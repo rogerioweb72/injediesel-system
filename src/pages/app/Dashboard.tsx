@@ -20,7 +20,7 @@ const MOCK_RECENT = [
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { hasRole } = useProfile()
+  useProfile()
 
   return (
     <div>

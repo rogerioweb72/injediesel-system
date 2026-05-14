@@ -13,7 +13,8 @@ export function useAuditLog() {
 
   async function log({ entity, entityId, action, metadata = {} }: AuditPayload) {
     if (!user) return
-    await supabase.from('audit_logs').insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('audit_logs').insert({
       actor_id: user.id,
       entity,
       entity_id: entityId ?? null,

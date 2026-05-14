@@ -1,6 +1,6 @@
 import { useAuthStore } from '@/stores/auth'
 import type { UserRole } from '@/types/app'
-import { canAccess } from '@/types/app'
+import { canAccess, MATRIX_ROLES } from '@/types/app'
 
 export function useProfile() {
   const profile = useAuthStore((s) => s.profile)
@@ -11,7 +11,7 @@ export function useProfile() {
   }
 
   function isMatrixUser(): boolean {
-    return hasRole('company_admin', 'operations_admin', 'finance_admin', 'support_agent', 'seller')
+    return hasRole(...MATRIX_ROLES)
   }
 
   return { profile, hasRole, isMatrixUser }

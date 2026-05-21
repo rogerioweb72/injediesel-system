@@ -61,16 +61,6 @@ export default function LojaPage() {
     return () => document.getElementById('loja-pg-css')?.remove()
   }, [])
 
-  useEffect(() => {
-    document.body.style.overflow = modal ? 'hidden' : ''
-    return () => { document.body.style.overflow = '' }
-  }, [modal])
-
-  useEffect(() => {
-    const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') setModal(null) }
-    window.addEventListener('keydown', fn)
-    return () => window.removeEventListener('keydown', fn)
-  }, [])
 
   return (
     <div className="loja-pg" style={{ background: DARK, color:'#fff', minHeight:'100vh', display:'flex', flexDirection:'column', fontFamily:'"DM Sans",sans-serif' }}>

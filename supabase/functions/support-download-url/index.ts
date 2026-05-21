@@ -38,8 +38,8 @@ serve(async (req) => {
   }
 
   // Verificar acesso ao ticket via RLS
-  const { data: ticket } = await callerClient.from('support_tickets').select('id').eq('id', ticketId).single()
-  if (!ticket) {
+  const { data: ticket, error: ticketErr } = await callerClient.from('support_tickets').select('id').eq('id', ticketId).single()
+  if (ticketErr || !ticket) {
     return new Response(JSON.stringify({ error: 'Ticket não encontrado' }), { status: 404, headers: CORS })
   }
 

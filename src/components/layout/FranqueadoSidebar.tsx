@@ -1,29 +1,27 @@
 import {
-  LayoutDashboard, Files, Users, Building2,
-  ShoppingCart, Package, ShoppingBag,
-  BarChart3, Headphones, Settings,
-  Database,
+  LayoutDashboard, Upload, Files, ShoppingBag, ShoppingCart,
+  ClipboardList, Users, BarChart3, Bell, Headphones,
+  Megaphone, User, Database,
 } from 'lucide-react'
 import { NavItem } from './NavItem'
-import { useProfile } from '@/hooks/useProfile'
-import { useUnseenJobs } from '@/hooks/useUnseenJobs'
-import { useUnreadSupportCount } from '@/hooks/useSupportTickets'
 import { supabase } from '@/lib/supabase'
 import { TunerLogo } from '@/components/branding/TunerLogo'
+import { useMyUnit } from '@/hooks/useMyUnit'
+import { useUnreadSupportCount } from '@/hooks/useSupportTickets'
 import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
 import type { SidebarMode } from './AppShell'
 
-interface SidebarProps {
+interface FranqueadoSidebarProps {
   mode: SidebarMode
   onTogglePin: () => void
 }
 
-export function Sidebar({ mode, onTogglePin }: SidebarProps) {
-  const { hasRole } = useProfile()
+export function FranqueadoSidebar({ mode, onTogglePin }: FranqueadoSidebarProps) {
+  const { data: myUnit } = useMyUnit()
+  const unit = myUnit?.franchise_units
   const prefix = useRoutePrefix()
-  const logout = () => supabase.auth.signOut()
-  const { count: unseenJobs } = useUnseenJobs()
   const { data: unreadSupport = 0 } = useUnreadSupportCount()
+  const logout = () => supabase.auth.signOut()
 
   const isExpanded = mode === 'pinned'
   const collapsed  = !isExpanded
@@ -37,7 +35,6 @@ export function Sidebar({ mode, onTogglePin }: SidebarProps) {
       className="pm-sidebar"
       style={{ width: isExpanded ? 'var(--pm-sidebar-width)' : 'var(--pm-sidebar-width-collapsed)' }}
     >
-      {/* Header — logo + toggle */}
       <div className={headerClass}>
         <div
           className="pm-sidebar-logo-wrap"
@@ -51,7 +48,7 @@ export function Sidebar({ mode, onTogglePin }: SidebarProps) {
             flexShrink: 0,
           }}
         >
-          <a href={`${prefix}/dashboard`} aria-label="Promax Tuner — Dashboard" tabIndex={isExpanded ? 0 : -1}>
+          <a href={`${prefix}/dashboard`} aria-label="Promax Tuner — Painel Franqueado" tabIndex={isExpanded ? 0 : -1}>
             <TunerLogo className="pm-sidebar-logo" />
           </a>
         </div>
@@ -69,40 +66,69 @@ export function Sidebar({ mode, onTogglePin }: SidebarProps) {
         </button>
       </div>
 
-      {/* Navegação */}
+      {isExpanded && unit && (
+        <div style={{
+          margin: '0 10px 8px',
+          padding: '8px 10px',
+          borderRadius: 8,
+          background: 'hsl(var(--pm-gray-800))',
+          border: '1px solid rgba(255,255,255,0.05)',
+        }}>
+          <p style={{
+            fontSize: 9,
+            fontFamily: 'var(--pm-font-mono)',
+            letterSpacing: '0.08em',
+            color: 'hsl(var(--pm-gray-500))',
+            textTransform: 'uppercase',
+            marginBottom: 2,
+          }}>
+            Franquia
+          </p>
+          <p style={{ fontSize: 12, fontWeight: 600, color: 'hsl(var(--pm-gray-100))', lineHeight: 1.3 }}>
+            {unit.name}
+          </p>
+          {unit.city && (
+            <p style={{ fontSize: 10, color: 'hsl(var(--pm-gray-500))', marginTop: 1 }}>
+              {unit.city}/{unit.state}
+            </p>
+          )}
+        </div>
+      )}
+
       <nav className="flex-1 py-3 overflow-y-auto overflow-x-hidden">
-        {!collapsed && <div className="pm-sidebar-group-title">Operação</div>}
+        {!collapsed && <div className="pm-sidebar-group-title">Principal</div>}
         {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
-        <NavItem to={`${prefix}/dashboard`}    icon={LayoutDashboard} label="Dashboard"    collapsed={collapsed} />
-        <NavItem to={`${prefix}/arquivos`}     icon={Files}           label="Arquivos ECU" collapsed={collapsed} badge={unseenJobs} />
-        <NavItem to={`${prefix}/tabela-remap`} icon={Database}        label="Tabela Remap" collapsed={collapsed} />
-        <NavItem to={`${prefix}/clientes`}     icon={Users}           label="Clientes"     collapsed={collapsed} />
-        {hasRole('company_admin', 'operations_admin') && (
-          <NavItem to={`${prefix}/franqueados`} icon={Building2} label="Franqueados" collapsed={collapsed} />
-        )}
+        <NavItem to={`${prefix}/dashboard`} icon={LayoutDashboard} label="Dashboard" collapsed={collapsed} />
+
+        {!collapsed && <div className="pm-sidebar-group-title">ECU</div>}
+        {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
+        <NavItem to={`${prefix}/arquivos/novo`} icon={Upload}   label="Enviar Arquivo"  collapsed={collapsed} end />
+        <NavItem to={`${prefix}/arquivos`}      icon={Files}    label="Meus Arquivos"   collapsed={collapsed} end />
+        <NavItem to={`${prefix}/tabela-remap`}  icon={Database} label="Tabela de Remap" collapsed={collapsed} />
 
         {!collapsed && <div className="pm-sidebar-group-title">Loja</div>}
         {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
-        <NavItem to={`${prefix}/pdv`}      icon={ShoppingBag}  label="PDV"      collapsed={collapsed} />
-        <NavItem to={`${prefix}/pedidos`}  icon={ShoppingCart} label="Pedidos"  collapsed={collapsed} />
-        <NavItem to={`${prefix}/produtos`} icon={Package}      label="Produtos" collapsed={collapsed} />
+        <NavItem to={`${prefix}/loja`}     icon={ShoppingBag}  label="Loja Promax"          collapsed={collapsed} />
+        <NavItem to={`${prefix}/carrinho`} icon={ShoppingCart} label="Meu Carrinho"          collapsed={collapsed} />
+        <NavItem to={`${prefix}/pedidos`}  icon={ClipboardList} label="Histórico de Compras" collapsed={collapsed} />
 
         {!collapsed && <div className="pm-sidebar-group-title">Gestão</div>}
         {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
-        {hasRole('company_admin', 'finance_admin') && (
-          <NavItem to={`${prefix}/financeiro`} icon={BarChart3} label="Financeiro" collapsed={collapsed} />
-        )}
-        <NavItem to={`${prefix}/suporte`} icon={Headphones} label="Suporte" collapsed={collapsed} badge={unreadSupport} />
+        <NavItem to={`${prefix}/clientes`}   icon={Users}     label="Clientes"   collapsed={collapsed} />
+        <NavItem to={`${prefix}/relatorios`} icon={BarChart3} label="Relatórios" collapsed={collapsed} />
+
+        {!collapsed && <div className="pm-sidebar-group-title">Suporte</div>}
+        {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
+        <NavItem to={`${prefix}/atualizacoes`} icon={Bell}       label="Atualizações"  collapsed={collapsed} />
+        <NavItem to={`${prefix}/suporte`}      icon={Headphones} label="Suporte"       collapsed={collapsed} badge={unreadSupport} />
+        <NavItem to={`${prefix}/materiais`}    icon={Megaphone}  label="Materiais MKT" collapsed={collapsed} />
       </nav>
 
-      {/* Footer — configurações + power */}
       <div className="flex flex-col">
-        {hasRole('company_admin', 'franchise_manager') && (
-          <NavItem to={`${prefix}/configuracoes`} icon={Settings} label="Configurações" collapsed={collapsed} />
-        )}
+        <NavItem to={`${prefix}/perfil`} icon={User} label="Perfil" collapsed={collapsed} />
         <div className="h-px mx-3 my-1 bg-[hsl(var(--pm-gray-800))]" />
         <div className={['flex items-center py-3', collapsed ? 'justify-center px-0' : 'px-4 gap-3'].join(' ')}>
-          {!collapsed && <span className="text-xs text-muted-foreground flex-1">v1.0.0 — MVP</span>}
+          {!collapsed && <span className="text-xs text-muted-foreground flex-1">v1.0 — Franqueado</span>}
           <button
             onClick={logout}
             style={{
@@ -125,7 +151,7 @@ export function Sidebar({ mode, onTogglePin }: SidebarProps) {
             aria-label="Sair"
             title="Sair"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"><g fill="none" fillRule="evenodd"><path d="M24 0v24H0V0zM12.593 23.258l-.011.002-.071.035-.02.004-.014-.004-.071-.035c-.01-.004-.019-.001-.024.005l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427c-.002-.01-.009-.017-.017-.018m.265-.113-.013.002-.185.093-.01.01-.003.011.018.43.005.012.008.007.201.093c.012.004.023 0 .029-.008l.004-.014-.034-.614c-.003-.012-.01-.02-.02-.022m-.715.002a.023.023 0 0 0-.027.006l-.006.014-.034.614c0 .012.007.02.017.024l.015-.002.201-.093.01-.008.004-.011.017-.43-.003-.012-.01-.01z"/><path fill="currentColor" d="M13.5 3a1.5 1.5 0 0 0-3 0v10a1.5 1.5 0 0 0 3 0zM7.854 5.75a1.5 1.5 0 1 0-1.661-2.5A10.492 10.492 0 0 0 1.5 12c0 5.799 4.701 10.5 10.5 10.5S22.5 17.799 22.5 12c0-3.654-1.867-6.87-4.693-8.75a1.5 1.5 0 0 0-1.66 2.5 7.5 7.5 0 1 1-8.292 0Z"/></g></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"><g fill="none" fillRule="evenodd"><path d="M24 0v24H0V0zM12.593 23.258l-.011.002-.071.035-.02.004-.014-.004-.071-.035c-.01-.004-.019-.001-.024.005l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427c-.002-.01-.009-.017-.017-.018m.265-.113-.013.002-.185.093-.01.01-.003.011.018.43.005.012.008.007.201.093c.012.004.023 0 .029-.008l.004-.014-.034-.614c-.003-.012-.01-.02-.02-.022m-.715.002a.023.023 0 0 0-.027.006l-.006.014-.034.614c0 .012.007.02.017.024l.015-.002.201-.093.01-.008.004-.011.017-.43-.003-.012-.01-.01z"/><path fill="currentColor" d="M13.5 3a1.5 1.5 0 0 0-3 0v10a1.5 1.5 0 0 0 3 0zM7.854 5.75a1.5 1.5 0 1 0-1.661-2.5A10.492 10.492 0 0 0 1.5 12c0 5.799 4.701 10.5 10.5 10.5S22.5 17.799 22.5 12c0-3.654-1.867-6.70-4.693-8.75a1.5 1.5 0 0 0-1.66 2.5 7.5 7.5 0 1 1-8.292 0Z"/></g></svg>
           </button>
         </div>
       </div>

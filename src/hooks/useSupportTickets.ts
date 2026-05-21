@@ -97,10 +97,11 @@ export function useSupportTicket(id: string) {
 }
 
 interface CreateTicketPayload {
+  title: string
   customer_id?: string | null
   unit_id?: string | null
   ecu_job_id?: string | null
-  category: string
+  category: TicketCategory
   priority: TicketPriority
   body: string
 }

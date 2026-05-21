@@ -48,17 +48,20 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('logos-unidades', 'logos-unidades', TRUE)
 ON CONFLICT (id) DO NOTHING;
 
--- RLS policies para o bucket
+-- RLS policies para o bucket (idempotent)
+DROP POLICY IF EXISTS "Authenticated upload logos" ON storage.objects;
 CREATE POLICY "Authenticated upload logos"
   ON storage.objects FOR INSERT
   TO authenticated
   WITH CHECK (bucket_id = 'logos-unidades');
 
+DROP POLICY IF EXISTS "Public read logos" ON storage.objects;
 CREATE POLICY "Public read logos"
   ON storage.objects FOR SELECT
   TO public
   USING (bucket_id = 'logos-unidades');
 
+DROP POLICY IF EXISTS "Authenticated update logos" ON storage.objects;
 CREATE POLICY "Authenticated update logos"
   ON storage.objects FOR UPDATE
   TO authenticated

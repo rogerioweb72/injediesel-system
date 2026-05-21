@@ -31,6 +31,12 @@ CREATE TABLE support_ticket_views (
   PRIMARY KEY (ticket_id, user_id)
 );
 
+-- Índices para performance das queries RLS
+CREATE INDEX idx_stv_ticket_id ON support_ticket_views(ticket_id);
+CREATE INDEX idx_stv_user_id   ON support_ticket_views(user_id);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_unit_id    ON support_tickets(unit_id);
+CREATE INDEX IF NOT EXISTS idx_support_messages_ticket_id ON support_messages(ticket_id);
+
 -- 6. RLS em support_tickets
 ALTER TABLE support_tickets ENABLE ROW LEVEL SECURITY;
 

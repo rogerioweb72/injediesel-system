@@ -603,6 +603,8 @@ export function usePublishChannels() {
   })
 }
 
+const PUBLIC_CHUNK = 1000
+
 export function useEcuCatalogPublic(categoriaSlug: string) {
   return useQuery({
     queryKey: QK.public(categoriaSlug),
@@ -612,16 +614,25 @@ export function useEcuCatalogPublic(categoriaSlug: string) {
           r => r.categoria_slug === categoriaSlug && r.ativo && r.ativo_ecommerce
         )
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
-        .from('ecu_catalog_public')
-        .select('*')
-        .eq('categoria_slug', categoriaSlug)
-        .order('marca', { ascending: true })
-        .order('secao_original', { ascending: true })
+      const all: EcuCatalogRow[] = []
+      let offset = 0
+      while (true) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data, error } = await (supabase as any)
+          .from('ecu_catalog_public')
+          .select('*')
+          .eq('categoria_slug', categoriaSlug)
+          .order('marca', { ascending: true })
+          .order('secao_original', { ascending: true })
+          .range(offset, offset + PUBLIC_CHUNK - 1)
 
-      if (error) throw error
-      return (data ?? []) as EcuCatalogRow[]
+        if (error) throw error
+        const chunk = (data ?? []) as EcuCatalogRow[]
+        all.push(...chunk)
+        if (chunk.length < PUBLIC_CHUNK) break
+        offset += PUBLIC_CHUNK
+      }
+      return all
     },
     staleTime: 300_000,
   })

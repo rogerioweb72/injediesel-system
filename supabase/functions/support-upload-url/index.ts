@@ -68,16 +68,21 @@ serve(async (req) => {
     },
   })
 
-  const uploadUrl = await getSignedUrl(
-    s3,
-    new PutObjectCommand({
-      Bucket: Deno.env.get('R2_BUCKET_SUPPORT')!,
-      Key: r2Key,
-      ContentType: mime,
-      ContentLength: size,
-    }),
-    { expiresIn: 600 }
-  )
+  let uploadUrl: string
+  try {
+    uploadUrl = await getSignedUrl(
+      s3,
+      new PutObjectCommand({
+        Bucket: Deno.env.get('R2_BUCKET_SUPPORT')!,
+        Key: r2Key,
+        ContentType: mime,
+        ContentLength: size,
+      }),
+      { expiresIn: 600 }
+    )
+  } catch {
+    return new Response(JSON.stringify({ error: 'Erro ao gerar URL de upload' }), { status: 500, headers: CORS })
+  }
 
   return new Response(JSON.stringify({ uploadUrl, r2Key }), {
     headers: { ...CORS, 'Content-Type': 'application/json' },

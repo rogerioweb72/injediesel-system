@@ -143,7 +143,7 @@ create policy "financial_matrix_read" on public.financial_entries
   );
 
 create policy "financial_admin_write" on public.financial_entries
-  for insert using (
+  for insert with check (
     public.current_user_role() in ('company_admin','finance_admin')
   );
 

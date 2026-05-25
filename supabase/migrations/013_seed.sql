@@ -21,9 +21,9 @@ with p1 as (
   returning id
 )
 insert into public.product_prices (product_id, tier, price)
-select id, 'franqueado_full',        350.00 from p1 union all
-select id, 'franqueado_linha_leve',  420.00 from p1 union all
-select id, 'cliente_final',          599.00 from p1;
+select id, 'franqueado_full'::public.price_tier,        350.00 from p1 union all
+select id, 'franqueado_linha_leve'::public.price_tier,  420.00 from p1 union all
+select id, 'cliente_final'::public.price_tier,          599.00 from p1;
 
 with p2 as (
   insert into public.products (sku, name, category, description, stock)
@@ -31,9 +31,9 @@ with p2 as (
   returning id
 )
 insert into public.product_prices (product_id, tier, price)
-select id, 'franqueado_full',        480.00 from p2 union all
-select id, 'franqueado_linha_leve',  560.00 from p2 union all
-select id, 'cliente_final',          799.00 from p2;
+select id, 'franqueado_full'::public.price_tier,        480.00 from p2 union all
+select id, 'franqueado_linha_leve'::public.price_tier,  560.00 from p2 union all
+select id, 'cliente_final'::public.price_tier,          799.00 from p2;
 
 with p3 as (
   insert into public.products (sku, name, category, description, stock)
@@ -41,6 +41,6 @@ with p3 as (
   returning id
 )
 insert into public.product_prices (product_id, tier, price)
-select id, 'franqueado_full',        180.00 from p3 union all
-select id, 'franqueado_linha_leve',  210.00 from p3 union all
-select id, 'cliente_final',          299.00 from p3;
+select id, 'franqueado_full'::public.price_tier,        180.00 from p3 union all
+select id, 'franqueado_linha_leve'::public.price_tier,  210.00 from p3 union all
+select id, 'cliente_final'::public.price_tier,          299.00 from p3;

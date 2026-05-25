@@ -1,13 +1,31 @@
+import { useState } from 'react'
 import {
   LayoutDashboard, Upload, Files, ShoppingBag, ShoppingCart,
-  ClipboardList, Users, BarChart3, Bell, Headphones,
-  Megaphone, User, Database,
+  ClipboardList, Users, BarChart3, Headphones,
+  Megaphone, User, Database, HelpCircle, BookOpen,
 } from 'lucide-react'
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+
+function IconAtualizacoes({ className, size = 24 }: { className?: string; size?: number }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" className={className}>
+      <g fill="none">
+        <path d="M24 0v24H0V0zM12.594 23.258l-.012.002-.071.035-.02.004-.014-.004-.071-.036c-.01-.003-.019 0-.024.006l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427c-.002-.01-.009-.017-.016-.018m.264-.113-.014.002-.184.093-.01.01-.003.011.018.43.005.012.008.008.201.092c.012.004.023 0 .029-.008l.004-.014-.034-.614c-.003-.012-.01-.02-.02-.022m-.715.002a.023.023 0 0 0-.027.006l-.006.014-.034.614c0 .012.007.02.017.024l.015-.002.201-.093.01-.008.003-.011.018-.43-.003-.012-.01-.01z" />
+        <path fill="currentColor" d="M20 9a1 1 0 0 1 1 1v1a8 8 0 0 1-8 8H9.414l.793.793a1 1 0 0 1-1.414 1.414l-2.496-2.496a.997.997 0 0 1-.287-.567L6 17.991a.996.996 0 0 1 .237-.638l.056-.06 2.5-2.5a1 1 0 0 1 1.414 1.414L9.414 17H13a6 6 0 0 0 6-6v-1a1 1 0 0 1 1-1m-4.793-6.207 2.5 2.5a1 1 0 0 1 0 1.414l-2.5 2.5a1 1 0 1 1-1.414-1.414L14.586 7H11a6 6 0 0 0-6 6v1a1 1 0 1 1-2 0v-1a8 8 0 0 1 8-8h3.586l-.793-.793a1 1 0 0 1 1.414-1.414" />
+      </g>
+    </svg>
+  )
+}
 import { NavItem } from './NavItem'
 import { supabase } from '@/lib/supabase'
 import { TunerLogo } from '@/components/branding/TunerLogo'
 import { useMyUnit } from '@/hooks/useMyUnit'
 import { useUnreadSupportCount } from '@/hooks/useSupportTickets'
+import { useUnseenJobs } from '@/hooks/useUnseenJobs'
+import { useFranchiseOrderUpdatesCount } from '@/hooks/useNotifications'
 import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
 import type { SidebarMode } from './AppShell'
 
@@ -17,10 +35,13 @@ interface FranqueadoSidebarProps {
 }
 
 export function FranqueadoSidebar({ mode, onTogglePin }: FranqueadoSidebarProps) {
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const { data: myUnit } = useMyUnit()
   const unit = myUnit?.franchise_units
   const prefix = useRoutePrefix()
   const { data: unreadSupport = 0 } = useUnreadSupportCount()
+  const { count: unseenJobs } = useUnseenJobs()
+  const { data: orderUpdates = 0 } = useFranchiseOrderUpdatesCount()
   const logout = () => supabase.auth.signOut()
 
   const isExpanded = mode === 'pinned'
@@ -31,6 +52,7 @@ export function FranqueadoSidebar({ mode, onTogglePin }: FranqueadoSidebarProps)
     : 'pm-sidebar-header pm-sidebar-header--collapsed'
 
   return (
+    <>
     <aside
       className="pm-sidebar"
       style={{ width: isExpanded ? 'var(--pm-sidebar-width)' : 'var(--pm-sidebar-width-collapsed)' }}
@@ -103,34 +125,36 @@ export function FranqueadoSidebar({ mode, onTogglePin }: FranqueadoSidebarProps)
         {!collapsed && <div className="pm-sidebar-group-title">ECU</div>}
         {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
         <NavItem to={`${prefix}/arquivos/novo`} icon={Upload}   label="Enviar Arquivo"  collapsed={collapsed} end />
-        <NavItem to={`${prefix}/arquivos`}      icon={Files}    label="Meus Arquivos"   collapsed={collapsed} end />
+        <NavItem to={`${prefix}/arquivos`}      icon={Files}    label="Meus Arquivos"   collapsed={collapsed} badge={unseenJobs} end />
         <NavItem to={`${prefix}/tabela-remap`}  icon={Database} label="Tabela de Remap" collapsed={collapsed} />
 
         {!collapsed && <div className="pm-sidebar-group-title">Loja</div>}
         {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
         <NavItem to={`${prefix}/loja`}     icon={ShoppingBag}  label="Loja Promax"          collapsed={collapsed} />
         <NavItem to={`${prefix}/carrinho`} icon={ShoppingCart} label="Meu Carrinho"          collapsed={collapsed} />
-        <NavItem to={`${prefix}/pedidos`}  icon={ClipboardList} label="Histórico de Compras" collapsed={collapsed} />
+        <NavItem to={`${prefix}/pedidos`}  icon={ClipboardList} label="Histórico de Compras" collapsed={collapsed} badge={orderUpdates} />
 
         {!collapsed && <div className="pm-sidebar-group-title">Gestão</div>}
         {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
         <NavItem to={`${prefix}/clientes`}   icon={Users}     label="Clientes"   collapsed={collapsed} />
         <NavItem to={`${prefix}/relatorios`} icon={BarChart3} label="Relatórios" collapsed={collapsed} />
+        <NavItem to={`${prefix}/cadastros`}  icon={BookOpen}  label="Cadastros"  collapsed={collapsed} />
 
         {!collapsed && <div className="pm-sidebar-group-title">Suporte</div>}
         {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
-        <NavItem to={`${prefix}/atualizacoes`} icon={Bell}       label="Atualizações"  collapsed={collapsed} />
+        <NavItem to={`${prefix}/atualizacoes`} icon={IconAtualizacoes} label="Atualizações"  collapsed={collapsed} />
         <NavItem to={`${prefix}/suporte`}      icon={Headphones} label="Suporte"       collapsed={collapsed} badge={unreadSupport} />
         <NavItem to={`${prefix}/materiais`}    icon={Megaphone}  label="Materiais MKT" collapsed={collapsed} />
       </nav>
 
       <div className="flex flex-col">
-        <NavItem to={`${prefix}/perfil`} icon={User} label="Perfil" collapsed={collapsed} />
+        <NavItem to={`${prefix}/perfil`} icon={User}       label="Perfil" collapsed={collapsed} />
+        <NavItem to={`${prefix}/ajuda`}  icon={HelpCircle} label="Ajuda"  collapsed={collapsed} />
         <div className="h-px mx-3 my-1 bg-[hsl(var(--pm-gray-800))]" />
         <div className={['flex items-center py-3', collapsed ? 'justify-center px-0' : 'px-4 gap-3'].join(' ')}>
           {!collapsed && <span className="text-xs text-muted-foreground flex-1">v1.0 — Franqueado</span>}
           <button
-            onClick={logout}
+            onClick={() => setShowLogoutConfirm(true)}
             style={{
               width: 34, height: 34, borderRadius: '50%',
               background: 'hsl(var(--pm-red-500)/0.12)',
@@ -156,5 +180,28 @@ export function FranqueadoSidebar({ mode, onTogglePin }: FranqueadoSidebarProps)
         </div>
       </div>
     </aside>
+
+    <Dialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Sair da conta</DialogTitle>
+          <DialogDescription>
+            Deseja realmente sair? Você precisará fazer login novamente para acessar o sistema.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setShowLogoutConfirm(false)}>
+            Cancelar
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={() => { setShowLogoutConfirm(false); logout() }}
+          >
+            Sair
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }

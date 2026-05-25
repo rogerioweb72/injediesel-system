@@ -1,13 +1,19 @@
+import { useState } from 'react'
 import {
   LayoutDashboard, Files, Users, Building2,
   ShoppingCart, Package, ShoppingBag,
   BarChart3, Headphones, Settings,
-  Database,
+  Database, ClipboardList, Megaphone, HelpCircle, BookOpen,
 } from 'lucide-react'
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import { NavItem } from './NavItem'
 import { useProfile } from '@/hooks/useProfile'
 import { useUnseenJobs } from '@/hooks/useUnseenJobs'
 import { useUnreadSupportCount } from '@/hooks/useSupportTickets'
+import { usePendingB2BCount } from '@/hooks/useNotifications'
 import { supabase } from '@/lib/supabase'
 import { TunerLogo } from '@/components/branding/TunerLogo'
 import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
@@ -19,11 +25,13 @@ interface SidebarProps {
 }
 
 export function Sidebar({ mode, onTogglePin }: SidebarProps) {
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const { hasRole } = useProfile()
   const prefix = useRoutePrefix()
   const logout = () => supabase.auth.signOut()
   const { count: unseenJobs } = useUnseenJobs()
   const { data: unreadSupport = 0 } = useUnreadSupportCount()
+  const { data: b2bPending = 0 } = usePendingB2BCount()
 
   const isExpanded = mode === 'pinned'
   const collapsed  = !isExpanded
@@ -33,6 +41,7 @@ export function Sidebar({ mode, onTogglePin }: SidebarProps) {
     : 'pm-sidebar-header pm-sidebar-header--collapsed'
 
   return (
+    <>
     <aside
       className="pm-sidebar"
       style={{ width: isExpanded ? 'var(--pm-sidebar-width)' : 'var(--pm-sidebar-width-collapsed)' }}
@@ -84,7 +93,8 @@ export function Sidebar({ mode, onTogglePin }: SidebarProps) {
         {!collapsed && <div className="pm-sidebar-group-title">Loja</div>}
         {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
         <NavItem to={`${prefix}/pdv`}      icon={ShoppingBag}  label="PDV"      collapsed={collapsed} />
-        <NavItem to={`${prefix}/pedidos`}  icon={ShoppingCart} label="Pedidos"  collapsed={collapsed} />
+        <NavItem to={`${prefix}/pedidos`}     icon={ShoppingCart}  label="Pedidos"      collapsed={collapsed} />
+        <NavItem to={`${prefix}/pedidos-b2b`} icon={ClipboardList} label="Pedidos B2B"  collapsed={collapsed} badge={b2bPending} />
         <NavItem to={`${prefix}/produtos`} icon={Package}      label="Produtos" collapsed={collapsed} />
 
         {!collapsed && <div className="pm-sidebar-group-title">Gestão</div>}
@@ -92,7 +102,9 @@ export function Sidebar({ mode, onTogglePin }: SidebarProps) {
         {hasRole('company_admin', 'finance_admin') && (
           <NavItem to={`${prefix}/financeiro`} icon={BarChart3} label="Financeiro" collapsed={collapsed} />
         )}
-        <NavItem to={`${prefix}/suporte`} icon={Headphones} label="Suporte" collapsed={collapsed} badge={unreadSupport} />
+        <NavItem to={`${prefix}/cadastros`} icon={BookOpen} label="Cadastros" collapsed={collapsed} />
+        <NavItem to={`${prefix}/suporte`}   icon={Headphones} label="Suporte"       collapsed={collapsed} badge={unreadSupport} />
+        <NavItem to={`${prefix}/materiais`} icon={Megaphone}  label="Materiais MKT" collapsed={collapsed} />
       </nav>
 
       {/* Footer — configurações + power */}
@@ -100,11 +112,12 @@ export function Sidebar({ mode, onTogglePin }: SidebarProps) {
         {hasRole('company_admin', 'franchise_manager') && (
           <NavItem to={`${prefix}/configuracoes`} icon={Settings} label="Configurações" collapsed={collapsed} />
         )}
+        <NavItem to={`${prefix}/ajuda`} icon={HelpCircle} label="Ajuda" collapsed={collapsed} />
         <div className="h-px mx-3 my-1 bg-[hsl(var(--pm-gray-800))]" />
         <div className={['flex items-center py-3', collapsed ? 'justify-center px-0' : 'px-4 gap-3'].join(' ')}>
           {!collapsed && <span className="text-xs text-muted-foreground flex-1">v1.0.0 — MVP</span>}
           <button
-            onClick={logout}
+            onClick={() => setShowLogoutConfirm(true)}
             style={{
               width: 34, height: 34, borderRadius: '50%',
               background: 'hsl(var(--pm-red-500)/0.12)',
@@ -130,5 +143,28 @@ export function Sidebar({ mode, onTogglePin }: SidebarProps) {
         </div>
       </div>
     </aside>
+
+    <Dialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Sair da conta</DialogTitle>
+          <DialogDescription>
+            Deseja realmente sair? Você precisará fazer login novamente para acessar o sistema.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setShowLogoutConfirm(false)}>
+            Cancelar
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={() => { setShowLogoutConfirm(false); logout() }}
+          >
+            Sair
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }

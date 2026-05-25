@@ -38,6 +38,7 @@ const FranqueadoCatalogPage   = lazy(() => import('@/pages/app/franqueados/Franq
 const FranqueadoDashboard     = lazy(() => import('@/pages/app/franqueados/FranqueadoDashboard'))
 const AtualizacoesPage        = lazy(() => import('@/pages/app/franqueados/AtualizacoesPage'))
 const FranqueadoConfigPage    = lazy(() => import('@/pages/app/franqueados/FranqueadoConfigPage'))
+const FranqueadoPerfilPage    = lazy(() => import('@/pages/app/franqueados/FranqueadoPerfilPage'))
 const FranqueadoLojaPage      = lazy(() => import('@/pages/app/franqueados/FranqueadoLojaPage'))
 const FranqueadoCarrinhoPage  = lazy(() => import('@/pages/app/franqueados/FranqueadoCarrinhoPage'))
 const FranqueadoCustomersPage = lazy(() => import('@/pages/app/clientes/CustomersPage'))
@@ -184,7 +185,7 @@ const router = createBrowserRouter([
           { path: 'suporte/novo',                element: <S><SupportTicketForm /></S> },
           { path: 'suporte/:id',                 element: <S><SupportTicketDetail /></S> },
           { path: 'materiais',                   element: <S><MateriaisPage /></S> },
-          { path: 'perfil',                      element: <EmBreve titulo="Perfil" /> },
+          { path: 'perfil',                      element: <S><FranqueadoPerfilPage /></S> },
           { path: 'ajuda',                       element: <S><AjudaPage /></S> },
           { path: 'configuracoes',               element: <S><FranqueadoConfigPage /></S> },
         ],

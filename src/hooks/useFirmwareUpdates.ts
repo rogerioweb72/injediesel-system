@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { downloadFirmwareFileFromR2 } from '@/lib/r2'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -70,6 +71,7 @@ export function useEquipmentTypes() {
   return useQuery({
     queryKey: ['equipment-types'],
     queryFn: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from('equipment_types')
         .select('*')
@@ -87,6 +89,7 @@ export function useUpsertEquipmentType() {
     mutationFn: async (
       payload: Partial<Pick<EquipmentType, 'id'>> & Pick<EquipmentType, 'name' | 'slug'> & { description?: string | null }
     ) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from('equipment_types')
         .upsert(payload, { onConflict: 'id' })
@@ -105,6 +108,7 @@ export function useFirmwareUpdates(equipmentId?: string) {
   return useQuery({
     queryKey: ['firmware-updates', equipmentId ?? 'all'],
     queryFn: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let q = (supabase as any)
         .from('firmware_updates')
         .select('*')
@@ -122,6 +126,7 @@ export function useFirmwareUpdatesAdmin(equipmentId?: string) {
   return useQuery({
     queryKey: ['firmware-updates-admin', equipmentId ?? 'all'],
     queryFn: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let q = (supabase as any)
         .from('firmware_updates')
         .select('*')
@@ -139,6 +144,7 @@ export function useFirmwareUpdate(updateId?: string) {
     queryKey: ['firmware-update', updateId],
     enabled: !!updateId,
     queryFn: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from('firmware_updates')
         .select('*')
@@ -160,11 +166,13 @@ export function useSaveFirmwareUpdate() {
       title: string
       blocks: Block[]
       published?: boolean
+      published_at?: string | null
     }) => {
       if (payload.id) {
         const { id, ...rest } = payload
         const update: Record<string, unknown> = { ...rest }
-        if (rest.published) update.published_at = new Date().toISOString()
+        if (rest.published && !rest.published_at) update.published_at = new Date().toISOString()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabase as any)
           .from('firmware_updates')
           .update(update)
@@ -175,7 +183,8 @@ export function useSaveFirmwareUpdate() {
         return data as FirmwareUpdate
       } else {
         const insert: Record<string, unknown> = { ...payload }
-        if (payload.published) insert.published_at = new Date().toISOString()
+        if (payload.published && !payload.published_at) insert.published_at = new Date().toISOString()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabase as any)
           .from('firmware_updates')
           .insert(insert)
@@ -200,6 +209,7 @@ export function useFirmwareFiles(updateId?: string) {
     queryKey: ['firmware-files', updateId],
     enabled: !!updateId,
     queryFn: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from('firmware_update_files')
         .select('*')
@@ -221,6 +231,7 @@ export function useAddFirmwareFile() {
       file_size?: number | null
       sort_order?: number
     }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from('firmware_update_files')
         .insert(payload)
@@ -239,6 +250,7 @@ export function useDeleteFirmwareFile() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (file: FirmwareFile) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any)
         .from('firmware_update_files')
         .delete()
@@ -258,6 +270,7 @@ export function useMyAcceptances() {
   return useQuery({
     queryKey: ['firmware-my-acceptances'],
     queryFn: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from('firmware_update_acceptances')
         .select('*')
@@ -275,12 +288,13 @@ export function useAcceptFirmwareUpdate() {
       unit_id: string | null
       user_id: string
     }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from('firmware_update_acceptances')
         .upsert(payload, { onConflict: 'update_id,user_id', ignoreDuplicates: true })
         .select()
         .maybeSingle()
-      if (error && error.code !== '23505') throw error
+      if (error) throw error
       return data as FirmwareAcceptance | null
     },
     onSuccess: () => {
@@ -293,7 +307,6 @@ export function useAcceptFirmwareUpdate() {
 
 export async function downloadFirmwareFile(file: FirmwareFile, updateId: string): Promise<void> {
   const token = await getAccessToken()
-  const { downloadFirmwareFileFromR2 } = await import('@/lib/r2')
   await downloadFirmwareFileFromR2({
     r2Key: file.r2_key,
     updateId,

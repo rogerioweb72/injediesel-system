@@ -1,0 +1,69 @@
+name = "promax-tuner-r2"
+main = "workers/r2-presign.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# account_id via env CLOUDFLARE_ACCOUNT_ID ou wrangler login
+
+[[r2_buckets]]
+binding = "ECU_ORIGINALS"
+bucket_name = "promax-ecu-originals"
+
+[[r2_buckets]]
+binding = "ECU_DELIVERED"
+bucket_name = "promax-ecu-delivered"
+
+[[r2_buckets]]
+binding = "MKT_MATERIALS"
+bucket_name = "promax-mkt-materials"
+
+[[r2_buckets]]
+binding = "FIRMWARE"
+bucket_name = "promax-firmware"
+
+# Secrets:
+# wrangler secret put SUPABASE_ANON_KEY --env production
+
+[vars]
+SUPABASE_URL = ""
+
+[env.staging]
+name = "promax-tuner-r2-staging"
+
+[[env.staging.r2_buckets]]
+binding = "ECU_ORIGINALS"
+bucket_name = "promax-ecu-originals-staging"
+
+[[env.staging.r2_buckets]]
+binding = "ECU_DELIVERED"
+bucket_name = "promax-ecu-delivered-staging"
+
+[[env.staging.r2_buckets]]
+binding = "MKT_MATERIALS"
+bucket_name = "promax-mkt-materials-staging"
+
+[[env.staging.r2_buckets]]
+binding = "FIRMWARE"
+bucket_name = "promax-firmware-staging"
+
+[env.production]
+name = "promax-tuner-r2-prod"
+
+[env.production.vars]
+SUPABASE_URL = "https://myjrylmxzertrbwuosrv.supabase.co"
+
+[[env.production.r2_buckets]]
+binding = "ECU_ORIGINALS"
+bucket_name = "promax-ecu-originals"
+
+[[env.production.r2_buckets]]
+binding = "ECU_DELIVERED"
+bucket_name = "promax-ecu-delivered"
+
+[[env.production.r2_buckets]]
+binding = "MKT_MATERIALS"
+bucket_name = "promax-mkt-materials"
+
+[[env.production.r2_buckets]]
+binding = "FIRMWARE"
+bucket_name = "promax-firmware"

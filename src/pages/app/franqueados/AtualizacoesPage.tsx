@@ -67,11 +67,12 @@ function renderBlock(block: Block, index: number) {
       )
     }
     case 'video': {
-      const videoId = block.url?.match(/(?:v=|youtu\.be\/)([^&?/]+)/)?.[1]
+      const videoId = /^https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?(?:.*&)?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/.exec(block.url ?? '')?.[1]
       if (!videoId) return null
       return (
         <div key={index} className="aspect-video w-full overflow-hidden rounded-lg">
           <iframe
+            title="Vídeo de instruções"
             src={`https://www.youtube.com/embed/${videoId}`}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
@@ -104,6 +105,7 @@ function ArticleView({
 
   const [checked, setChecked] = useState(false)
   const [downloading, setDownloading] = useState<string | null>(null)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
 
   const myAcceptance = acceptances.find((a) => a.update_id === update.id)
   const alreadyAccepted = !!myAcceptance
@@ -124,6 +126,7 @@ function ArticleView({
       await downloadFirmwareFile(file, update.id)
     } catch (err) {
       console.error(err)
+      setDownloadError('Falha ao baixar o arquivo. Tente novamente.')
     } finally {
       setDownloading(null)
     }
@@ -165,7 +168,7 @@ function ArticleView({
             <label className="flex cursor-pointer items-start gap-3">
               <Checkbox
                 checked={checked}
-                onCheckedChange={(v) => setChecked(v === true)}
+                onCheckedChange={(v) => { setChecked(v === true); setDownloadError(null) }}
                 className="mt-0.5"
               />
               <span className="text-xs text-zinc-300 leading-relaxed">
@@ -190,6 +193,9 @@ function ArticleView({
               </Button>
             ))}
           </div>
+          {downloadError && (
+            <p className="text-xs text-red-400 text-center">{downloadError}</p>
+          )}
         </div>
       ) : null}
     </div>

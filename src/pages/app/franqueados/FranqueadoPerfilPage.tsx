@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -300,7 +300,7 @@ function PerfilIdentidadePanel({
       {/* Identidade */}
       <div className="w-full space-y-2 text-center">
         <p className="text-xs text-muted-foreground">
-          {unit?.city}{unit?.state ? `-${unit.state}` : ''}
+          {unit?.city}{unit?.state ? ` / ${unit.state}` : ''}
         </p>
         <button
           onClick={() => setTrocaNomeOpen(true)}
@@ -311,10 +311,10 @@ function PerfilIdentidadePanel({
       </div>
 
       {/* Contrato */}
-      {unit?.contract_end_date && (
+      {unit?.contract_start_date && unit?.contract_end_date && (
         <div className="w-full">
           <ContractProgressBar
-            startDate={unit.contract_start_date ?? unit.contract_end_date}
+            startDate={unit.contract_start_date}
             endDate={unit.contract_end_date}
           />
         </div>
@@ -393,7 +393,7 @@ function PerfilFormPanel({
   const [showOld, setShowOld] = useState(false)
   const [oldPwdError, setOldPwdError] = useState('')
 
-  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<PerfilFormData>({
+  const { register, handleSubmit, setValue, watch, reset, formState: { errors, isSubmitting } } = useForm<PerfilFormData>({
     resolver: zodResolver(perfilSchema),
     defaultValues: {
       name:           profile?.name ?? '',
@@ -408,6 +408,22 @@ function PerfilFormPanel({
       state:          profile?.state ?? '',
     },
   })
+
+  useEffect(() => {
+    if (!profile) return
+    reset({
+      name:           profile.name ?? '',
+      phone:          profile.phone ?? '',
+      birth_date:     profile.birth_date ?? '',
+      cep:            profile.cep ?? '',
+      street:         profile.street ?? '',
+      address_number: profile.address_number ?? '',
+      complement:     profile.complement ?? '',
+      neighborhood:   profile.neighborhood ?? '',
+      city:           profile.city ?? '',
+      state:          profile.state ?? '',
+    })
+  }, [profile, reset])
 
   const newPassword = watch('newPassword') ?? ''
   const stateValue  = watch('state') ?? ''
@@ -469,6 +485,14 @@ function PerfilFormPanel({
         state:          data.state || null,
       })
       toast.success('Alterações salvas com sucesso.')
+      reset({
+        ...watch(),
+        email:           '',
+        emailConfirm:    '',
+        newPassword:     '',
+        confirmPassword: '',
+        oldPassword:     '',
+      })
     } catch {
       toast.error('Erro ao salvar alterações.')
     }

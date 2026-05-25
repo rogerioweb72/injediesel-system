@@ -28,7 +28,8 @@ create table if not exists firmware_updates (
   published_at timestamptz,
   created_by   uuid references profiles(id) on delete set null,
   created_at   timestamptz not null default now(),
-  updated_at   timestamptz not null default now()
+  updated_at   timestamptz not null default now(),
+  unique (equipment_id, version)
 );
 
 create index if not exists firmware_updates_equipment_idx on firmware_updates (equipment_id);
@@ -62,13 +63,23 @@ create index if not exists firmware_acceptances_update_idx on firmware_update_ac
 create index if not exists firmware_acceptances_user_idx   on firmware_update_acceptances (user_id);
 
 -- Triggers updated_at
-create trigger equipment_types_updated_at
-  before update on equipment_types
-  for each row execute procedure moddatetime(updated_at);
+create or replace function set_equipment_types_updated_at()
+returns trigger language plpgsql as $$
+begin new.updated_at = now(); return new; end;
+$$;
 
-create trigger firmware_updates_updated_at
+create trigger trg_equipment_types_updated_at
+  before update on equipment_types
+  for each row execute function set_equipment_types_updated_at();
+
+create or replace function set_firmware_updates_updated_at()
+returns trigger language plpgsql as $$
+begin new.updated_at = now(); return new; end;
+$$;
+
+create trigger trg_firmware_updates_updated_at
   before update on firmware_updates
-  for each row execute procedure moddatetime(updated_at);
+  for each row execute function set_firmware_updates_updated_at();
 
 -- RLS: equipment_types
 alter table equipment_types enable row level security;
@@ -77,13 +88,7 @@ create policy "equip_types_read" on equipment_types
   for select using (auth.uid() is not null and active = true);
 
 create policy "equip_types_admin_write" on equipment_types
-  for all using (
-    exists (
-      select 1 from profiles
-      where profiles.id = auth.uid()
-        and profiles.role in ('company_admin', 'operations_admin')
-    )
-  );
+  for all using (public.is_matrix_admin());
 
 -- RLS: firmware_updates
 alter table firmware_updates enable row level security;
@@ -92,28 +97,24 @@ create policy "firmware_updates_read_published" on firmware_updates
   for select using (auth.uid() is not null and published = true);
 
 create policy "firmware_updates_admin_all" on firmware_updates
-  for all using (
-    exists (
-      select 1 from profiles
-      where profiles.id = auth.uid()
-        and profiles.role in ('company_admin', 'operations_admin')
-    )
-  );
+  for all using (public.is_matrix_admin());
 
 -- RLS: firmware_update_files
 alter table firmware_update_files enable row level security;
 
 create policy "firmware_files_read" on firmware_update_files
-  for select using (auth.uid() is not null);
-
-create policy "firmware_files_admin_write" on firmware_update_files
-  for all using (
-    exists (
-      select 1 from profiles
-      where profiles.id = auth.uid()
-        and profiles.role in ('company_admin', 'operations_admin')
+  for select using (
+    public.is_matrix_admin()
+    or exists (
+      select 1 from firmware_updates fu
+      where fu.id = firmware_update_files.update_id
+        and fu.published = true
+        and auth.uid() is not null
     )
   );
+
+create policy "firmware_files_admin_write" on firmware_update_files
+  for all using (public.is_matrix_admin());
 
 -- RLS: firmware_update_acceptances
 alter table firmware_update_acceptances enable row level security;
@@ -123,4 +124,7 @@ create policy "firmware_acceptances_own_read" on firmware_update_acceptances
 
 create policy "firmware_acceptances_insert" on firmware_update_acceptances
   for insert with check (auth.uid() = user_id);
+
+create policy "firmware_acceptances_admin_read" on firmware_update_acceptances
+  for select using (public.is_matrix_admin());
 -- sem UPDATE/DELETE permitido em aceites

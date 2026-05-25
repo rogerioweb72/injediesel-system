@@ -322,6 +322,15 @@ async function handleFirmwareDownload(request: Request, env: Env): Promise<Respo
     return json({ error: 'r2Key e updateId são obrigatórios' }, 400, env)
   }
 
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (!UUID_RE.test(body.updateId)) {
+    return json({ error: 'updateId inválido' }, 400, env)
+  }
+
+  if (!body.r2Key.startsWith('firmware/files/')) {
+    return json({ error: 'Arquivo não encontrado' }, 404, env)
+  }
+
   const hasAccepted = await checkFirmwareAcceptance(userId, body.updateId, env)
   if (!hasAccepted) {
     return json({ error: 'Aceite dos termos necessário antes do download' }, 403, env)

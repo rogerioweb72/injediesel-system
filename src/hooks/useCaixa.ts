@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuditLog } from '@/hooks/useAuditLog'
-import { useAuthStore } from '@/stores/auth'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const sb = () => supabase as any

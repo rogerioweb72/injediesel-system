@@ -19,6 +19,7 @@ export function useUploadAvatar() {
       const { data } = supabase.storage.from('avatars').getPublicUrl(path)
       const publicUrl = `${data.publicUrl}?t=${Date.now()}`
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: updateError } = await (supabase as any)
         .from('profiles')
         .update({ avatar_url: publicUrl })

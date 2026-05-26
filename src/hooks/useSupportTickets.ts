@@ -227,6 +227,24 @@ export function useMarkTicketSeen(ticketId: string) {
   })
 }
 
+export function useMatrixAgents(enabled = true) {
+  return useQuery({
+    queryKey: ['support-agents'],
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await sb()
+        .from('profiles')
+        .select('id, name')
+        .in('role', ['support_agent', 'operations_admin', 'company_admin'])
+        .eq('active', true)
+        .order('name')
+      if (error) throw error
+      return (data ?? []) as { id: string; name: string }[]
+    },
+    staleTime: 300_000,
+  })
+}
+
 export function useUnreadSupportCount() {
   const user = useAuthStore((s) => s.user)
   const profile = useAuthStore((s) => s.profile)

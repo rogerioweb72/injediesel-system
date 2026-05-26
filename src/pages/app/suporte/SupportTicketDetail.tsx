@@ -9,14 +9,13 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { SupportChatPanel } from '@/components/support/SupportChatPanel'
 import { SupportSLABadge } from '@/components/support/SupportSLABadge'
 import { SupportRequesterCard } from '@/components/support/SupportRequesterCard'
-import { useQuery } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
 import {
   useSupportTicket,
   useUpdateTicketStatus,
   useReopenTicket,
   useMarkTicketSeen,
   useAssignTicket,
+  useMatrixAgents,
 } from '@/hooks/useSupportTickets'
 import { useAuthStore } from '@/stores/auth'
 import {
@@ -74,20 +73,7 @@ export default function SupportTicketDetail() {
   const markSeen     = useMarkTicketSeen(id ?? '')
   const assignTicket = useAssignTicket()
 
-  const { data: agents = [] } = useQuery({
-    queryKey: ['support-agents'],
-    enabled: isMatrix,
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('profiles')
-        .select('id, name')
-        .in('role', ['support_agent', 'operations_admin', 'company_admin'])
-        .eq('active', true)
-        .order('name')
-      if (error) throw error
-      return data as { id: string; name: string }[]
-    },
-  })
+  const { data: agents = [] } = useMatrixAgents(isMatrix)
 
   const agentName = agents.find((a) => a.id === ticket?.assigned_to)?.name
 

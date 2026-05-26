@@ -72,7 +72,7 @@ function EquipmentAccordion({
 }) {
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
-  const { data: updates = [], isLoading } = useFirmwareUpdatesAdmin(equipment.id)
+  const { data: updates = [], isLoading } = useFirmwareUpdatesAdmin(equipment.id, { enabled: open })
 
   return (
     <div className="rounded-xl border border-zinc-700 bg-zinc-900 overflow-hidden">
@@ -150,6 +150,7 @@ function EquipmentModal({
   const upsert = useUpsertEquipmentType()
   const [name, setName] = useState(equipment?.name ?? '')
   const [description, setDescription] = useState(equipment?.description ?? '')
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const slug = name
     .toLowerCase()
@@ -160,13 +161,18 @@ function EquipmentModal({
 
   async function handleSave() {
     if (!name.trim()) return
-    await upsert.mutateAsync({
-      ...(equipment?.id ? { id: equipment.id } : {}),
-      name: name.trim(),
-      slug,
-      description: description.trim() || null,
-    })
-    onOpenChange(false)
+    setSaveError(null)
+    try {
+      await upsert.mutateAsync({
+        ...(equipment?.id ? { id: equipment.id } : {}),
+        name: name.trim(),
+        slug,
+        description: description.trim() || null,
+      })
+      onOpenChange(false)
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Erro ao salvar equipamento.')
+    }
   }
 
   return (
@@ -198,6 +204,9 @@ function EquipmentModal({
             />
           </div>
         </div>
+        {saveError && (
+          <p className="text-sm text-red-400 px-1">{saveError}</p>
+        )}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
@@ -272,6 +281,7 @@ export default function AtualizacoesMatrizPage() {
       )}
 
       <EquipmentModal
+        key={editingEquipment?.id ?? 'new'}
         equipment={editingEquipment}
         open={modalOpen}
         onOpenChange={setModalOpen}

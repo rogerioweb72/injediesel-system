@@ -122,9 +122,10 @@ export function useFirmwareUpdates(equipmentId?: string) {
   })
 }
 
-export function useFirmwareUpdatesAdmin(equipmentId?: string) {
+export function useFirmwareUpdatesAdmin(equipmentId?: string, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['firmware-updates-admin', equipmentId ?? 'all'],
+    enabled: options?.enabled ?? true,
     queryFn: async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let q = (supabase as any)

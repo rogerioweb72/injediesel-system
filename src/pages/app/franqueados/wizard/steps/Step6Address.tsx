@@ -6,6 +6,12 @@ import { useWizard } from '../WizardContext'
 import { useCepLookup } from '@/hooks/useCepLookup'
 import { maskCEP } from '@/lib/validators'
 
+function AutoIcon({ field, autofilled }: { field: string; autofilled: Set<string> }) {
+  return autofilled.has(field)
+    ? <CheckCircle2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 pointer-events-none" />
+    : null
+}
+
 export function Step6Address() {
   const { form, autofilled, markAutofilled, clearAutofilled } = useWizard()
   const { register, setValue, watch, formState: { errors } } = form
@@ -24,12 +30,6 @@ export function Step6Address() {
   }, [status, data, setValue, markAutofilled])
 
   function handleCepBlur() { lookup(cepRaw ?? '') }
-
-  function AutoIcon({ field }: { field: string }) {
-    return autofilled.has(field)
-      ? <CheckCircle2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 pointer-events-none" />
-      : null
-  }
 
   return (
     <div className="space-y-6">
@@ -56,7 +56,7 @@ export function Step6Address() {
           <Label>Logradouro</Label>
           <div className="relative">
             <Input {...register('logradouro')} placeholder="Av. Paulista" onChange={() => clearAutofilled('logradouro')} />
-            <AutoIcon field="logradouro" />
+            <AutoIcon field="\1" autofilled={autofilled} />
           </div>
         </div>
 
@@ -76,7 +76,7 @@ export function Step6Address() {
           <Label>Bairro</Label>
           <div className="relative">
             <Input {...register('bairro')} placeholder="Bela Vista" onChange={() => clearAutofilled('bairro')} />
-            <AutoIcon field="bairro" />
+            <AutoIcon field="\1" autofilled={autofilled} />
           </div>
         </div>
 
@@ -85,14 +85,14 @@ export function Step6Address() {
             <Label>Cidade</Label>
             <div className="relative">
               <Input {...register('city')} placeholder="São Paulo" onChange={() => clearAutofilled('city')} />
-              <AutoIcon field="city" />
+              <AutoIcon field="\1" autofilled={autofilled} />
             </div>
           </div>
           <div className="space-y-1">
             <Label>UF</Label>
             <div className="relative">
               <Input {...register('state')} maxLength={2} placeholder="SP" className="uppercase" onChange={() => clearAutofilled('state')} />
-              <AutoIcon field="state" />
+              <AutoIcon field="\1" autofilled={autofilled} />
             </div>
           </div>
         </div>

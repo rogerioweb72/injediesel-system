@@ -1,26 +1,30 @@
 import { useState } from 'react'
 import { BookOpen } from 'lucide-react'
 import { useMyUnit } from '@/hooks/useMyUnit'
+import { useModulePermission } from '@/hooks/usePermissions'
 import { TabFornecedores } from './tabs/TabFornecedores'
 import { TabFormasPagamento } from './tabs/TabFormasPagamento'
 import { TabServicos } from './tabs/TabServicos'
 import { TabCategorias } from './tabs/TabCategorias'
+import { UsersTab } from '@/pages/app/configuracoes/UsersTab'
 
-type TabId = 'fornecedores' | 'formas-pagamento' | 'servicos' | 'categorias'
-
-const TABS: { id: TabId; label: string }[] = [
-  { id: 'fornecedores',     label: 'Fornecedores' },
-  { id: 'formas-pagamento', label: 'Formas de Pagamento' },
-  { id: 'servicos',         label: 'Serviços' },
-  { id: 'categorias',       label: 'Categorias' },
-]
+type TabId = 'fornecedores' | 'formas-pagamento' | 'servicos' | 'categorias' | 'usuarios'
 
 export default function CadastrosPage() {
   const { data: myUnit, isLoading } = useMyUnit()
   const [activeTab, setActiveTab] = useState<TabId>('fornecedores')
+  const permConfig = useModulePermission('configuracoes')
 
   // undefined = loading, null = matrix, string = franchise
   const unitId: string | null | undefined = isLoading ? undefined : (myUnit?.unit_id ?? null)
+
+  const TABS: { id: TabId; label: string }[] = [
+    { id: 'fornecedores',     label: 'Fornecedores' },
+    { id: 'formas-pagamento', label: 'Formas de Pagamento' },
+    { id: 'servicos',         label: 'Serviços' },
+    { id: 'categorias',       label: 'Categorias' },
+    ...(permConfig.canView ? [{ id: 'usuarios' as TabId, label: 'Usuários' }] : []),
+  ]
 
   return (
     <div className="space-y-5">
@@ -49,6 +53,7 @@ export default function CadastrosPage() {
       {activeTab === 'formas-pagamento' && <TabFormasPagamento unitId={unitId} />}
       {activeTab === 'servicos'         && <TabServicos        unitId={unitId} />}
       {activeTab === 'categorias'       && <TabCategorias />}
+      {activeTab === 'usuarios'         && <UsersTab />}
     </div>
   )
 }

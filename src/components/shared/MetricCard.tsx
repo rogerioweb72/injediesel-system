@@ -25,7 +25,7 @@ export function MetricCard({
 
   const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus
   const trendColor =
-    trend === 'up' ? 'text-green-500' : trend === 'down' ? 'text-red-400' : 'text-muted-foreground'
+    trend === 'up' ? 'text-[hsl(var(--pm-green-400))]' : trend === 'down' ? 'text-[hsl(var(--pm-red-400))]' : 'text-muted-foreground'
 
   return (
     <div className="pm-kpi-card">

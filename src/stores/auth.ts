@@ -7,9 +7,13 @@ interface AuthState {
   user: User | null
   profile: AppUser | null
   loading: boolean
+  impersonating: AppUser | null
+  impersonationSessionId: string | null
   setSession: (session: Session | null) => void
   setProfile: (profile: AppUser | null) => void
   setLoading: (loading: boolean) => void
+  startImpersonation: (target: AppUser, sessionId: string) => void
+  stopImpersonation: () => void
   reset: () => void
 }
 
@@ -18,8 +22,15 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   profile: null,
   loading: true,
+  impersonating: null,
+  impersonationSessionId: null,
   setSession: (session) => set({ session, user: session?.user ?? null }),
   setProfile: (profile) => set({ profile }),
   setLoading: (loading) => set({ loading }),
-  reset: () => set({ session: null, user: null, profile: null, loading: false }),
+  startImpersonation: (target, sessionId) =>
+    set({ impersonating: target, impersonationSessionId: sessionId }),
+  stopImpersonation: () =>
+    set({ impersonating: null, impersonationSessionId: null }),
+  reset: () =>
+    set({ session: null, user: null, profile: null, loading: false, impersonating: null, impersonationSessionId: null }),
 }))

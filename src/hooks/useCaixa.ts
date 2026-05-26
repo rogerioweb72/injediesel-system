@@ -39,9 +39,9 @@ export interface CommissionEntry {
 export function usePendingPayments(unitId: string | null | undefined) {
   return useQuery({
     queryKey: ['caixa-pendentes', unitId],
-    enabled: !!unitId,
+    enabled: unitId !== undefined,
     queryFn: async () => {
-      const { data, error } = await sb()
+      let q = sb()
         .from('financial_entries')
         .select(`
           id, amount, description, created_at, ecu_job_id,
@@ -51,9 +51,10 @@ export function usePendingPayments(unitId: string | null | undefined) {
             customers(name)
           )
         `)
-        .eq('unit_id', unitId)
         .eq('status', 'pendente')
         .order('created_at', { ascending: false })
+      q = unitId === null ? q.is('unit_id', null) : q.eq('unit_id', unitId)
+      const { data, error } = await q
       if (error) throw error
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (data ?? []).map((r: any) => ({

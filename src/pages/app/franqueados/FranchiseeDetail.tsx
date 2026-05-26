@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
-import { ArrowLeft, Edit, Trash2, AlertTriangle, Clock, ArrowUpCircle, RefreshCw, ShieldOff, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, Edit, Trash2, AlertTriangle, Clock, ArrowUpCircle, RefreshCw, ShieldOff, ShieldCheck, Mail } from 'lucide-react'
 import { toast } from 'sonner'
 import { PermissionGuard } from '@/components/auth/PermissionGuard'
+import { RoleGuard } from '@/components/auth/RoleGuard'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -15,6 +16,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { ContractProgressBar, contractDaysRemaining } from '@/components/shared/ContractProgressBar'
 import { FranchiseeWizard } from './wizard/FranchiseeWizard'
 import { useFranchiseUnit, useDeleteFranchiseUnit, useUpdateFranchiseUnit } from '@/hooks/useFranchiseUnits'
+import { useInviteFranchisee } from '@/hooks/useInviteFranchisee'
 import type { ContractType } from '@/types/app'
 
 const CONTRACT_LABELS: Record<string, string> = { full: 'Full', linha_leve: 'Linha Leve' }
@@ -38,6 +40,10 @@ export default function FranchiseeDetail() {
   const [upgradeOpen,  setUpgradeOpen]  = useState(false)
   const [renewOpen,    setRenewOpen]    = useState(false)
   const [blockOpen,    setBlockOpen]    = useState(false)
+  const [inviteOpen,   setInviteOpen]   = useState(false)
+  const [inviteEmail,  setInviteEmail]  = useState('')
+  const [inviteName,   setInviteName]   = useState('')
+  const [inviteRole,   setInviteRole]   = useState<'franchise_manager' | 'unit_operator'>('franchise_manager')
 
   // Upgrade state
   const [upgradeType, setUpgradeType] = useState<ContractType>('full')
@@ -52,6 +58,7 @@ export default function FranchiseeDetail() {
   const { data: unit, isLoading } = useFranchiseUnit(id ?? '')
   const deleteUnit  = useDeleteFranchiseUnit()
   const updateUnit  = useUpdateFranchiseUnit()
+  const invite      = useInviteFranchisee()
 
   if (isLoading || !unit) return <div className="pm-skeleton h-64 w-full rounded" />
 
@@ -119,52 +126,51 @@ export default function FranchiseeDetail() {
       <PageHeader
         title={unit.name}
         subtitle={unit.city && unit.state ? `${unit.city} — ${unit.state}` : undefined}
-        actions={
-          <div className="flex gap-2 flex-wrap">
-            <Button variant="ghost" onClick={() => navigate(`${prefix}/franqueados`)}>
-              <ArrowLeft size={16} className="mr-2" />Voltar
-            </Button>
-            <PermissionGuard module="franqueados" action="edit">
-              {/* Upgrade/Downgrade */}
-              <Button variant="outline" size="sm" onClick={() => { setUpgradeType(unit.contract_type); setUpgradeOpen(true) }}>
-                <ArrowUpCircle size={14} className="mr-1.5" />Upgrade
-              </Button>
-              {/* Renovar contrato */}
-              <Button variant="outline" size="sm" onClick={() => { setRenewEnd(unit.contract_end_date?.split('T')[0] ?? ''); setRenewOpen(true) }}>
-                <RefreshCw size={14} className="mr-1.5" />Renovar
-              </Button>
-              {/* Bloquear / Desbloquear */}
-              {unit.contract_blocked ? (
-                <Button
-                  size="sm"
-                  onClick={handleUnblock}
-                  disabled={updateUnit.isPending}
-                  style={{ background: 'rgba(52,211,153,0.15)', color: '#34D399', border: '1px solid rgba(52,211,153,0.25)' }}
-                >
-                  <ShieldCheck size={14} className="mr-1.5" />Desbloquear
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => setBlockOpen(true)}
-                >
-                  <ShieldOff size={14} className="mr-1.5" />Bloquear
-                </Button>
-              )}
-              {/* Editar */}
-              <Button variant="outline" onClick={() => setEditOpen(true)}>
-                <Edit size={16} className="mr-2" />Editar
-              </Button>
-            </PermissionGuard>
-            <PermissionGuard module="franqueados" action="delete">
-              <Button variant="ghost" onClick={() => setDeleteOpen(true)}>
-                <Trash2 size={16} />
-              </Button>
-            </PermissionGuard>
-          </div>
-        }
       />
+
+      <div className="flex items-center gap-2 flex-wrap justify-end">
+        <Button variant="ghost" size="sm" onClick={() => navigate(`${prefix}/franqueados`)}>
+          <ArrowLeft size={16} className="mr-2" />Voltar
+        </Button>
+        <PermissionGuard module="franqueados" action="edit">
+          <Button variant="outline" size="sm" onClick={() => { setUpgradeType(unit.contract_type); setUpgradeOpen(true) }}>
+            <ArrowUpCircle size={14} className="mr-1.5" />Upgrade
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => { setRenewEnd(unit.contract_end_date?.split('T')[0] ?? ''); setRenewOpen(true) }}>
+            <RefreshCw size={14} className="mr-1.5" />Renovar
+          </Button>
+          {unit.contract_blocked ? (
+            <Button
+              size="sm"
+              onClick={handleUnblock}
+              disabled={updateUnit.isPending}
+              style={{ background: 'rgba(52,211,153,0.15)', color: '#34D399', border: '1px solid rgba(52,211,153,0.25)' }}
+            >
+              <ShieldCheck size={14} className="mr-1.5" />Desbloquear
+            </Button>
+          ) : (
+            <Button size="sm" variant="destructive" onClick={() => setBlockOpen(true)}>
+              <ShieldOff size={14} className="mr-1.5" />Bloquear
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+            <Edit size={16} className="mr-2" />Editar
+          </Button>
+        </PermissionGuard>
+        <RoleGuard roles={['company_admin']}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => { setInviteEmail(unit.email ?? ''); setInviteOpen(true) }}
+            style={{ borderColor: 'rgba(96,165,250,0.3)', color: '#60A5FA' }}
+          >
+            <Mail size={14} className="mr-1.5" />Convidar Acesso
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setDeleteOpen(true)}>
+            <Trash2 size={16} />
+          </Button>
+        </RoleGuard>
+      </div>
 
       {/* ── Alerta de bloqueio ── */}
       {unit.contract_blocked && (
@@ -389,11 +395,78 @@ export default function FranchiseeDetail() {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         title="Excluir Unidade"
-        description={`Tem certeza que deseja excluir "${unit.name}"?`}
+        description={`Tem certeza que deseja excluir permanentemente "${unit.name}"? Esta ação não pode ser desfeita.`}
         onConfirm={handleDelete}
         isLoading={deleteUnit.isPending}
-        confirmLabel="Excluir"
+        confirmLabel="Excluir Permanentemente"
+        requireTyped="excluir"
       />
+
+      {/* Dialog de convite */}
+      <Dialog open={inviteOpen} onOpenChange={(v) => { if (!v) { setInviteEmail(''); setInviteName(''); } setInviteOpen(v) }}>
+        <DialogContent className="max-w-sm max-h-[90vh] flex flex-col overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Convidar Acesso à Unidade</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-4 py-2">
+            <p className="text-xs text-muted-foreground">
+              O usuário receberá um email com link para definir sua senha e acessar o sistema.
+            </p>
+            <div className="space-y-1">
+              <Label>Nome completo *</Label>
+              <Input
+                value={inviteName}
+                onChange={e => setInviteName(e.target.value)}
+                placeholder="João da Silva"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>E-mail *</Label>
+              <Input
+                type="email"
+                value={inviteEmail}
+                onChange={e => setInviteEmail(e.target.value)}
+                placeholder="franqueado@email.com"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Perfil de Acesso</Label>
+              <Select value={inviteRole} onValueChange={v => setInviteRole(v as typeof inviteRole)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="franchise_manager">Gerente de Franquia — acesso completo da unidade</SelectItem>
+                  <SelectItem value="unit_operator">Operador — acesso operacional restrito</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setInviteOpen(false)} disabled={invite.isPending}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={!inviteEmail || !inviteName || invite.isPending}
+              onClick={async () => {
+                try {
+                  const result = await invite.mutateAsync({ email: inviteEmail, name: inviteName, unit_id: unit.id, role: inviteRole })
+                  if (result.already_registered) {
+                    toast.success(`Acesso vinculado para ${inviteEmail} (usuário já cadastrado)`)
+                  } else {
+                    toast.success(`Convite enviado para ${inviteEmail}`)
+                  }
+                  setInviteOpen(false)
+                  setInviteEmail('')
+                } catch (err: unknown) {
+                  toast.error(err instanceof Error ? err.message : 'Erro ao enviar convite')
+                }
+              }}
+              style={{ background: 'rgba(96,165,250,0.15)', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.25)' }}
+            >
+              {invite.isPending ? 'Enviando...' : <><Mail size={14} className="mr-1.5" />Enviar Convite</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

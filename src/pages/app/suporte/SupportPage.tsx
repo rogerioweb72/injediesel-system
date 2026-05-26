@@ -8,11 +8,10 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { DataTable, type Column } from '@/components/shared/DataTable'
 import { useSupportTickets, type SupportTicket } from '@/hooks/useSupportTickets'
 import type { TicketStatus } from '@/types/app'
-import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/auth'
 import { getAccountTier, CATEGORY_LABELS } from '@/types/app'
 import { SupportSLABadge } from '@/components/support/SupportSLABadge'
-import { supabase } from '@/lib/supabase'
+import { useFranchiseUnitsList } from '@/hooks/useFranchiseUnits'
 
 const STATUS_LABELS: Record<TicketStatus, string> = {
   aberto:            'Aberto',
@@ -122,18 +121,7 @@ export default function SupportPage() {
   const isMatrix = profile ? getAccountTier(profile.role) === 'matrix' : false
   const [unitFilter, setUnitFilter] = useState<string>('')
 
-  const { data: units } = useQuery({
-    queryKey: ['franchise-units'],
-    enabled: isMatrix,
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('franchise_units')
-        .select('id, name')
-        .order('name')
-      if (error) throw error
-      return data as { id: string; name: string }[]
-    },
-  })
+  const { data: units } = useFranchiseUnitsList(isMatrix)
 
   const { data, isLoading } = useSupportTickets({ q: search, status, page, pageSize: PAGE_SIZE, unitId: unitFilter || undefined })
 

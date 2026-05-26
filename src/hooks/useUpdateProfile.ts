@@ -11,6 +11,7 @@ export function useUpdateProfile() {
 
   return useMutation({
     mutationFn: async (data: ProfileUpdateData) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any)
         .from('profiles')
         .update(data)

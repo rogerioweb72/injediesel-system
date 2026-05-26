@@ -1,32 +1,32 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ArrowLeft, Upload, X, ImageIcon, Link } from 'lucide-react'
+import { ArrowLeft, Upload, X, ImageIcon, Link, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { PageHeader } from '@/components/shared/PageHeader'
-import { useProduct, useUpsertProduct } from '@/hooks/useProducts'
-import { supabase } from '@/lib/supabase'
+import { useProduct, useUpsertProduct, useProductCategories } from '@/hooks/useProducts'
+import { useStorageUpload } from '@/hooks/useStorageUpload'
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
 const BUCKET = 'product-images'
 
-function storageSrc(path: string): string {
-  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`
-}
 
 const schema = z.object({
   sku:           z.string().min(1, 'SKU é obrigatório'),
+  code:          z.string().nullable(),
   name:          z.string().min(2, 'Nome é obrigatório'),
   category:      z.string().min(1, 'Categoria é obrigatória'),
   description:   z.string().nullable(),
   image_url:     z.string().nullable(),
   stock:         z.preprocess((v) => Number(v), z.number().int().min(0)),
+  cost_price:    z.preprocess((v) => v === '' || v === null || v === undefined ? null : Number(v), z.number().min(0).nullable()),
   active:        z.boolean(),
   featured:      z.boolean(),
   price_cliente_final:         z.preprocess((v) => Number(v), z.number().min(0)),
@@ -36,15 +36,21 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
+const NEW_CAT_SENTINEL = '__new_category__'
+
 export default function ProductForm() {
   const navigate    = useNavigate()
   const { id }      = useParams<{ id: string }>()
   const isEdit      = !!id
+  const prefix      = useRoutePrefix()
   const fileRef     = useRef<HTMLInputElement>(null)
-  const [uploading, setUploading] = useState(false)
-  const [imgTab, setImgTab]       = useState<'url' | 'upload'>('url')
+  const { upload, uploading } = useStorageUpload()
+  const [imgTab, setImgTab]   = useState<'url' | 'upload'>('url')
+  const [newCatMode, setNewCatMode] = useState(false)
+  const [newCatInput, setNewCatInput] = useState('')
 
   const { data: product, isLoading } = useProduct(id ?? '')
+  const { data: categories = [] } = useProductCategories()
   const upsert = useUpsertProduct()
 
   const {
@@ -54,22 +60,27 @@ export default function ProductForm() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema) as any,
     defaultValues: {
-      sku: '', name: '', category: '', description: null, image_url: null,
-      stock: 0, active: true, featured: false,
+      sku: '', code: null, name: '', category: '', description: null, image_url: null,
+      stock: 0, cost_price: null, active: true, featured: false,
       price_cliente_final: 0, price_franqueado_linha_leve: 0, price_franqueado_full: 0,
     },
   })
 
-  const imageUrl = watch('image_url')
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const imageUrl  = watch('image_url')
+   
+  const catValue  = watch('category')
 
   useEffect(() => {
     if (product) {
       setValue('sku',          product.sku)
+      setValue('code',         product.code ?? null)
       setValue('name',         product.name)
       setValue('category',     product.category)
       setValue('description',  product.description)
       setValue('image_url',    product.image_url)
       setValue('stock',        product.stock)
+      setValue('cost_price',   product.cost_price ?? null)
       setValue('active',       product.active)
       setValue('featured',     product.featured ?? false)
       const prices = product.product_prices ?? []
@@ -85,39 +96,38 @@ export default function ProductForm() {
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 5 * 1024 * 1024) { toast.error('Imagem muito grande (máx 5 MB)'); return }
+    const ext  = file.name.split('.').pop()
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+    const { publicUrl, error } = await upload(BUCKET, path, file, { maxSizeMB: 5 })
+    if (error) { toast.error(error); return }
+    setValue('image_url', publicUrl)
+    toast.success('Imagem enviada')
+    if (fileRef.current) fileRef.current.value = ''
+  }
 
-    setUploading(true)
-    try {
-      const ext  = file.name.split('.').pop()
-      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any).storage.from(BUCKET).upload(path, file, { upsert: true })
-      if (error) throw error
-      setValue('image_url', storageSrc(path))
-      toast.success('Imagem enviada')
-    } catch (err) {
-      toast.error('Erro ao enviar imagem')
-    } finally {
-      setUploading(false)
-      if (fileRef.current) fileRef.current.value = ''
-    }
+  function confirmNewCategory() {
+    const trimmed = newCatInput.trim()
+    if (!trimmed) return
+    setValue('category', trimmed)
+    setNewCatMode(false)
+    setNewCatInput('')
   }
 
   async function onSubmit(values: FormValues) {
     await upsert.mutateAsync({
       ...(isEdit && id ? { id } : {}),
-      sku: values.sku, name: values.name, category: values.category,
+      sku: values.sku, code: values.code ?? null, name: values.name, category: values.category,
       description: values.description ?? null,
       image_url: values.image_url || null,
       stock: values.stock, active: values.active, featured: values.featured,
+      cost_price: values.cost_price ?? null,
       prices: [
         { tier: 'cliente_final',         price: values.price_cliente_final },
         { tier: 'franqueado_linha_leve', price: values.price_franqueado_linha_leve },
         { tier: 'franqueado_full',       price: values.price_franqueado_full },
       ],
     })
-    navigate('/matriz/produtos')
+    navigate(`${prefix}/produtos`)
   }
 
   if (isEdit && isLoading) return <div className="pm-skeleton h-64 w-full rounded" />
@@ -127,7 +137,7 @@ export default function ProductForm() {
       <PageHeader
         title={isEdit ? 'Editar Produto' : 'Novo Produto'}
         actions={
-          <Button variant="ghost" onClick={() => navigate('/matriz/produtos')}>
+          <Button variant="ghost" onClick={() => navigate(`${prefix}/produtos`)}>
             <ArrowLeft size={16} className="mr-2" />Voltar
           </Button>
         }
@@ -135,7 +145,7 @@ export default function ProductForm() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="pm-card max-w-2xl space-y-5">
 
-        {/* Basic info */}
+        {/* SKU + Código */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <Label htmlFor="sku">SKU *</Label>
@@ -143,24 +153,72 @@ export default function ProductForm() {
             {errors.sku && <p className="text-xs text-red-400">{errors.sku.message}</p>}
           </div>
           <div className="space-y-1">
-            <Label htmlFor="category">Categoria *</Label>
-            <Input id="category" {...register('category')} />
-            {errors.category && <p className="text-xs text-red-400">{errors.category.message}</p>}
+            <Label htmlFor="code">Código</Label>
+            <Input id="code" placeholder="Código do produto / EAN" {...register('code')} />
           </div>
         </div>
 
+        {/* Name */}
         <div className="space-y-1">
           <Label htmlFor="name">Nome *</Label>
           <Input id="name" {...register('name')} />
           {errors.name && <p className="text-xs text-red-400">{errors.name.message}</p>}
         </div>
 
+        {/* Category */}
+        <div className="space-y-1">
+          <Label>Categoria *</Label>
+          {newCatMode ? (
+            <div className="flex gap-2">
+              <Input
+                autoFocus
+                placeholder="Nome da nova categoria..."
+                value={newCatInput}
+                onChange={e => setNewCatInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); confirmNewCategory() } }}
+              />
+              <Button type="button" variant="outline" size="sm" onClick={confirmNewCategory}>OK</Button>
+              <Button
+                type="button" variant="ghost" size="sm"
+                onClick={() => { setNewCatMode(false); setNewCatInput('') }}
+              >
+                <X size={14} />
+              </Button>
+            </div>
+          ) : (
+            <Select
+              value={catValue || ''}
+              onValueChange={(v) => {
+                if (v === NEW_CAT_SENTINEL) { setNewCatMode(true) }
+                else { setValue('category', v) }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione uma categoria..." />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+                <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '4px 8px' }} />
+                <SelectItem value={NEW_CAT_SENTINEL}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#94A3B8' }}>
+                    <Plus size={13} /> Nova categoria...
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+          {errors.category && <p className="text-xs text-red-400">{errors.category.message}</p>}
+        </div>
+
+        {/* Description */}
         <div className="space-y-1">
           <Label htmlFor="description">Descrição</Label>
           <Textarea id="description" {...register('description')} rows={3} />
         </div>
 
-        {/* ── IMAGE SECTION ── */}
+        {/* Image */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label>Imagem do Produto</Label>
@@ -189,7 +247,6 @@ export default function ProductForm() {
           </div>
 
           <div className="flex gap-4">
-            {/* Preview */}
             <div className="shrink-0 w-24 h-24 rounded-lg border border-white/[0.08] bg-black/30 overflow-hidden flex items-center justify-center">
               {imageUrl ? (
                 <img
@@ -203,7 +260,6 @@ export default function ProductForm() {
               )}
             </div>
 
-            {/* Input */}
             <div className="flex-1 space-y-2">
               {imgTab === 'url' ? (
                 <div className="relative">
@@ -253,10 +309,23 @@ export default function ProductForm() {
           </div>
         </div>
 
-        {/* Stock */}
-        <div className="space-y-1">
-          <Label htmlFor="stock">Estoque</Label>
-          <Input id="stock" type="number" min={0} {...register('stock')} />
+        {/* Stock + Cost */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <Label htmlFor="stock">Estoque</Label>
+            <Input id="stock" type="number" min={0} {...register('stock')} />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="cost_price">Preço de Custo (R$)</Label>
+            <Input
+              id="cost_price"
+              type="number"
+              step="0.01"
+              min={0}
+              placeholder="0,00"
+              {...register('cost_price')}
+            />
+          </div>
         </div>
 
         {/* Prices */}
@@ -290,10 +359,10 @@ export default function ProductForm() {
         </div>
 
         <div className="flex gap-3 pt-2">
-          <Button type="submit" disabled={isSubmitting} style={{ background: 'hsl(var(--pm-red-500))' }}>
+          <Button type="submit" disabled={isSubmitting} style={{ background: 'var(--pm-accent-gradient)' }}>
             {isSubmitting ? 'Salvando...' : isEdit ? 'Salvar Alterações' : 'Criar Produto'}
           </Button>
-          <Button type="button" variant="ghost" onClick={() => navigate('/matriz/produtos')}>
+          <Button type="button" variant="ghost" onClick={() => navigate(`${prefix}/produtos`)}>
             Cancelar
           </Button>
         </div>

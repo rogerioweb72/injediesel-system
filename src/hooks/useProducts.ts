@@ -13,6 +13,7 @@ export interface ProductPrice {
 export interface Product {
   id: string
   sku: string
+  code: string | null
   name: string
   category: string
   description: string | null
@@ -20,6 +21,7 @@ export interface Product {
   active: boolean
   featured: boolean
   stock: number
+  cost_price: number | null
   created_at: string
   product_prices?: ProductPrice[]
 }
@@ -45,7 +47,7 @@ export function useProducts({ q = '', category = '', page = 0, pageSize = 20 }: 
         .select('*, product_prices(*)', { count: 'exact' })
         .order('name')
         .range(page * pageSize, (page + 1) * pageSize - 1)
-      if (q) query = query.ilike('name', `%${q}%`)
+      if (q) query = query.or(`name.ilike.%${q}%,sku.ilike.%${q}%`)
       if (category) query = query.eq('category', category)
       const { data, error, count } = await query
       if (error) throw error
@@ -90,6 +92,7 @@ export function useProductCategories() {
 interface UpsertProductPayload {
   id?: string
   sku: string
+  code: string | null
   name: string
   category: string
   description: string | null
@@ -97,6 +100,7 @@ interface UpsertProductPayload {
   active: boolean
   featured: boolean
   stock: number
+  cost_price: number | null
   prices: { tier: PriceTier; price: number }[]
 }
 
@@ -113,6 +117,7 @@ export function useUpsertProduct() {
       if (isNew) {
         const { data, error } = await sb.from('products').insert({
           sku: product.sku,
+          code: product.code,
           name: product.name,
           category: product.category,
           description: product.description,
@@ -120,12 +125,14 @@ export function useUpsertProduct() {
           active: product.active,
           featured: product.featured,
           stock: product.stock,
+          cost_price: product.cost_price,
         }).select('id').single()
         if (error) throw error
         productId = data.id
       } else {
         const { error } = await sb.from('products').update({
           sku: product.sku,
+          code: product.code,
           name: product.name,
           category: product.category,
           description: product.description,
@@ -133,6 +140,7 @@ export function useUpsertProduct() {
           active: product.active,
           featured: product.featured,
           stock: product.stock,
+          cost_price: product.cost_price,
         }).eq('id', product.id)
         if (error) throw error
         productId = product.id!
@@ -151,6 +159,21 @@ export function useUpsertProduct() {
       qc.invalidateQueries({ queryKey: ['products'] })
       qc.invalidateQueries({ queryKey: ['product', id] })
       log({ entity: 'product', entityId: id, action: vars.id ? 'updated' : 'created' })
+    },
+  })
+}
+
+export function useToggleProductActive() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from('products').update({ active }).eq('id', id)
+      if (error) throw error
+      return { id, active }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['products'] })
     },
   })
 }

@@ -7,8 +7,10 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
   globalIgnores(['dist']),
+
+  // Frontend — React + browser globals
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ['src/**/*.{ts,tsx}'],
     extends: [
       js.configs.recommended,
       tseslint.configs.recommended,
@@ -17,6 +19,35 @@ export default defineConfig([
     ],
     languageOptions: {
       globals: globals.browser,
+    },
+  },
+
+  // Edge Functions — Deno runtime, console.log proibido em produção
+  {
+    files: ['supabase/functions/**/*.ts'],
+    extends: [
+      js.configs.recommended,
+      tseslint.configs.recommended,
+    ],
+    languageOptions: {
+      globals: {
+        Deno:             'readonly',
+        crypto:           'readonly',
+        fetch:            'readonly',
+        Request:          'readonly',
+        Response:         'readonly',
+        URL:              'readonly',
+        URLSearchParams:  'readonly',
+        Headers:          'readonly',
+        FormData:         'readonly',
+        ReadableStream:   'readonly',
+        WritableStream:   'readonly',
+        TextEncoder:      'readonly',
+        TextDecoder:      'readonly',
+      },
+    },
+    rules: {
+      'no-console': 'error',
     },
   },
 ])

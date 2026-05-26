@@ -331,7 +331,9 @@ export default function EcuJobForm() {
   const [blockedModalOpen, setBlockedModalOpen] = useState(false)
   const { data: usersData = [] } = useUsers()
   const isFranchise = !!myUnit?.unit_id
-  const sellers = usersData.filter((u) => u.active && u.role === 'unit_seller')
+  const sellers = usersData.filter((u) =>
+    u.active && (isFranchise ? u.role === 'unit_seller' : u.role === 'seller')
+  )
   const { data: customersData } = useCustomers({ pageSize: 200 })
   const customers = customersData?.data ?? []
 
@@ -413,6 +415,7 @@ export default function EcuJobForm() {
   }
 
   const handlePlacaLookup = useCallback(async () => {
+    // eslint-disable-next-line react-hooks/incompatible-library
     const placa = watch('vehicle_placa') ?? ''
     if (!PLATE_REGEX.test(placa.trim())) return
     setLookupLoading(true)
@@ -481,6 +484,7 @@ export default function EcuJobForm() {
           ano:       values.vehicle_ano       || undefined,
           horas_km:  values.vehicle_horas_km  || undefined,
         },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any)
       setUploadProgress(40)
       if (ecuFiles.originalA) await uploadFile.mutateAsync({ jobId: job.id, file: ecuFiles.originalA, fileType: 'original' })
@@ -501,6 +505,7 @@ export default function EcuJobForm() {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function handleInvalidSubmit(errors: any) {
     console.log('invalid submit', {
       errors,
@@ -589,8 +594,8 @@ export default function EcuJobForm() {
         {/* ── Restante do form — bloqueado sem cliente ── */}
         <fieldset disabled={!hasClient} className={cn('space-y-5', !hasClient && 'opacity-40 pointer-events-none select-none')}>
 
-          {/* ── Vendedor responsável (apenas franquia) ── */}
-          {isFranchise && (
+          {/* ── Vendedor responsável ── */}
+          {(
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium" style={{ color: 'hsl(var(--pm-gray-300))' }}>
                 Vendedor responsável

@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { EcuCatalogRow, CatalogFilters, BulkPricePayload } from '@/types/ecu-catalog'
+import mockData from '@/data/ecu-catalog-mock.json'
 
 const IS_MOCK = import.meta.env.VITE_MOCK === 'true'
 
@@ -605,31 +606,38 @@ export function usePublishChannels() {
 
 const PUBLIC_CHUNK = 1000
 
+// Uses raw fetch (not supabase-js) — supabase-js v2 hangs for anonymous public queries
 export function useEcuCatalogPublic(categoriaSlug: string) {
   return useQuery({
     queryKey: QK.public(categoriaSlug),
+    enabled: !!categoriaSlug,
     queryFn: async (): Promise<EcuCatalogRow[]> => {
       if (IS_MOCK) {
-        return MOCK_ROWS.filter(
-          r => r.categoria_slug === categoriaSlug && r.ativo && r.ativo_ecommerce
+        return (mockData as EcuCatalogRow[]).filter(
+          r => r.categoria_slug === categoriaSlug
+            && r.tipo_registro !== 'Observação'
+            && r.ativo_ecommerce,
         )
       }
+      const base = import.meta.env.VITE_SUPABASE_URL as string
+      const key  = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string
+      const url  = `${base}/rest/v1/ecu_catalog_public?categoria_slug=eq.${categoriaSlug}&order=marca,secao_original,modelo_descricao`
       const all: EcuCatalogRow[] = []
       let offset = 0
       while (true) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data, error } = await (supabase as any)
-          .from('ecu_catalog_public')
-          .select('*')
-          .eq('categoria_slug', categoriaSlug)
-          .order('marca', { ascending: true })
-          .order('secao_original', { ascending: true })
-          .range(offset, offset + PUBLIC_CHUNK - 1)
-
-        if (error) throw error
-        const chunk = (data ?? []) as EcuCatalogRow[]
-        all.push(...chunk)
-        if (chunk.length < PUBLIC_CHUNK) break
+        const res = await fetch(url, {
+          headers: {
+            apikey: key,
+            Authorization: `Bearer ${key}`,
+            Range: `${offset}-${offset + PUBLIC_CHUNK - 1}`,
+            'Range-Unit': 'items',
+            Prefer: 'count=none',
+          },
+        })
+        const data = await res.json()
+        if (!Array.isArray(data)) break
+        all.push(...(data as EcuCatalogRow[]))
+        if (data.length < PUBLIC_CHUNK) break
         offset += PUBLIC_CHUNK
       }
       return all

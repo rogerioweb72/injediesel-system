@@ -1,12 +1,9 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
 import type { EcuCatalogRow } from '@/types/ecu-catalog'
-import mockData from '@/data/ecu-catalog-mock.json'
 import { brandLogos } from '@/data/brand-logos'
 import { GainsPanel } from './GainsPanel'
-
-const IS_MOCK = import.meta.env.VITE_MOCK === 'true'
+import { useEcuCatalogPublic } from '@/hooks/useEcuCatalog'
 
 const RED = 'hsl(var(--pm-red-500))'
 const MONO = 'var(--pm-font-mono, "JetBrains Mono", monospace)'
@@ -107,54 +104,9 @@ function MarcaSection({ marca, records, initialOpen = false }: { marca: string; 
 }
 
 export function CatalogoCliente({ categorySlug }: { categorySlug: string }) {
-  const [records, setRecords] = useState<EcuCatalogRow[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data: records = [], isLoading: loading } = useEcuCatalogPublic(categorySlug)
   const [search, setSearch] = useState('')
   const [marcaFilter, setMarcaFilter] = useState('Todas as Marcas')
-
-  useEffect(() => {
-    if (IS_MOCK) {
-      const filtered = (mockData as EcuCatalogRow[])
-        .filter(r => r.categoria_slug === categorySlug && r.tipo_registro !== 'Observação' && r.ativo_ecommerce)
-        .sort((a, b) => ((a.marca ?? '') > (b.marca ?? '') ? 1 : (a.marca ?? '') < (b.marca ?? '') ? -1 : 0))
-      setRecords(filtered)
-      setLoading(false)
-      return
-    }
-    let cancelled = false
-    setLoading(true)
-    const base = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/ecu_catalog_public?categoria_slug=eq.${categorySlug}&order=marca,secao_original,modelo_descricao`
-    const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
-    const CHUNK = 1000
-    ;(async () => {
-      const all: EcuCatalogRow[] = []
-      let offset = 0
-      try {
-        while (true) {
-          const res = await fetch(base, {
-            headers: {
-              apikey: key,
-              Authorization: `Bearer ${key}`,
-              Range: `${offset}-${offset + CHUNK - 1}`,
-              'Range-Unit': 'items',
-              Prefer: 'count=none',
-            },
-          })
-          const data = await res.json()
-          if (!Array.isArray(data)) break
-          all.push(...(data as EcuCatalogRow[]))
-          if (data.length < CHUNK) break
-          offset += CHUNK
-        }
-        if (!cancelled) setRecords(all)
-      } catch (err) {
-        if (!cancelled) console.error('FETCH ERROR:', err)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    })()
-    return () => { cancelled = true }
-  }, [categorySlug])
 
   const allMarcas = useMemo(() => [...new Set(records.map(r => r.marca).filter((m): m is string => Boolean(m)))].sort(), [records])
 

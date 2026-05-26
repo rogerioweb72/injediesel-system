@@ -1,35 +1,21 @@
 // supabase/functions/support-upload-url/index.ts
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { S3Client, PutObjectCommand } from 'npm:@aws-sdk/client-s3'
 import { getSignedUrl } from 'npm:@aws-sdk/s3-request-presigner'
-
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders } from '../_shared/cors.ts'
+import { requireAuth } from '../_shared/auth.ts'
 
 const ALLOWED_EXTENSIONS = ['bin', 'hex', 'ori', 'ori2', 'csv', 'txt']
 const ALLOWED_MIME_PREFIXES = ['image/', 'application/pdf', 'text/plain', 'application/octet-stream']
 const MAX_SIZE = 10 * 1024 * 1024
 
 serve(async (req) => {
+  const CORS = corsHeaders(req)
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
 
-  const authHeader = req.headers.get('Authorization')
-  if (!authHeader) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: CORS })
-  }
-
-  const callerClient = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_ANON_KEY')!,
-    { global: { headers: { Authorization: authHeader } } }
-  )
-  const { data: { user }, error: authErr } = await callerClient.auth.getUser()
-  if (authErr || !user) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: CORS })
-  }
+  const auth = await requireAuth(req).catch(() => null)
+  if (!auth) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: CORS })
+  const { callerClient } = auth
 
   let body: { ticketId?: string; filename?: string; mime?: string; size?: number }
   try { body = await req.json() } catch {
@@ -47,7 +33,9 @@ serve(async (req) => {
   const ext = (filename.split('.').pop() ?? 'bin').toLowerCase()
   const mimeOk = ALLOWED_MIME_PREFIXES.some(p => mime.startsWith(p))
   const extOk  = ALLOWED_EXTENSIONS.includes(ext)
-  if (!mimeOk && !extOk) {
+  // SECURITY (VULN-07): usar || para rejeitar quando QUALQUER validação falha.
+  // Com &&, um arquivo .bin com MIME text/html era aceito pois extOk=true.
+  if (!mimeOk || !extOk) {
     return new Response(JSON.stringify({ error: 'Tipo de arquivo não permitido' }), { status: 400, headers: CORS })
   }
 

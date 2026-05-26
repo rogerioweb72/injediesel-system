@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import {
-  Lock, Eye, EyeOff, Upload, RefreshCw, ArrowLeft,
+  Lock, Eye, EyeOff, Upload, RefreshCw, ArrowLeft, UserPlus, Plus,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,8 +23,11 @@ import { useCreateSupportTicket } from '@/hooks/useSupportTickets'
 import { useCommissions } from '@/hooks/useCaixa'
 import { useAuthStore } from '@/stores/auth'
 import { supabase } from '@/lib/supabase'
+import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
+import { NovoLancamentoModal } from '@/pages/app/caixa/NovoLancamentoModal'
 
 // ─── Schema ─────────────────────────────────────────────────────────────────
+// eslint-disable-next-line react-refresh/only-export-components
 export const perfilSchema = z.object({
   name:            z.string().min(3, 'Mínimo 3 caracteres'),
   phone:           z.string().refine(v => v.replace(/\D/g, '').length >= 10, 'Celular inválido'),
@@ -115,6 +118,7 @@ function PhoneMaskInput({
   const [display, setDisplay] = useState(() => toDisplay(value ?? ''))
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDisplay(toDisplay(value ?? ''))
   }, [value])
 
@@ -148,6 +152,7 @@ function DateMaskInput({ value, onChange }: { value: string; onChange: (v: strin
   const [display, setDisplay] = useState(() => toDisplay(value))
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDisplay(toDisplay(value))
   }, [value])
 
@@ -579,6 +584,7 @@ function PerfilFormPanel({
       })
       toast.success('Alterações salvas com sucesso.')
       reset({
+        // eslint-disable-next-line react-hooks/incompatible-library
         ...watch(),
         email:           '',
         emailConfirm:    '',
@@ -733,10 +739,13 @@ function PerfilFormPanel({
 // ─── FranqueadoPerfilPage ────────────────────────────────────────────────────
 export default function FranqueadoPerfilPage() {
   const navigate = useNavigate()
+  const prefix = useRoutePrefix()
   const { data: profile, isLoading: loadingProfile } = useFranchiseeProfile()
   const { data: myUnit, isLoading: loadingUnit } = useMyUnit()
   const unit = myUnit?.franchise_units
+  const unitId = myUnit?.unit_id ?? ''
   const [renovarOpen, setRenovarOpen] = useState(false)
+  const [lancamentoOpen, setLancamentoOpen] = useState(false)
   const user = useAuthStore((s) => s.user)
   const { data: commissions = [] } = useCommissions(user?.id)
   const totalCommission = commissions.reduce((sum, c) => sum + c.commission_amount, 0)
@@ -756,10 +765,28 @@ export default function FranqueadoPerfilPage() {
         title="EDITAR PERFIL DE USUÁRIO"
         subtitle="Gerencie seus dados pessoais e configurações de acesso"
         actions={
-          <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
-            <ArrowLeft size={14} className="mr-1.5" />
-            Voltar ↵
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+              <ArrowLeft size={14} className="mr-1.5" />
+              Voltar ↵
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => navigate(`${prefix}/clientes/novo`)}
+              style={{ background: '#16A34A', color: '#fff', border: 'none' }}
+            >
+              <UserPlus size={14} className="mr-1.5" />
+              Novo Cliente
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setLancamentoOpen(true)}
+              style={{ background: '#2563EB', color: '#fff', border: 'none' }}
+            >
+              <Plus size={14} className="mr-1.5" />
+              Novo Lançamento
+            </Button>
+          </div>
         }
       />
 
@@ -855,6 +882,14 @@ export default function FranqueadoPerfilPage() {
         onClose={() => setRenovarOpen(false)}
         unitId={unit?.id}
       />
+
+      {lancamentoOpen && (
+        <NovoLancamentoModal
+          unitId={unitId}
+          onClose={() => setLancamentoOpen(false)}
+          onSuccess={() => setLancamentoOpen(false)}
+        />
+      )}
     </div>
   )
 }

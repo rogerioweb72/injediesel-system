@@ -4,8 +4,11 @@ import { AuthGuard } from '@/components/auth/AuthGuard'
 import { AppShell } from '@/components/layout/AppShell'
 import { FranqueadoShell } from '@/components/layout/FranqueadoShell'
 import { useAuth } from '@/hooks/useAuth'
+import { useProfileSync } from '@/hooks/useProfileSync'
 import { TunerSplashProvider } from '@/components/branding/TunerSplashProvider'
 import { RoutePrefixProvider } from '@/contexts/RoutePrefixContext'
+import { RoleGuard } from '@/components/auth/RoleGuard'
+import { MATRIX_ROLES, FRANCHISE_ROLES, SYSTEM_ROLES } from '@/types/app'
 
 const Home              = lazy(() => import('@/pages/LandingV2'))
 const LojaPage          = lazy(() => import('@/pages/LojaPage'))
@@ -55,7 +58,9 @@ const AjudaPage               = lazy(() => import('@/pages/app/ajuda/AjudaPage')
 const MatrizAjudaPage         = lazy(() => import('@/pages/app/ajuda/MatrizAjudaPage'))
 const HelpArticleForm         = lazy(() => import('@/pages/app/ajuda/HelpArticleForm'))
 const AuditoriaPage           = lazy(() => import('@/pages/app/auditoria/AuditoriaPage'))
+const ControlTowerPage        = lazy(() => import('@/pages/app/controlTower/ControlTowerPage'))
 const CaixaPage               = lazy(() => import('@/pages/app/caixa/CaixaPage'))
+const AcessoNegado            = lazy(() => import('@/pages/AcessoNegado'))
 
 function EmBreve({ titulo }: { titulo: string }) {
   return (
@@ -83,6 +88,7 @@ function S({ children }: { children: React.ReactNode }) {
 
 function RootLayout() {
   useAuth()
+  useProfileSync()
   return (
     <TunerSplashProvider>
       <Outlet />
@@ -94,11 +100,13 @@ function ProtectedLayout() {
   const { agentSlug = '' } = useParams()
   return (
     <AuthGuard loginPath="/appmax">
-      <RoutePrefixProvider prefix={`/${agentSlug}`}>
-        <AppShell>
-          <Outlet />
-        </AppShell>
-      </RoutePrefixProvider>
+      <RoleGuard allowedRoles={[...SYSTEM_ROLES, ...MATRIX_ROLES]} redirectTo="/acesso-negado">
+        <RoutePrefixProvider prefix={`/${agentSlug}`}>
+          <AppShell>
+            <Outlet />
+          </AppShell>
+        </RoutePrefixProvider>
+      </RoleGuard>
     </AuthGuard>
   )
 }
@@ -107,11 +115,13 @@ function FranqueadoLayout() {
   const { unitSlug = '', agentSlug = '' } = useParams()
   return (
     <AuthGuard loginPath="/login">
-      <RoutePrefixProvider prefix={`/${unitSlug}/${agentSlug}`}>
-        <FranqueadoShell>
-          <Outlet />
-        </FranqueadoShell>
-      </RoutePrefixProvider>
+      <RoleGuard allowedRoles={FRANCHISE_ROLES} redirectTo="/acesso-negado">
+        <RoutePrefixProvider prefix={`/${unitSlug}/${agentSlug}`}>
+          <FranqueadoShell>
+            <Outlet />
+          </FranqueadoShell>
+        </RoutePrefixProvider>
+      </RoleGuard>
     </AuthGuard>
   )
 }
@@ -164,6 +174,7 @@ const router = createBrowserRouter([
           { path: 'ajuda/novo',                  element: <S><HelpArticleForm /></S> },
           { path: 'ajuda/:id/editar',            element: <S><HelpArticleForm /></S> },
           { path: 'auditoria',                   element: <S><AuditoriaPage /></S> },
+          { path: 'control-tower',               element: <S><ControlTowerPage /></S> },
           { path: 'loja',                        element: <EmBreve titulo="Loja Online" /> },
         ],
       },
@@ -197,6 +208,7 @@ const router = createBrowserRouter([
           { path: 'configuracoes',               element: <S><FranqueadoConfigPage /></S> },
         ],
       },
+      { path: '/acesso-negado', element: <S><AcessoNegado /></S> },
       { path: '*', element: <S><NotFound /></S> },
     ],
   },

@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useRef, type ReactNode } from 'react'
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useState, useRef, useCallback, type ReactNode } from 'react'
 import { useForm, type UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -155,13 +156,13 @@ export function WizardProvider({ children, initialValues }: WizardProviderProps)
     setLogoFileState(f)
   }
 
-  function markAutofilled(fields: string[]) {
+  const markAutofilled = useCallback((fields: string[]) => {
     setAutofilled(prev => new Set([...prev, ...fields]))
-  }
+  }, [])
 
-  function clearAutofilled(field: string) {
+  const clearAutofilled = useCallback((field: string) => {
     setAutofilled(prev => { const s = new Set(prev); s.delete(field); return s })
-  }
+  }, [])
 
   return (
     <WizardCtx.Provider value={{

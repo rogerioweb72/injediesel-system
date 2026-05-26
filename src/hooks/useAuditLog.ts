@@ -109,7 +109,8 @@ export function useAuditLogs({
       const { data, error, count } = await q
       if (error) throw error
 
-      const rows: AuditLogEntry[] = (data ?? []).map((r: any) => ({
+      type RawRow = AuditLogEntry & { profiles?: { name: string } | null }
+      const rows: AuditLogEntry[] = (data as RawRow[] ?? []).map((r) => ({
         id:         r.id,
         actor_id:   r.actor_id,
         actor_name: r.profiles?.name ?? null,

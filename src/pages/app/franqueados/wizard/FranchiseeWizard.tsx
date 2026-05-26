@@ -87,7 +87,7 @@ function WizardInner({ isEdit, unit, onOpenChange }: WizardInnerProps) {
   return (
     <>
       <SheetContent className="w-full sm:max-w-2xl flex flex-col p-0">
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-white/[0.06] px-6 py-4">
+        <div className="sticky top-0 z-10 bg-background border-b border-white/[0.06] px-6 py-4">
           <SheetHeader>
             <SheetTitle className="text-base">
               {isEdit ? `Editar Unidade${unit ? ` — ${unit.name}` : ''}` : 'Nova Unidade Franqueada'}
@@ -100,7 +100,7 @@ function WizardInner({ isEdit, unit, onOpenChange }: WizardInnerProps) {
           <StepComponent />
         </div>
 
-        <div className="sticky bottom-0 border-t border-white/[0.06] bg-background/95 backdrop-blur px-6 py-4 flex justify-between items-center">
+        <div className="sticky bottom-0 border-t border-white/[0.06] bg-background px-6 py-4 flex justify-between items-center">
           <Button type="button" variant="ghost" onClick={handlePrev}>
             {currentStep === 1 ? 'Cancelar' : (
               <><ChevronLeft size={16} className="mr-1" />Anterior</>

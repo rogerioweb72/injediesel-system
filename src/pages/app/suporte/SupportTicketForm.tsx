@@ -42,8 +42,11 @@ export default function SupportTicketForm() {
     },
   })
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const priority = watch('priority')
+   
   const category = watch('category')
+   
   const customerId = watch('customer_id')
 
   async function onSubmit(data: FormData) {

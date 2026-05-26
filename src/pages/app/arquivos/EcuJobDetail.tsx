@@ -2,9 +2,9 @@ import { useRef, useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
 import {
-  ArrowLeft, Upload, Download, FileText, Clock,
+  ArrowLeft, Upload, FileText, Clock,
   ChevronRight, AlertCircle, MessageSquarePlus, X, CheckCircle,
-  CreditCard, CheckCircle2, Loader2,
+  CreditCard, CheckCircle2, Loader2, ShieldAlert, ShieldCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -323,7 +323,7 @@ export default function EcuJobDetail() {
     }
   }
 
-  async function handleDownloadFile(f: { r2_key: string; file_name: string; file_type: string }) {
+  async function handleDownloadFile(f: { id: string; r2_key: string; file_name: string }) {
     if (!job) return
     if (isMatrixUser() && job.status === 'recebido') {
       try {
@@ -332,11 +332,7 @@ export default function EcuJobDetail() {
         // non-blocking
       }
     }
-    downloadFile.mutate({
-      r2Key: f.r2_key,
-      fileName: f.file_name,
-      bucket: f.file_type === 'original' ? 'originals' : 'delivered',
-    })
+    downloadFile.mutate({ fileId: f.id, fileName: f.file_name })
   }
 
   async function handleSendToFinance() {
@@ -534,17 +530,29 @@ export default function EcuJobDetail() {
                         {f.file_type === 'original' ? 'Original' : 'Entrega'} · {formatBytes(f.size_bytes)} · {formatDateTime(f.created_at)}
                       </p>
                     </div>
-                    <Button
-                      size="sm"
-                      disabled={f.r2_key.startsWith('mock/') || downloadFile.isPending}
-                      className={f.r2_key.startsWith('mock/')
-                        ? 'opacity-40 cursor-not-allowed'
-                        : 'bg-green-600 hover:bg-green-500 text-white border-0 gap-1.5'}
-                      onClick={() => handleDownloadFile(f)}
-                    >
-                      <Download size={14} />
-                      Baixar
-                    </Button>
+                    {(f.scan_status === 'infected' || f.scan_status === 'blocked') ? (
+                      <Button size="sm" disabled className="bg-red-700/80 text-white border-0 gap-1.5 cursor-not-allowed opacity-90">
+                        <ShieldAlert size={14} />
+                        {f.scan_status === 'blocked' ? 'Bloqueado' : 'Infectado'}
+                      </Button>
+                    ) : f.scan_status === 'pending' ? (
+                      <Button size="sm" disabled className="opacity-60 gap-1.5 cursor-not-allowed">
+                        <Loader2 size={14} className="animate-spin" />
+                        Analisando
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        disabled={f.r2_key.startsWith('mock/') || downloadFile.isPending}
+                        className={f.r2_key.startsWith('mock/')
+                          ? 'opacity-40 cursor-not-allowed'
+                          : 'bg-green-600 hover:bg-green-500 text-white border-0 gap-1.5'}
+                        onClick={() => handleDownloadFile(f)}
+                      >
+                        <ShieldCheck size={14} />
+                        Baixar
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>

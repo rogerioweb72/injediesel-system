@@ -33,6 +33,7 @@ export function useSupportChat(ticketId: string, isActive: boolean) {
           filter: `ticket_id=eq.${ticketId}`,
         },
         (payload) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           qc.setQueryData(['support-ticket', ticketId], (old: any) => {
             if (!old) return old
             const msgs: SupportMessage[] = old.support_messages ?? []

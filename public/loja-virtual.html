@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth bg-[#141416]">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loja Virtual — Promax Tuner</title>
+    <meta name="description" content="Módulos de performance ECU para carros, pickups, trucks, agrícola e motos. Promax Tuner — calibração de alta performance.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,700;0,800;0,900;1,700;1,800;1,900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        base:       '#141416',
+                        card:       '#1a1a1d',
+                        crimson:    '#E72B2B',
+                        muted:      '#8a8d90',
+                        borderline: '#242528'
+                    },
+                    fontFamily: {
+                        display: ['"Barlow Condensed"', 'sans-serif'],
+                        body:    ['"DM Sans"', 'sans-serif'],
+                        mono:    ['"JetBrains Mono"', 'monospace'],
+                    },
+                    borderRadius: { DEFAULT: '0', sm: '0', md: '0', lg: '0', xl: '0', '2xl': '0', full: '0' }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            border-radius: 0 !important;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #141416; }
+        ::-webkit-scrollbar-thumb { background: #242528; }
+        ::-webkit-scrollbar-thumb:hover { background: #E72B2B; }
+
+        /* Promax parallelogram CTA */
+        .btn-skew {
+            transform: skewX(-12deg);
+            transition: filter 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-skew-text { display: inline-block; transform: skewX(12deg); }
+        .btn-skew:hover { filter: brightness(1.22); }
+        .btn-skew::before {
+            content: '';
+            position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+            transform: skewX(25deg);
+            transition: left 0.45s ease;
+        }
+        .btn-skew:hover::before { left: 200%; }
+
+        /* Arrow slide */
+        .arrow-slide { transition: transform 0.2s ease; display: inline-block; }
+        .btn-skew:hover .arrow-slide { transform: translateX(4px); }
+
+        /* Tab active */
+        .tab-active {
+            background-color: #E72B2B !important;
+            color: #ffffff !important;
+            border-color: #E72B2B !important;
+        }
+
+        /* Card image hover */
+        .card-img img {
+            transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .product-card:hover .card-img img { transform: scale(1.05); }
+        .product-card { transition: border-color 0.25s ease; }
+        .product-card:hover { border-color: #E72B2B !important; }
+
+        /* Reveal animation */
+        @keyframes fadeUp {
+            0%   { opacity: 0; transform: translateY(14px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .reveal { opacity: 0; animation: fadeUp 0.4s cubic-bezier(0.16,1,0.3,1) forwards; }
+
+        /* Filter checkbox dot */
+        .check-active { border-color: #E72B2B !important; }
+        .check-active .check-dot { display: block !important; }
+
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+
+        /* Banner responsivo */
+        @media (max-width: 767px) {
+            .banner-right { display: none !important; }
+            section[style*="max-height:500px"] > div {
+                padding: 2rem 1.5rem !important;
+                min-height: unset !important;
+            }
+        }
+
+        /* Section switcher arrows */
+        @keyframes sw-arrow-l {
+            0%, 100% { transform: translateX(-5px); opacity: 0.2; }
+            50%       { transform: translateX(0px);  opacity: 1; }
+        }
+        @keyframes sw-arrow-r {
+            0%, 100% { transform: translateX(5px); opacity: 0.2; }
+            50%       { transform: translateX(0px); opacity: 1; }
+        }
+        .sw-arrow {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-style: normal;
+            font-size: 1.8rem;
+            line-height: 1;
+            font-weight: 400;
+        }
+        .sw-arrow-l { animation: sw-arrow-l 1.3s cubic-bezier(0.45,0,0.55,1) infinite; }
+        .sw-arrow-r { animation: sw-arrow-r 1.3s cubic-bezier(0.45,0,0.55,1) infinite; }
+
+        /* inactive tab arrows — muted */
+        #sw-acessorios .sw-arrow { opacity: 0.18; animation-play-state: paused; }
+        #sw-acessorios.sw-is-active .sw-arrow { opacity: 1; animation-play-state: running; }
+        #sw-remap.sw-inactive .sw-arrow { opacity: 0.18; animation-play-state: paused; }
+
+        /* Filter panel ECU style */
+        .filter-row {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid #242528;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.65rem 0.75rem;
+            transition: background 0.15s;
+        }
+        .filter-row:hover { background: rgba(255,255,255,0.03); }
+        .filter-row:last-child { border-bottom: none; }
+        .filter-row.is-active { background: rgba(231,43,43,0.07); }
+        .filter-row.is-active .fr-label { color: #fff; }
+        .filter-row.is-active .fr-check { color: #E72B2B; }
+
+        .proto-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0.3rem 0.55rem;
+            border: 1px solid #242528;
+            background: transparent;
+            color: #8a8d90;
+            cursor: pointer;
+            transition: border-color 0.15s, color 0.15s, background 0.15s;
+        }
+        .proto-tag:hover { border-color: #8a8d90; color: #fff; }
+        .proto-tag.is-active { border-color: #E72B2B; background: rgba(231,43,43,0.10); color: #fff; }
+    </style>
+</head>
+<body class="text-white min-h-screen flex flex-col selection:bg-crimson selection:text-white" style="background:#141416;">
+
+<!-- ════ HEADER ════ -->
+<header class="w-full sticky top-0 z-50 border-b border-borderline" style="background:rgba(8,8,9,0.97); backdrop-filter:blur(12px);">
+    <div class="px-8 md:px-12 py-4 flex items-center justify-between">
+
+        <!-- Logo lockup -->
+        <a href="/" style="text-decoration:none; display:block; line-height:0;">
+            <img src="/tuner-logo.svg" alt="Promax Tuner" style="height:24px; width:auto; display:block;">
+        </a>
+
+        <!-- Nav links -->
+        <nav class="hidden lg:flex items-center gap-9 font-body font-bold text-muted mr-10 shrink-0 uppercase" style="font-size:11px; letter-spacing:0.15em;">
+            <a href="/#serviços"      style="color:inherit; text-decoration:none; transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color=''">Serviços</a>
+            <a href="/#veículos"      style="color:inherit; text-decoration:none; transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color=''">Veículos</a>
+            <a href="/#como-funciona" style="color:inherit; text-decoration:none; transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color=''">Como Funciona</a>
+            <a href="/#resultados"    style="color:inherit; text-decoration:none; transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color=''">Resultados</a>
+            <a href="/#sobre"         style="color:inherit; text-decoration:none; transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color=''">Sobre</a>
+            <a href="/loja-virtual.html" style="color:#fff; text-decoration:none; border-bottom:2px solid #E72B2B; padding-bottom:3px;">Loja</a>
+        </nav>
+
+        <!-- CTA skewed -->
+        <div class="btn-skew" style="background:#E72B2B; display:inline-flex;">
+            <a href="/" class="btn-skew-text font-display italic font-bold uppercase no-underline flex items-center gap-1"
+               style="padding:0 1.4rem; height:40px; font-size:1.1rem; letter-spacing:0.1em; color:#fff; text-decoration:none;">
+                Analisar Veículo <span class="arrow-slide" style="margin-left:4px;">→</span>
+            </a>
+        </div>
+    </div>
+</header>
+
+<!-- ════ BANNER ESTÁTICO ════ -->
+<section style="width:100%; max-height:500px; overflow:hidden; position:relative; background:#0a0a0b; border-bottom:2px solid #242528;">
+    <!-- Background: diagonal split vermelho/preto -->
+    <div style="position:absolute; inset:0; z-index:0;">
+        <div style="position:absolute; inset:0; background:linear-gradient(105deg, #0a0a0b 0%, #0a0a0b 52%, #1a0505 52%, #0f0303 100%);"></div>
+        <!-- Linha diagonal vermelha -->
+        <div style="position:absolute; top:0; bottom:0; left:51%; width:3px; background:#E72B2B; transform:skewX(-6deg); z-index:1;"></div>
+        <!-- Ruído de fundo -->
+        <div style="position:absolute; inset:0; background:radial-gradient(ellipse at 70% 50%, rgba(231,43,43,0.08) 0%, transparent 65%); z-index:1;"></div>
+        <!-- Grid lines sutil -->
+        <div style="position:absolute; inset:0; background-image:linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px); background-size:48px 48px; z-index:1;"></div>
+    </div>
+
+    <!-- Conteúdo -->
+    <div style="position:relative; z-index:2; display:flex; align-items:center; justify-content:space-between; gap:2rem; padding:2.5rem 3rem 2.5rem 3rem; max-width:1920px; margin:0 auto; min-height:220px; max-height:500px; box-sizing:border-box;">
+
+        <!-- LEFT: copy principal -->
+        <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.75rem;">
+                <span style="display:inline-block; width:28px; height:2px; background:#E72B2B;"></span>
+                <span class="font-mono" style="font-size:0.58rem; letter-spacing:0.32em; text-transform:uppercase; color:#E72B2B;">Loja Oficial · Performance ECU</span>
+            </div>
+
+            <h2 class="font-display" style="font-style:italic; font-weight:900; text-transform:uppercase; line-height:0.88; color:#fff; margin:0 0 1rem 0; font-size:clamp(2.6rem, 6vw, 5.2rem); letter-spacing:-0.02em;">
+                MÁXIMA<br>
+                <span style="color:#E72B2B;">PERFORMANCE</span><br>
+                <span style="color:#8a8d90; font-size:0.65em;">PARA SEU VEÍCULO</span>
+            </h2>
+
+            <p class="font-body" style="color:#8a8d90; font-size:0.85rem; max-width:420px; line-height:1.65; margin:0 0 1.75rem 0;">
+                Módulos Stage 1, 2 e 3 calibrados por especialistas. Mais potência, mais torque — garantia técnica de fábrica.
+            </p>
+
+            <!-- Stats inline -->
+            <div style="display:flex; align-items:stretch; gap:0; flex-wrap:wrap;">
+                <div style="padding:0.6rem 1.4rem 0.6rem 0; border-right:1px solid #242528; margin-right:1.4rem;">
+                    <span class="font-display" style="font-style:italic; font-weight:900; font-size:2rem; color:#fff; line-height:1; display:block;">+140cv</span>
+                    <span class="font-mono" style="font-size:0.55rem; letter-spacing:0.18em; text-transform:uppercase; color:#8a8d90; display:block; margin-top:2px;">Ganho Máximo</span>
+                </div>
+                <div style="padding:0.6rem 1.4rem 0.6rem 0; border-right:1px solid #242528; margin-right:1.4rem;">
+                    <span class="font-display" style="font-style:italic; font-weight:900; font-size:2rem; color:#fff; line-height:1; display:block;">6 Marcas</span>
+                    <span class="font-mono" style="font-size:0.55rem; letter-spacing:0.18em; text-transform:uppercase; color:#8a8d90; display:block; margin-top:2px;">No Catálogo</span>
+                </div>
+                <div style="padding:0.6rem 0;">
+                    <span class="font-display" style="font-style:italic; font-weight:900; font-size:2rem; color:#E72B2B; line-height:1; display:block;">100%</span>
+                    <span class="font-mono" style="font-size:0.55rem; letter-spacing:0.18em; text-transform:uppercase; color:#8a8d90; display:block; margin-top:2px;">Licença Definitiva</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: destaque de produto/badge -->
+        <div class="banner-right" style="flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end; gap:1rem; min-width:240px;">
+            <!-- Badge destaque -->
+            <div style="background:rgba(231,43,43,0.10); border:1px solid rgba(231,43,43,0.30); padding:1.25rem 1.75rem; text-align:center; position:relative;">
+                <div style="position:absolute; top:-1px; left:-1px; width:16px; height:16px; border-top:2px solid #E72B2B; border-left:2px solid #E72B2B;"></div>
+                <div style="position:absolute; bottom:-1px; right:-1px; width:16px; height:16px; border-bottom:2px solid #E72B2B; border-right:2px solid #E72B2B;"></div>
+                <span class="font-mono" style="font-size:0.55rem; letter-spacing:0.28em; text-transform:uppercase; color:#E72B2B; display:block; margin-bottom:0.4rem;">Destaque do Mês</span>
+                <span class="font-display" style="font-style:italic; font-weight:900; font-size:1.5rem; color:#fff; text-transform:uppercase; display:block; line-height:1.1;">Audi RS3 8V</span>
+                <span class="font-mono" style="font-size:0.6rem; color:#8a8d90; display:block; margin-top:0.3rem;">STAGE 3 · +140cv · +25kgf.m</span>
+                <div style="margin-top:0.9rem; padding-top:0.75rem; border-top:1px solid rgba(255,255,255,0.06);">
+                    <span class="font-display" style="font-style:italic; font-weight:700; font-size:1.75rem; color:#fff;">R$ 8.900</span>
+                </div>
+            </div>
+
+            <!-- Tag licença -->
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                <span style="display:inline-block; width:6px; height:6px; background:#E72B2B; transform:rotate(45deg); flex-shrink:0;"></span>
+                <span class="font-mono" style="font-size:0.58rem; letter-spacing:0.14em; text-transform:uppercase; color:#8a8d90;">Licença definitiva · sem assinatura</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ════ SECTION SWITCHER — borda a borda ════ -->
+<div class="w-full flex" style="background:#0a0a0b; border-bottom:2px solid #242528;">
+    <button id="sw-remap"
+            onclick="switchSection('remap')"
+            class="font-display italic font-black uppercase"
+            style="flex:1; height:64px; font-size:1.55rem; letter-spacing:0.1em; background:#E72B2B; color:#fff; border:none; cursor:pointer; border-right:2px solid #1a0808; transition:filter 0.15s; display:flex; align-items:center; justify-content:center; gap:0.75rem;">
+        <span class="sw-arrow sw-arrow-l">→</span>
+        <span>REMAP</span>
+        <span class="sw-arrow sw-arrow-r">←</span>
+    </button>
+    <button id="sw-acessorios"
+            onclick="switchSection('acessorios')"
+            class="font-display italic font-black uppercase"
+            style="flex:1; height:64px; font-size:1.55rem; letter-spacing:0.1em; background:#0a0a0b; color:#4a4c4f; border:none; cursor:pointer; transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:0.75rem;">
+        <span class="sw-arrow sw-arrow-l">→</span>
+        <span>ACESSÓRIOS</span>
+        <span class="sw-arrow sw-arrow-r">←</span>
+    </button>
+</div>
+
+<!-- ════ SECTION: REMAP ════ -->
+<div id="section-remap">
+
+<!-- ════ CATEGORY TABS ════ -->
+<div class="w-full border-b border-borderline" style="background:#0d0d0f;">
+    <div class="px-8 md:px-12 flex gap-2 py-3 overflow-x-auto hide-scroll" id="category-tabs">
+        <button class="tab-btn tab-active font-display italic font-bold uppercase border border-transparent px-7 py-2.5 whitespace-nowrap transition-all"
+                style="font-size:0.9rem; letter-spacing:0.08em;" data-tab="carros">CARROS</button>
+        <button class="tab-btn font-display italic font-bold uppercase border border-borderline text-muted hover:text-white px-7 py-2.5 whitespace-nowrap transition-all"
+                style="font-size:0.9rem; letter-spacing:0.08em;" data-tab="pickups">PICKUPS</button>
+        <button class="tab-btn font-display italic font-bold uppercase border border-borderline text-muted hover:text-white px-7 py-2.5 whitespace-nowrap transition-all"
+                style="font-size:0.9rem; letter-spacing:0.08em;" data-tab="trucks">TRUCKS</button>
+        <button class="tab-btn font-display italic font-bold uppercase border border-borderline text-muted hover:text-white px-7 py-2.5 whitespace-nowrap transition-all"
+                style="font-size:0.9rem; letter-spacing:0.08em;" data-tab="agricola">AGRÍCOLA</button>
+        <button class="tab-btn font-display italic font-bold uppercase border border-borderline text-muted hover:text-white px-7 py-2.5 whitespace-nowrap transition-all"
+                style="font-size:0.9rem; letter-spacing:0.08em;" data-tab="motos">MOTOS</button>
+    </div>
+</div>
+
+<!-- ════ STORE BODY ════ -->
+<main class="w-full flex-grow flex flex-col md:flex-row gap-0 max-w-[1920px] mx-auto">
+
+    <!-- LEFT: Filter Panel -->
+    <aside class="w-full md:w-56 lg:w-64 shrink-0 border-r border-borderline flex flex-col"
+           style="background:#141416; min-height:calc(100vh - 116px);">
+
+        <!-- Panel header -->
+        <div class="flex items-center justify-between border-b border-borderline px-5 py-3">
+            <div class="flex items-center gap-2">
+                <span class="font-mono text-crimson" style="font-size:0.6rem;">▸</span>
+                <span class="font-mono text-white uppercase" style="font-size:0.6rem; letter-spacing:0.28em; font-weight:600;">FILTROS</span>
+            </div>
+            <button class="font-mono text-muted uppercase transition-colors"
+                    style="font-size:0.55rem; letter-spacing:0.12em; background:none; border:none; cursor:pointer;"
+                    onmouseover="this.style.color='#E72B2B'" onmouseout="this.style.color=''">
+                LIMPAR
+            </button>
+        </div>
+
+        <!-- Ordenar -->
+        <div class="border-b border-borderline px-5 py-4">
+            <p class="font-mono text-muted uppercase mb-3" style="font-size:0.58rem; letter-spacing:0.28em;">── ORDENAR</p>
+            <div class="flex flex-col gap-1">
+                <button class="sort-btn filter-row is-active" onclick="setSortActive(this)">
+                    <span class="fr-label font-mono uppercase" style="font-size:0.68rem; letter-spacing:0.1em;">RELEVÂNCIA</span>
+                    <span class="fr-check font-mono" style="font-size:0.6rem; color:#E72B2B;">▸</span>
+                </button>
+                <button class="sort-btn filter-row" onclick="setSortActive(this)" style="border-bottom:none;">
+                    <span class="fr-label font-mono uppercase text-muted" style="font-size:0.68rem; letter-spacing:0.1em;">NOVIDADES</span>
+                    <span class="fr-check font-mono text-muted" style="font-size:0.6rem;">○</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Marca -->
+        <div class="border-b border-borderline px-5 py-4">
+            <p class="font-mono text-muted uppercase mb-3" style="font-size:0.58rem; letter-spacing:0.28em;">── MARCA</p>
+            <div class="flex flex-col" style="border:1px solid #242528;">
+                <button class="filter-row" onclick="toggleFilterRow(this)">
+                    <span class="fr-label font-mono uppercase text-muted" style="font-size:0.68rem; letter-spacing:0.08em;">BMW</span>
+                    <span class="fr-check font-mono text-muted" style="font-size:0.6rem;">[ ]</span>
+                </button>
+                <button class="filter-row" onclick="toggleFilterRow(this)">
+                    <span class="fr-label font-mono uppercase text-muted" style="font-size:0.68rem; letter-spacing:0.08em;">AUDI</span>
+                    <span class="fr-check font-mono text-muted" style="font-size:0.6rem;">[ ]</span>
+                </button>
+                <button class="filter-row" onclick="toggleFilterRow(this)">
+                    <span class="fr-label font-mono uppercase text-muted" style="font-size:0.68rem; letter-spacing:0.08em;">VOLKSWAGEN</span>
+                    <span class="fr-check font-mono text-muted" style="font-size:0.6rem;">[ ]</span>
+                </button>
+                <button class="filter-row" onclick="toggleFilterRow(this)">
+                    <span class="fr-label font-mono uppercase text-muted" style="font-size:0.68rem; letter-spacing:0.08em;">MERCEDES-BENZ</span>
+                    <span class="fr-check font-mono text-muted" style="font-size:0.6rem;">[ ]</span>
+                </button>
+                <button class="filter-row" onclick="toggleFilterRow(this)">
+                    <span class="fr-label font-mono uppercase text-muted" style="font-size:0.68rem; letter-spacing:0.08em;">PORSCHE</span>
+                    <span class="fr-check font-mono text-muted" style="font-size:0.6rem;">[ ]</span>
+                </button>
+                <button class="filter-row" style="border-bottom:none;" onclick="toggleFilterRow(this)">
+                    <span class="fr-label font-mono uppercase text-muted" style="font-size:0.68rem; letter-spacing:0.08em;">TOYOTA</span>
+                    <span class="fr-check font-mono text-muted" style="font-size:0.6rem;">[ ]</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Stage / Tipo -->
+        <div class="border-b border-borderline px-5 py-4">
+            <p class="font-mono text-muted uppercase mb-3" style="font-size:0.58rem; letter-spacing:0.28em;">── STAGE / TIPO</p>
+            <div class="flex flex-wrap gap-1.5">
+                <button class="proto-tag" onclick="toggleProto(this)">STAGE 1</button>
+                <button class="proto-tag" onclick="toggleProto(this)">STAGE 2</button>
+                <button class="proto-tag" onclick="toggleProto(this)">STAGE 3</button>
+                <button class="proto-tag" onclick="toggleProto(this)">TCU</button>
+                <button class="proto-tag" onclick="toggleProto(this)">WMI</button>
+            </div>
+        </div>
+
+        <!-- Faixa de Preço -->
+        <div class="px-5 py-4">
+            <p class="font-mono text-muted uppercase mb-3" style="font-size:0.58rem; letter-spacing:0.28em;">── FAIXA DE PREÇO</p>
+            <div class="flex flex-col" style="border:1px solid #242528;">
+                <button class="filter-row" onclick="toggleFilterRow(this)">
+                    <span class="fr-label font-mono uppercase text-muted" style="font-size:0.68rem; letter-spacing:0.06em;">ATÉ R$ 2.000</span>
+                    <span class="fr-check font-mono text-muted" style="font-size:0.6rem;">[ ]</span>
+                </button>
+                <button class="filter-row" onclick="toggleFilterRow(this)">
+                    <span class="fr-label font-mono uppercase text-muted" style="font-size:0.68rem; letter-spacing:0.06em;">R$ 2.000 – 5.000</span>
+                    <span class="fr-check font-mono text-muted" style="font-size:0.6rem;">[ ]</span>
+                </button>
+                <button class="filter-row" style="border-bottom:none;" onclick="toggleFilterRow(this)">
+                    <span class="fr-label font-mono uppercase text-muted" style="font-size:0.68rem; letter-spacing:0.06em;">ACIMA R$ 5.000</span>
+                    <span class="fr-check font-mono text-muted" style="font-size:0.6rem;">[ ]</span>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- RIGHT: Grid -->
+    <div class="flex-grow flex flex-col gap-6 p-6 md:p-8">
+
+        <!-- Count bar -->
+        <div class="flex items-center gap-2 border-b border-borderline pb-4">
+            <span class="font-body text-muted uppercase" style="font-size:10px; letter-spacing:0.15em;">
+                Exibindo <strong class="text-white" id="product-count">6</strong> Módulos Disponíveis
+            </span>
+        </div>
+
+        <!-- Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="product-grid">
+
+            <!-- CARD: BMW 320i -->
+            <article class="product-card group flex flex-col border border-borderline reveal" style="background:#1a1a1d; animation-delay:40ms;" data-category="carros">
+                <div class="card-img relative overflow-hidden" style="height:210px; background:#000;">
+                    <img src="https://images.unsplash.com/photo-1553440569-bcc63803a83d?auto=format&fit=crop&w=800&q=80"
+                         alt="BMW 320i" class="w-full h-full object-cover" style="mix-blend-mode:lighten; opacity:0.82;">
+                    <div class="absolute inset-0" style="background:linear-gradient(to bottom, transparent 35%, #1a1a1d 100%); z-index:2;"></div>
+                    <div class="absolute top-3 left-3 z-10">
+                        <span class="font-display italic font-bold text-white bg-crimson px-2 py-0.5 uppercase" style="font-size:11px; letter-spacing:0.1em;">STAGE 2</span>
+                    </div>
+                </div>
+                <div class="p-5 flex flex-col flex-grow">
+                    <span class="font-mono text-crimson uppercase mb-1" style="font-size:9px; letter-spacing:0.2em;">Módulo B48 / G20</span>
+                    <h2 class="font-display italic font-black text-white uppercase leading-none mb-3" style="font-size:2rem; letter-spacing:-0.01em;">BMW 320I</h2>
+                    <div class="flex items-end gap-3 mb-4">
+                        <div class="flex items-end">
+                            <span class="font-display italic font-black text-crimson leading-none" style="font-size:3.75rem; line-height:0.85;">+45</span>
+                            <span class="font-display italic font-bold text-crimson mb-1 ml-1" style="font-size:1.5rem;">cv</span>
+                        </div>
+                        <div class="font-body text-muted border-l border-borderline pl-3 pb-1 uppercase leading-snug" style="font-size:11px;">
+                            +8 kgf.m<br><span style="font-size:9px; letter-spacing:0.1em;">Torque Incremental</span>
+                        </div>
+                    </div>
+                    <div class="border-t border-borderline pt-4 mt-auto flex items-center justify-between gap-3">
+                        <div>
+                            <span class="font-mono text-muted uppercase block" style="font-size:9px; letter-spacing:0.15em;">Licença Definitiva</span>
+                            <span class="font-display italic font-bold text-white" style="font-size:1.5rem;">R$ 2.490</span>
+                        </div>
+                        <div class="btn-skew" style="background:#E72B2B;">
+                            <button class="btn-skew-text font-display italic font-bold uppercase whitespace-nowrap"
+                                    style="padding:0.6rem 1.1rem; font-size:1rem; letter-spacing:0.08em; color:#fff; background:none; border:none; cursor:pointer;">
+                                VER MÓDULO <span class="arrow-slide">→</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- CARD: Porsche Macan S -->
+            <article class="product-card group flex flex-col border border-borderline reveal" style="background:#1a1a1d; animation-delay:80ms;" data-category="carros">
+                <div class="card-img relative overflow-hidden" style="height:210px; background:#000;">
+                    <img src="https://images.unsplash.com/photo-1503376713919-6188e9981ed4?auto=format&fit=crop&w=800&q=80"
+                         alt="Porsche Macan S" class="w-full h-full object-cover" style="mix-blend-mode:lighten; opacity:0.82;">
+                    <div class="absolute inset-0" style="background:linear-gradient(to bottom, transparent 35%, #1a1a1d 100%); z-index:2;"></div>
+                    <div class="absolute top-3 left-3 z-10">
+                        <span class="font-display italic font-bold text-white bg-crimson px-2 py-0.5 uppercase" style="font-size:11px; letter-spacing:0.1em;">STAGE 1</span>
+                    </div>
+                </div>
+                <div class="p-5 flex flex-col flex-grow">
+                    <span class="font-mono text-crimson uppercase mb-1" style="font-size:9px; letter-spacing:0.2em;">Módulo SIMOS 18</span>
+                    <h2 class="font-display italic font-black text-white uppercase leading-none mb-3" style="font-size:2rem; letter-spacing:-0.01em;">Porsche Macan S</h2>
+                    <div class="flex items-end gap-3 mb-4">
+                        <div class="flex items-end">
+                            <span class="font-display italic font-black text-crimson leading-none" style="font-size:3.75rem; line-height:0.85;">+80</span>
+                            <span class="font-display italic font-bold text-crimson mb-1 ml-1" style="font-size:1.5rem;">cv</span>
+                        </div>
+                        <div class="font-body text-muted border-l border-borderline pl-3 pb-1 uppercase leading-snug" style="font-size:11px;">
+                            +12 kgf.m<br><span style="font-size:9px; letter-spacing:0.1em;">Torque Incremental</span>
+                        </div>
+                    </div>
+                    <div class="border-t border-borderline pt-4 mt-auto flex items-center justify-between gap-3">
+                        <div>
+                            <span class="font-mono text-muted uppercase block" style="font-size:9px; letter-spacing:0.15em;">Licença Definitiva</span>
+                            <span class="font-display italic font-bold text-white" style="font-size:1.5rem;">R$ 5.200</span>
+                        </div>
+                        <div class="btn-skew" style="background:#E72B2B;">
+                            <button class="btn-skew-text font-display italic font-bold uppercase whitespace-nowrap"
+                                    style="padding:0.6rem 1.1rem; font-size:1rem; letter-spacing:0.08em; color:#fff; background:none; border:none; cursor:pointer;">
+                                VER MÓDULO <span class="arrow-slide">→</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- CARD: Audi RS3 -->
+            <article class="product-card group flex flex-col border border-borderline reveal" style="background:#1a1a1d; animation-delay:120ms;" data-category="carros">
+                <div class="card-img relative overflow-hidden" style="height:210px; background:#000;">
+                    <img src="https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?auto=format&fit=crop&w=800&q=80"
+                         alt="Audi RS3" class="w-full h-full object-cover" style="mix-blend-mode:lighten; opacity:0.82;">
+                    <div class="absolute inset-0" style="background:linear-gradient(to bottom, transparent 35%, #1a1a1d 100%); z-index:2;"></div>
+                    <div class="absolute top-3 left-3 z-10 flex items-start gap-1.5">
+                        <span class="font-display italic font-bold text-white bg-crimson px-2 py-0.5 uppercase" style="font-size:11px; letter-spacing:0.1em;">STAGE 3</span>
+                        <span class="font-display italic font-black text-base bg-white px-2 py-0.5 uppercase" style="font-size:11px; letter-spacing:0.1em; color:#141416; box-shadow:2px 2px 0 #E72B2B;">WMI</span>
+                    </div>
+                </div>
+                <div class="p-5 flex flex-col flex-grow">
+                    <span class="font-mono text-crimson uppercase mb-1" style="font-size:9px; letter-spacing:0.2em;">Módulo DAZA 2.5TFSI</span>
+                    <h2 class="font-display italic font-black text-white uppercase leading-none mb-3" style="font-size:2rem; letter-spacing:-0.01em;">Audi RS3 8V</h2>
+                    <div class="flex items-end gap-3 mb-4">
+                        <div class="flex items-end">
+                            <span class="font-display italic font-black text-crimson leading-none" style="font-size:3.75rem; line-height:0.85;">+140</span>
+                            <span class="font-display italic font-bold text-crimson mb-1 ml-1" style="font-size:1.5rem;">cv</span>
+                        </div>
+                        <div class="font-body text-muted border-l border-borderline pl-3 pb-1 uppercase leading-snug" style="font-size:11px;">
+                            +25 kgf.m<br><span style="font-size:9px; letter-spacing:0.1em;">Torque Extremo DQ500</span>
+                        </div>
+                    </div>
+                    <div class="border-t border-borderline pt-4 mt-auto flex items-center justify-between gap-3">
+                        <div>
+                            <span class="font-mono text-muted uppercase block" style="font-size:9px; letter-spacing:0.15em;">Licença + TCU</span>
+                            <span class="font-display italic font-bold text-white" style="font-size:1.5rem;">R$ 8.900</span>
+                        </div>
+                        <div class="btn-skew" style="background:#E72B2B;">
+                            <button class="btn-skew-text font-display italic font-bold uppercase whitespace-nowrap"
+                                    style="padding:0.6rem 1.1rem; font-size:1rem; letter-spacing:0.08em; color:#fff; background:none; border:none; cursor:pointer;">
+                                VER MÓDULO <span class="arrow-slide">→</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- CARD: Golf GTI MK7.5 -->
+            <article class="product-card group flex flex-col border border-borderline reveal" style="background:#1a1a1d; animation-delay:160ms;" data-category="carros">
+                <div class="card-img relative overflow-hidden" style="height:210px; background:#000;">
+                    <img src="https://images.unsplash.com/photo-1541899481282-d53bffe3c3e5?auto=format&fit=crop&w=800&q=80"
+                         alt="VW Golf GTI" class="w-full h-full object-cover" style="mix-blend-mode:lighten; opacity:0.82;">
+                    <div class="absolute inset-0" style="background:linear-gradient(to bottom, transparent 35%, #1a1a1d 100%); z-index:2;"></div>
+                    <div class="absolute top-3 left-3 z-10">
+                        <span class="font-display italic font-bold text-white bg-crimson px-2 py-0.5 uppercase" style="font-size:11px; letter-spacing:0.1em;">STAGE 2</span>
+                    </div>
+                </div>
+                <div class="p-5 flex flex-col flex-grow">
+                    <span class="font-mono text-crimson uppercase mb-1" style="font-size:9px; letter-spacing:0.2em;">Módulo EA888 Gen3</span>
+                    <h2 class="font-display italic font-black text-white uppercase leading-none mb-3" style="font-size:2rem; letter-spacing:-0.01em;">Golf GTI MK7.5</h2>
+                    <div class="flex items-end gap-3 mb-4">
+                        <div class="flex items-end">
+                            <span class="font-display italic font-black text-crimson leading-none" style="font-size:3.75rem; line-height:0.85;">+75</span>
+                            <span class="font-display italic font-bold text-crimson mb-1 ml-1" style="font-size:1.5rem;">cv</span>
+                        </div>
+                        <div class="font-body text-muted border-l border-borderline pl-3 pb-1 uppercase leading-snug" style="font-size:11px;">
+                            +14 kgf.m<br><span style="font-size:9px; letter-spacing:0.1em;">Torque Incremental</span>
+                        </div>
+                    </div>
+                    <div class="border-t border-borderline pt-4 mt-auto flex items-center justify-between gap-3">
+                        <div>
+                            <span class="font-mono text-muted uppercase block" style="font-size:9px; letter-spacing:0.15em;">Licença Definitiva</span>
+                            <span class="font-display italic font-bold text-white" style="font-size:1.5rem;">R$ 2.800</span>
+                        </div>
+                        <div class="btn-skew" style="background:#E72B2B;">
+                            <button class="btn-skew-text font-display italic font-bold uppercase whitespace-nowrap"
+                                    style="padding:0.6rem 1.1rem; font-size:1rem; letter-spacing:0.08em; color:#fff; background:none; border:none; cursor:pointer;">
+                                VER MÓDULO <span class="arrow-slide">→</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- CARD: A45 S AMG -->
+            <article class="product-card group flex flex-col border border-borderline reveal" style="background:#1a1a1d; animation-delay:200ms;" data-category="carros">
+                <div class="card-img relative overflow-hidden" style="height:210px; background:#000;">
+                    <img src="https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=800&q=80"
+                         alt="Mercedes A45 AMG" class="w-full h-full object-cover" style="mix-blend-mode:lighten; opacity:0.82; object-position:center 70%;">
+                    <div class="absolute inset-0" style="background:linear-gradient(to bottom, transparent 35%, #1a1a1d 100%); z-index:2;"></div>
+                    <div class="absolute top-3 left-3 z-10">
+                        <span class="font-display italic font-bold text-white bg-crimson px-2 py-0.5 uppercase" style="font-size:11px; letter-spacing:0.1em;">STAGE 1</span>
+                    </div>
+                </div>
+                <div class="p-5 flex flex-col flex-grow">
+                    <span class="font-mono text-crimson uppercase mb-1" style="font-size:9px; letter-spacing:0.2em;">Módulo M139 2.0T</span>
+                    <h2 class="font-display italic font-black text-white uppercase leading-none mb-3" style="font-size:2rem; letter-spacing:-0.01em;">A45 S AMG</h2>
+                    <div class="flex items-end gap-3 mb-4">
+                        <div class="flex items-end">
+                            <span class="font-display italic font-black text-crimson leading-none" style="font-size:3.75rem; line-height:0.85;">+55</span>
+                            <span class="font-display italic font-bold text-crimson mb-1 ml-1" style="font-size:1.5rem;">cv</span>
+                        </div>
+                        <div class="font-body text-muted border-l border-borderline pl-3 pb-1 uppercase leading-snug" style="font-size:11px;">
+                            +10 kgf.m<br><span style="font-size:9px; letter-spacing:0.1em;">Torque Incremental</span>
+                        </div>
+                    </div>
+                    <div class="border-t border-borderline pt-4 mt-auto flex items-center justify-between gap-3">
+                        <div>
+                            <span class="font-mono text-muted uppercase block" style="font-size:9px; letter-spacing:0.15em;">Licença Definitiva</span>
+                            <span class="font-display italic font-bold text-white" style="font-size:1.5rem;">R$ 6.100</span>
+                        </div>
+                        <div class="btn-skew" style="background:#E72B2B;">
+                            <button class="btn-skew-text font-display italic font-bold uppercase whitespace-nowrap"
+                                    style="padding:0.6rem 1.1rem; font-size:1rem; letter-spacing:0.08em; color:#fff; background:none; border:none; cursor:pointer;">
+                                VER MÓDULO <span class="arrow-slide">→</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- CARD: TCU Remap BMW -->
+            <article class="product-card group flex flex-col border border-borderline reveal" style="background:#1a1a1d; animation-delay:240ms;" data-category="carros">
+                <div class="card-img relative overflow-hidden" style="height:210px; background:#000;">
+                    <img src="https://images.unsplash.com/photo-1518972559570-7cc1309f3229?auto=format&fit=crop&w=800&q=80"
+                         alt="TCU ECU Board" class="w-full h-full object-cover" style="mix-blend-mode:lighten; opacity:0.7; filter:grayscale(60%);">
+                    <div class="absolute inset-0" style="background:linear-gradient(to bottom, transparent 35%, #1a1a1d 100%); z-index:2;"></div>
+                    <div class="absolute top-3 left-3 z-10">
+                        <span class="font-display italic font-black bg-white px-2 py-0.5 uppercase" style="font-size:11px; letter-spacing:0.1em; color:#141416; box-shadow:2px 2px 0 #E72B2B;">TCU</span>
+                    </div>
+                </div>
+                <div class="p-5 flex flex-col flex-grow">
+                    <span class="font-mono text-crimson uppercase mb-1" style="font-size:9px; letter-spacing:0.2em;">Transmissão ZF8HP</span>
+                    <h2 class="font-display italic font-black text-white uppercase leading-none mb-3" style="font-size:2rem; letter-spacing:-0.01em;">TCU Remap — BMW</h2>
+                    <div class="flex items-end gap-3 mb-4">
+                        <div class="flex items-end">
+                            <span class="font-display italic font-black text-crimson leading-none" style="font-size:3.75rem; line-height:0.85;">-30</span>
+                            <span class="font-display italic font-bold text-crimson mb-1 ml-1" style="font-size:1.5rem;">%</span>
+                        </div>
+                        <div class="font-body text-muted border-l border-borderline pl-3 pb-1 uppercase leading-snug" style="font-size:11px;">
+                            Shift Time<br><span style="font-size:9px; letter-spacing:0.1em;">Limitador Torque OFF</span>
+                        </div>
+                    </div>
+                    <div class="border-t border-borderline pt-4 mt-auto flex items-center justify-between gap-3">
+                        <div>
+                            <span class="font-mono text-muted uppercase block" style="font-size:9px; letter-spacing:0.15em;">Licença TCU</span>
+                            <span class="font-display italic font-bold text-white" style="font-size:1.5rem;">R$ 1.900</span>
+                        </div>
+                        <div class="btn-skew" style="background:#E72B2B;">
+                            <button class="btn-skew-text font-display italic font-bold uppercase whitespace-nowrap"
+                                    style="padding:0.6rem 1.1rem; font-size:1rem; letter-spacing:0.08em; color:#fff; background:none; border:none; cursor:pointer;">
+                                VER MÓDULO <span class="arrow-slide">→</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+        </div>
+
+        <!-- Pagination -->
+        <div class="border-t border-borderline pt-6 flex justify-between items-center mt-4">
+            <span class="font-mono text-muted uppercase" style="font-size:9px; letter-spacing:0.2em;">Página 01 / 04</span>
+            <div class="flex gap-1.5 font-display italic font-bold" style="font-size:1.25rem;">
+                <button class="w-9 h-9 border border-borderline flex items-center justify-center text-muted" style="opacity:0.4; cursor:not-allowed;">←</button>
+                <button class="w-9 h-9 border border-crimson flex items-center justify-center text-white" style="background:#E72B2B;">1</button>
+                <button class="w-9 h-9 border border-borderline flex items-center justify-center text-white hover:border-crimson hover:text-crimson" style="transition:all 0.2s;">2</button>
+                <button class="w-9 h-9 border border-borderline flex items-center justify-center text-white hover:border-crimson hover:text-crimson" style="transition:all 0.2s;">3</button>
+                <span class="w-9 h-9 flex items-center justify-center text-muted font-body" style="font-size:0.85rem;">...</span>
+                <button class="w-9 h-9 border border-borderline flex items-center justify-center text-white hover:border-crimson hover:text-crimson" style="transition:all 0.2s;">→</button>
+            </div>
+        </div>
+    </div>
+
+</main>
+</div><!-- /section-remap -->
+
+<!-- ════ SECTION: ACESSÓRIOS ════ -->
+<div id="section-acessorios" style="display:none;">
+    <div class="w-full flex-grow flex flex-col md:flex-row gap-0 max-w-[1920px] mx-auto">
+
+        <!-- LEFT: Filter Panel acessórios -->
+        <aside class="w-full md:w-56 lg:w-64 shrink-0 border-r border-borderline flex flex-col gap-6 p-6"
+               style="background:#141416; min-height:calc(100vh - 170px);">
+            <div class="flex items-center gap-2 border-b border-borderline pb-4">
+                <i class="ph ph-package text-crimson" style="font-size:1.1rem;"></i>
+                <span class="font-display italic font-bold text-white uppercase tracking-widest" style="font-size:1rem;">Categoria</span>
+            </div>
+            <div class="flex flex-col gap-2">
+                <span class="font-body font-bold text-muted uppercase" style="font-size:9px; letter-spacing:0.2em;">Tipo</span>
+                <div class="flex flex-col gap-2">
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <div class="w-3.5 h-3.5 border border-crimson flex items-center justify-center flex-shrink-0">
+                            <div class="w-1.5 h-1.5 bg-crimson"></div>
+                        </div>
+                        <span class="font-body text-white uppercase" style="font-size:10px;">Filtros de Ar</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <div class="w-3.5 h-3.5 border border-borderline group-hover:border-crimson flex items-center justify-center transition-colors flex-shrink-0">
+                            <div class="check-dot w-1.5 h-1.5 bg-crimson hidden"></div>
+                        </div>
+                        <span class="font-body text-muted group-hover:text-white transition-colors uppercase" style="font-size:10px;">Turbinas</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <div class="w-3.5 h-3.5 border border-borderline group-hover:border-crimson flex items-center justify-center transition-colors flex-shrink-0">
+                            <div class="check-dot w-1.5 h-1.5 bg-crimson hidden"></div>
+                        </div>
+                        <span class="font-body text-muted group-hover:text-white transition-colors uppercase" style="font-size:10px;">Intercoolers</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <div class="w-3.5 h-3.5 border border-borderline group-hover:border-crimson flex items-center justify-center transition-colors flex-shrink-0">
+                            <div class="check-dot w-1.5 h-1.5 bg-crimson hidden"></div>
+                        </div>
+                        <span class="font-body text-muted group-hover:text-white transition-colors uppercase" style="font-size:10px;">Downpipes</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <div class="w-3.5 h-3.5 border border-borderline group-hover:border-crimson flex items-center justify-center transition-colors flex-shrink-0">
+                            <div class="check-dot w-1.5 h-1.5 bg-crimson hidden"></div>
+                        </div>
+                        <span class="font-body text-muted group-hover:text-white transition-colors uppercase" style="font-size:10px;">Escapamentos</span>
+                    </label>
+                </div>
+            </div>
+        </aside>
+
+        <!-- RIGHT: Acessórios grid -->
+        <div class="flex-grow flex flex-col gap-6 p-6 md:p-8">
+            <div class="flex items-center gap-2 border-b border-borderline pb-4">
+                <span class="font-body text-muted uppercase" style="font-size:10px; letter-spacing:0.15em;">
+                    Exibindo <strong class="text-white" id="acessorios-count">0</strong> Acessórios Disponíveis
+                </span>
+            </div>
+            <!-- produto cards de acessórios podem ser injetados aqui -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="acessorios-grid">
+                <!-- placeholder vazio — aguardando produtos -->
+                <div class="col-span-3 flex flex-col items-center justify-center py-24 border border-borderline" style="background:#1a1a1d;">
+                    <i class="ph ph-package text-borderline" style="font-size:3rem; margin-bottom:1rem;"></i>
+                    <span class="font-display italic font-bold text-muted uppercase" style="font-size:1.1rem; letter-spacing:0.15em;">Em breve</span>
+                    <span class="font-body text-muted mt-2" style="font-size:0.75rem;">Catálogo de acessórios sendo preparado</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div><!-- /section-acessorios -->
+
+<!-- ════ FOOTER ════ -->
+<footer style="background:#000; padding:4rem 3rem 2rem; border-top:1px solid #1f222a; margin-top:auto;">
+    <div style="max-width:1200px; margin:0 auto;">
+        <div style="display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:3rem; margin-bottom:3rem;">
+            <div>
+                <div style="margin-bottom:1rem; line-height:0;">
+                    <img src="/tuner-logo.svg" alt="Promax Tuner" style="height:36px; width:auto; display:block; opacity:0.92;">
+                </div>
+                <p style="font-size:0.75rem; color:#71717a; line-height:1.8; max-width:280px;">
+                    Desempenho real. Resultados reais.<br>
+                    Excelência técnica em remapeamento e performance automotiva.
+                </p>
+            </div>
+            <div>
+                <p class="font-mono uppercase mb-5" style="font-size:0.55rem; color:#E72B2B; letter-spacing:0.25em;">Performance</p>
+                <p style="font-size:0.78rem; color:#71717a; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.7rem;">Stage 1 &amp; 2</p>
+                <p style="font-size:0.78rem; color:#71717a; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.7rem;">Custom Tuning</p>
+                <p style="font-size:0.78rem; color:#71717a; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.7rem;">Dyno Test</p>
+                <p style="font-size:0.78rem; color:#71717a; text-transform:uppercase; letter-spacing:0.08em;">Track Day</p>
+            </div>
+            <div>
+                <p class="font-mono uppercase mb-5" style="font-size:0.55rem; color:#E72B2B; letter-spacing:0.25em;">Navegação</p>
+                <p style="font-size:0.78rem; color:#71717a; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.7rem;"><a href="/#serviços" style="color:inherit;text-decoration:none;">Serviços</a></p>
+                <p style="font-size:0.78rem; color:#71717a; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.7rem;"><a href="/#veículos" style="color:inherit;text-decoration:none;">Veículos</a></p>
+                <p style="font-size:0.78rem; color:#71717a; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.7rem;"><a href="/#como-funciona" style="color:inherit;text-decoration:none;">Como Funciona</a></p>
+                <p style="font-size:0.78rem; color:#71717a; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.7rem;"><a href="/loja-virtual.html" style="color:inherit;text-decoration:none;">Loja Virtual</a></p>
+                <p style="font-size:0.78rem; color:#71717a; text-transform:uppercase; letter-spacing:0.08em;">Contato</p>
+            </div>
+        </div>
+        <div style="border-top:1px solid #1a1a1a; padding-top:1.5rem; display:flex; justify-content:space-between; align-items:center;">
+            <p class="font-mono uppercase" style="font-size:0.55rem; color:#404040; letter-spacing:0.1em;">© 2026 PROMAX TUNER. TODOS OS DIREITOS RESERVADOS.</p>
+            <p class="font-mono uppercase" style="font-size:0.55rem; color:#404040; letter-spacing:0.1em;">POWERED BY <strong style="color:#606060;">PROMAX GROUP</strong></p>
+        </div>
+    </div>
+</footer>
+
+<!-- ════ MODAL: Tech Spec ════ -->
+<div id="remapModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);align-items:center;justify-content:center;">
+  <div style="background:#121214;border:1px solid #2a2a2e;border-radius:12px;max-width:500px;width:92%;padding:28px;position:relative;max-height:90vh;overflow-y:auto;">
+    <button onclick="closeRemapModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:#555;font-size:22px;cursor:pointer;line-height:1;">&times;</button>
+
+    <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:18px;">
+      <img id="modalImg" src="" alt="" style="width:80px;height:60px;object-fit:cover;border-radius:6px;flex-shrink:0;">
+      <div>
+        <span id="modalStage" style="display:inline-block;background:#E72B2B;color:#fff;font-size:10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:0.1em;padding:2px 8px;text-transform:uppercase;border-radius:2px;margin-bottom:4px;"></span>
+        <p id="modalTitulo" style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:22px;color:#fff;text-transform:uppercase;margin:0;line-height:1.1;"></p>
+        <p id="modalModulo" style="font-size:10px;font-family:'JetBrains Mono',monospace;color:#E72B2B;text-transform:uppercase;letter-spacing:0.15em;margin:4px 0 0;"></p>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;">
+      <div style="background:#1a1a1d;border-radius:8px;padding:14px;">
+        <p style="font-size:10px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.1em;color:#555;margin:0 0 8px;">Ganho de Potência</p>
+        <p id="modalGanho" style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:2rem;color:#E72B2B;margin:0;line-height:1;"></p>
+      </div>
+      <div style="background:#1a1a1d;border-radius:8px;padding:14px;">
+        <p style="font-size:10px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.1em;color:#555;margin:0 0 8px;">Torque</p>
+        <p id="modalTorque" style="font-size:13px;color:#aaa;margin:0;line-height:1.5;"></p>
+      </div>
+    </div>
+
+    <div style="background:#1a1a1d;border-radius:8px;padding:14px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <p style="font-size:10px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.1em;color:#555;margin:0 0 4px;">Valor</p>
+        <p id="modalPrecoModal" style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-style:italic;font-size:1.75rem;color:#fff;margin:0;"></p>
+      </div>
+    </div>
+
+    <a id="modalWhatsApp" href="#" target="_blank"
+      style="display:flex;align-items:center;justify-content:center;gap:10px;background:#25D366;color:#fff;border-radius:8px;padding:13px 20px;text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1rem;letter-spacing:0.05em;text-transform:uppercase;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+      Solicitar via WhatsApp
+    </a>
+  </div>
+</div>
+
+<!-- ════ JS ════ -->
+<script>
+    /* SECTION SWITCHER */
+    function switchSection(name) {
+        const sections = ['remap', 'acessorios'];
+        sections.forEach(s => {
+            document.getElementById('section-' + s).style.display = s === name ? '' : 'none';
+            const btn = document.getElementById('sw-' + s);
+            const isActive = s === name;
+            btn.style.background = isActive ? '#E72B2B' : '#0a0a0b';
+            btn.style.color     = isActive ? '#fff'    : '#4a4c4f';
+            // Arrow states: active arrows run + full opacity; inactive pause + dim
+            btn.querySelectorAll('.sw-arrow').forEach(el => {
+                el.style.animationPlayState = isActive ? 'running'  : 'paused';
+                el.style.opacity            = isActive ? '1'        : '0.15';
+            });
+        });
+    }
+    /* Init arrow state for default-active (remap) */
+    document.getElementById('sw-acessorios').querySelectorAll('.sw-arrow').forEach(el => {
+        el.style.animationPlayState = 'paused';
+        el.style.opacity = '0.15';
+    });
+
+    /* FILTER ROW TOGGLE */
+    function toggleFilterRow(btn) {
+        const label = btn.querySelector('.fr-label');
+        const check = btn.querySelector('.fr-check');
+        const active = btn.classList.toggle('is-active');
+        if (active) {
+            label.classList.remove('text-muted');
+            check.style.color = '#E72B2B';
+            check.textContent = '[×]';
+        } else {
+            label.classList.add('text-muted');
+            check.style.color = '';
+            check.textContent = '[ ]';
+        }
+    }
+
+    /* PROTO TAG TOGGLE */
+    function toggleProto(btn) {
+        btn.classList.toggle('is-active');
+    }
+
+    /* SORT ACTIVE */
+    function setSortActive(clicked) {
+        clicked.closest('.flex').querySelectorAll('.sort-btn').forEach(btn => {
+            const lbl = btn.querySelector('.fr-label');
+            const chk = btn.querySelector('.fr-check');
+            btn.classList.remove('is-active');
+            if (lbl) lbl.classList.add('text-muted');
+            if (chk) { chk.classList.add('text-muted'); chk.style.color = ''; chk.textContent = '○'; }
+        });
+        clicked.classList.add('is-active');
+        const lbl = clicked.querySelector('.fr-label');
+        const chk = clicked.querySelector('.fr-check');
+        if (lbl) lbl.classList.remove('text-muted');
+        if (chk) { chk.classList.remove('text-muted'); chk.style.color = '#E72B2B'; chk.textContent = '▸'; }
+    }
+
+    /* CATEGORY TABS */
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const cards   = document.querySelectorAll('.product-card[data-category]');
+    const countEl = document.getElementById('product-count');
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const target = btn.dataset.tab;
+
+            tabBtns.forEach(b => {
+                b.classList.remove('tab-active');
+                b.classList.add('border-borderline', 'text-muted');
+                b.style.background = '';
+                b.style.color = '';
+                b.style.borderColor = '';
+            });
+            btn.classList.add('tab-active');
+            btn.classList.remove('border-borderline', 'text-muted');
+
+            let visible = 0;
+            cards.forEach((card, ix) => {
+                const match = card.dataset.category === target;
+                if (match) {
+                    card.style.display = 'flex';
+                    card.style.animation = 'none';
+                    void card.offsetHeight;
+                    card.style.animation = `fadeUp 0.38s cubic-bezier(0.16,1,0.3,1) ${ix * 35}ms forwards`;
+                    visible++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            countEl.textContent = visible || cards.length;
+        });
+    });
+
+    /* SORT BUTTONS — handled by setSortActive() above */
+
+    /* REMAP MODAL */
+    function openRemapModal(article) {
+        var h2 = article.querySelector('h2');
+        var titulo = h2 ? h2.textContent.trim() : '';
+
+        var badge = article.querySelector('[class*="bg-crimson"]');
+        var stage = badge ? badge.textContent.trim() : '';
+
+        var modulo = article.querySelector('.font-mono.text-crimson');
+        var moduloText = modulo ? modulo.textContent.trim() : '';
+
+        // Gain: big number + unit sibling
+        var gainNumEl = article.querySelector('.font-display.italic.font-black.text-crimson');
+        var gainNum = gainNumEl ? gainNumEl.textContent.trim() : '';
+        var gainUnitEl = gainNumEl ? gainNumEl.nextElementSibling : null;
+        var gainUnit = gainUnitEl ? gainUnitEl.textContent.trim() : 'cv';
+        var ganho = gainNum ? ('+' + gainNum + gainUnit) : '';
+
+        // Torque: text inside border-l div
+        var torqueDiv = article.querySelector('.border-l');
+        var torqueText = torqueDiv ? torqueDiv.textContent.trim().replace(/\s+/g, ' ') : '';
+
+        // Price: .font-display.font-bold.text-white containing R$
+        var priceText = 'CONSULTAR';
+        article.querySelectorAll('.font-display.italic.font-bold.text-white').forEach(function(el) {
+            if (el.textContent.includes('R$')) priceText = el.textContent.trim();
+        });
+
+        var img = article.querySelector('img');
+        var imgSrc = img ? img.src : '';
+
+        document.getElementById('modalImg').src = imgSrc;
+        document.getElementById('modalTitulo').textContent = titulo;
+        document.getElementById('modalStage').textContent = stage;
+        document.getElementById('modalModulo').textContent = moduloText;
+        document.getElementById('modalGanho').textContent = ganho;
+        document.getElementById('modalTorque').textContent = torqueText;
+        document.getElementById('modalPrecoModal').textContent = priceText;
+        document.getElementById('modalPrecoModal').style.color = priceText === 'CONSULTAR' ? '#D97706' : '#fff';
+
+        var wn = (window.WHATSAPP_NUMBER || '').replace(/\D/g, '');
+        var msg = encodeURIComponent(
+            'Olá! Tenho interesse no remap:\n' +
+            '*Veículo:* ' + titulo + (stage ? ' — ' + stage : '') + '\n' +
+            (ganho ? '*Ganho:* ' + ganho + '\n' : '') +
+            '*Preço:* ' + (priceText === 'CONSULTAR' ? 'Solicitar cotação' : priceText) + '\n\nAguardo retorno!'
+        );
+        var waLink = document.getElementById('modalWhatsApp');
+        waLink.href = wn ? ('https://wa.me/' + wn + '?text=' + msg) : '#';
+
+        var modal = document.getElementById('remapModal');
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeRemapModal() {
+        document.getElementById('remapModal').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    // Close on backdrop click
+    document.getElementById('remapModal').addEventListener('click', function(e) {
+        if (e.target === this) closeRemapModal();
+    });
+
+    // Wire VER MÓDULO buttons to open modal
+    document.querySelectorAll('.product-card .btn-skew button').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openRemapModal(this.closest('article'));
+        });
+    });
+</script>
+</body>
+</html>

@@ -110,6 +110,45 @@ export function useExpiringContracts(days = 90) {
   })
 }
 
+export interface UnitUserRecord {
+  user_id: string
+  role: string
+  profiles: { name: string; email: string; active: boolean } | null
+}
+
+export function useFranchiseUnitsList(enabled = true) {
+  return useQuery({
+    queryKey: ['franchise-units-list'],
+    enabled,
+    queryFn: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from('franchise_units')
+        .select('id, name')
+        .order('name')
+      if (error) throw error
+      return (data ?? []) as { id: string; name: string }[]
+    },
+    staleTime: 300_000,
+  })
+}
+
+export function useUnitUsers(unitId: string) {
+  return useQuery({
+    queryKey: ['unit-users', unitId],
+    enabled: !!unitId,
+    queryFn: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from('user_unit_roles')
+        .select('user_id, role, profiles(name, email, active)')
+        .eq('unit_id', unitId)
+      if (error) throw error
+      return (data ?? []) as UnitUserRecord[]
+    },
+  })
+}
+
 type CreatePayload = Omit<FranchiseUnit, 'id' | 'created_at'>
 
 export function useCreateFranchiseUnit() {

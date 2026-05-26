@@ -24,6 +24,7 @@ export function useFranchiseeProfile() {
     queryKey: ['franchisee-profile', user?.id],
     enabled: !!user,
     queryFn: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from('profiles')
         .select('id, name, phone, birth_date, avatar_url, cep, street, address_number, complement, neighborhood, city, state')

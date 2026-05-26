@@ -1,31 +1,17 @@
 // supabase/functions/support-download-url/index.ts
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { S3Client, GetObjectCommand } from 'npm:@aws-sdk/client-s3'
 import { getSignedUrl } from 'npm:@aws-sdk/s3-request-presigner'
-
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders } from '../_shared/cors.ts'
+import { requireAuth } from '../_shared/auth.ts'
 
 serve(async (req) => {
+  const CORS = corsHeaders(req)
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
 
-  const authHeader = req.headers.get('Authorization')
-  if (!authHeader) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: CORS })
-  }
-
-  const callerClient = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_ANON_KEY')!,
-    { global: { headers: { Authorization: authHeader } } }
-  )
-  const { data: { user }, error: authErr } = await callerClient.auth.getUser()
-  if (authErr || !user) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: CORS })
-  }
+  const auth = await requireAuth(req).catch(() => null)
+  if (!auth) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: CORS })
+  const { callerClient } = auth
 
   let body: { r2Key?: string; ticketId?: string }
   try { body = await req.json() } catch {
@@ -41,6 +27,19 @@ serve(async (req) => {
   const { data: ticket, error: ticketErr } = await callerClient.from('support_tickets').select('id').eq('id', ticketId).single()
   if (ticketErr || !ticket) {
     return new Response(JSON.stringify({ error: 'Ticket não encontrado' }), { status: 404, headers: CORS })
+  }
+
+  // SECURITY (VULN-03): validar que r2Key pertence a uma mensagem deste ticket.
+  // Sem esta checagem, um usuário com acesso ao ticket A poderia baixar
+  // arquivos do ticket B passando r2Key arbitrário.
+  const { data: attachment } = await callerClient
+    .from('support_messages')
+    .select('id')
+    .eq('ticket_id', ticketId)
+    .eq('attachment_r2_key', r2Key)
+    .single()
+  if (!attachment) {
+    return new Response(JSON.stringify({ error: 'Arquivo não pertence a este ticket' }), { status: 403, headers: CORS })
   }
 
   const s3 = new S3Client({

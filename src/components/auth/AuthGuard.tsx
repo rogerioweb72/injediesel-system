@@ -3,9 +3,10 @@ import { useAuthStore } from '@/stores/auth'
 
 interface AuthGuardProps {
   children: React.ReactNode
+  loginPath?: string
 }
 
-export function AuthGuard({ children }: AuthGuardProps) {
+export function AuthGuard({ children, loginPath = '/appmax' }: AuthGuardProps) {
   const { session, loading } = useAuthStore()
   const location = useLocation()
 
@@ -18,7 +19,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   }
 
   if (!session) {
-    return <Navigate to="/login" state={{ from: location }} replace />
+    return <Navigate to={loginPath} state={{ from: location }} replace />
   }
 
   return <>{children}</>

@@ -1,3 +1,7 @@
+import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
+import { usePageHeaderContext } from '@/contexts/PageHeaderContext'
+
 interface PageHeaderProps {
   title: string
   highlight?: string
@@ -6,16 +10,16 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ title, highlight, subtitle, actions }: PageHeaderProps) {
-  return (
-    <div className="flex items-start justify-between mb-6">
-      <div>
-        <h1 className="pm-page-title">
-          {title}
-          {highlight && <span> {highlight}</span>}
-        </h1>
-        {subtitle && <p className="pm-page-subtitle mt-1">{subtitle}</p>}
-      </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
-    </div>
-  )
+  const { setPageHeader, clearPageHeader } = usePageHeaderContext()
+  const fullTitle = title + (highlight ? ` ${highlight}` : '')
+
+  useEffect(() => {
+    setPageHeader({ title: fullTitle, subtitle })
+    return () => clearPageHeader()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fullTitle, subtitle])
+
+  const slot = document.getElementById('topbar-actions')
+  if (!actions || !slot) return null
+  return createPortal(actions, slot)
 }

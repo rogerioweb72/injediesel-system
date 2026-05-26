@@ -2,7 +2,7 @@ import { useState } from 'react'
 import {
   LayoutDashboard, Upload, Files, ShoppingBag, ShoppingCart,
   ClipboardList, Users, BarChart3, Headphones,
-  Megaphone, User, Database, HelpCircle, BookOpen,
+  Megaphone, User, Database, HelpCircle, BookOpen, CreditCard,
 } from 'lucide-react'
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -20,6 +20,7 @@ function IconAtualizacoes({ className, size = 24 }: { className?: string; size?:
   )
 }
 import { NavItem } from './NavItem'
+import { useModulePermission } from '@/hooks/usePermissions'
 import { supabase } from '@/lib/supabase'
 import { TunerLogo } from '@/components/branding/TunerLogo'
 import { useMyUnit } from '@/hooks/useMyUnit'
@@ -39,6 +40,13 @@ export function FranqueadoSidebar({ mode, onTogglePin }: FranqueadoSidebarProps)
   const { data: myUnit } = useMyUnit()
   const unit = myUnit?.franchise_units
   const prefix = useRoutePrefix()
+  const permEcu      = useModulePermission('ecu_arquivos')
+  const permRemap    = useModulePermission('tabela_remap')
+  const permPdv      = useModulePermission('pdv')
+  const permClientes = useModulePermission('clientes')
+  const permRelat    = useModulePermission('relatorios')
+  const permConfig   = useModulePermission('configuracoes')
+  const permFinanceiro = useModulePermission('financeiro')
   const { data: unreadSupport = 0 } = useUnreadSupportCount()
   const { count: unseenJobs } = useUnseenJobs()
   const { data: orderUpdates = 0 } = useFranchiseOrderUpdatesCount()
@@ -88,33 +96,19 @@ export function FranqueadoSidebar({ mode, onTogglePin }: FranqueadoSidebarProps)
         </button>
       </div>
 
-      {isExpanded && unit && (
-        <div style={{
+      {isExpanded && unit?.city && (
+        <p style={{
           margin: '0 10px 8px',
-          padding: '8px 10px',
-          borderRadius: 8,
-          background: 'hsl(var(--pm-gray-800))',
-          border: '1px solid rgba(255,255,255,0.05)',
+          fontSize: 11,
+          fontFamily: 'var(--pm-font-mono)',
+          fontWeight: 600,
+          letterSpacing: '0.06em',
+          color: 'hsl(var(--pm-gray-500))',
+          textTransform: 'uppercase',
+          textAlign: 'center',
         }}>
-          <p style={{
-            fontSize: 9,
-            fontFamily: 'var(--pm-font-mono)',
-            letterSpacing: '0.08em',
-            color: 'hsl(var(--pm-gray-500))',
-            textTransform: 'uppercase',
-            marginBottom: 2,
-          }}>
-            Franquia
-          </p>
-          <p style={{ fontSize: 12, fontWeight: 600, color: 'hsl(var(--pm-gray-100))', lineHeight: 1.3 }}>
-            {unit.name}
-          </p>
-          {unit.city && (
-            <p style={{ fontSize: 10, color: 'hsl(var(--pm-gray-500))', marginTop: 1 }}>
-              {unit.city}/{unit.state}
-            </p>
-          )}
-        </div>
+          {unit.city}{unit.state ? `-${unit.state}` : ''}
+        </p>
       )}
 
       <nav className="flex-1 py-3 overflow-y-auto overflow-x-hidden">
@@ -122,23 +116,40 @@ export function FranqueadoSidebar({ mode, onTogglePin }: FranqueadoSidebarProps)
         {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
         <NavItem to={`${prefix}/dashboard`} icon={LayoutDashboard} label="Dashboard" collapsed={collapsed} />
 
-        {!collapsed && <div className="pm-sidebar-group-title">ECU</div>}
-        {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
-        <NavItem to={`${prefix}/arquivos/novo`} icon={Upload}   label="Enviar Arquivo"  collapsed={collapsed} end />
-        <NavItem to={`${prefix}/arquivos`}      icon={Files}    label="Meus Arquivos"   collapsed={collapsed} badge={unseenJobs} end />
-        <NavItem to={`${prefix}/tabela-remap`}  icon={Database} label="Tabela de Remap" collapsed={collapsed} />
+        {permEcu.canView && <>
+          {!collapsed && <div className="pm-sidebar-group-title">ECU</div>}
+          {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
+          <NavItem to={`${prefix}/arquivos/novo`} icon={Upload} label="Enviar Arquivo" collapsed={collapsed} end />
+          <NavItem to={`${prefix}/arquivos`}      icon={Files}  label="Meus Arquivos"  collapsed={collapsed} badge={unseenJobs} end />
+          {permRemap.canView && (
+            <NavItem to={`${prefix}/tabela-remap`} icon={Database} label="Tabela de Remap" collapsed={collapsed} />
+          )}
+        </>}
 
-        {!collapsed && <div className="pm-sidebar-group-title">Loja</div>}
-        {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
-        <NavItem to={`${prefix}/loja`}     icon={ShoppingBag}  label="Loja Promax"          collapsed={collapsed} />
-        <NavItem to={`${prefix}/carrinho`} icon={ShoppingCart} label="Meu Carrinho"          collapsed={collapsed} />
-        <NavItem to={`${prefix}/pedidos`}  icon={ClipboardList} label="Histórico de Compras" collapsed={collapsed} badge={orderUpdates} />
+        {permPdv.canView && <>
+          {!collapsed && <div className="pm-sidebar-group-title">Loja</div>}
+          {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
+          <NavItem to={`${prefix}/loja`}     icon={ShoppingBag}   label="Loja Promax"          collapsed={collapsed} />
+          <NavItem to={`${prefix}/carrinho`} icon={ShoppingCart}  label="Meu Carrinho"          collapsed={collapsed} />
+          <NavItem to={`${prefix}/pedidos`}  icon={ClipboardList} label="Histórico de Compras"  collapsed={collapsed} badge={orderUpdates} />
+        </>}
 
-        {!collapsed && <div className="pm-sidebar-group-title">Gestão</div>}
-        {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
-        <NavItem to={`${prefix}/clientes`}   icon={Users}     label="Clientes"   collapsed={collapsed} />
-        <NavItem to={`${prefix}/relatorios`} icon={BarChart3} label="Relatórios" collapsed={collapsed} />
-        <NavItem to={`${prefix}/cadastros`}  icon={BookOpen}  label="Cadastros"  collapsed={collapsed} />
+        {(permClientes.canView || permRelat.canView || permConfig.canView || permFinanceiro.canView) && <>
+          {!collapsed && <div className="pm-sidebar-group-title">Gestão</div>}
+          {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
+          {permClientes.canView && (
+            <NavItem to={`${prefix}/clientes`}   icon={Users}     label="Clientes"   collapsed={collapsed} />
+          )}
+          {permFinanceiro.canView && (
+            <NavItem to={`${prefix}/caixa`} icon={CreditCard} label="Caixa" collapsed={collapsed} />
+          )}
+          {permRelat.canView && (
+            <NavItem to={`${prefix}/relatorios`} icon={BarChart3} label="Relatórios" collapsed={collapsed} />
+          )}
+          {permConfig.canView && (
+            <NavItem to={`${prefix}/cadastros`}  icon={BookOpen}  label="Cadastros"  collapsed={collapsed} />
+          )}
+        </>}
 
         {!collapsed && <div className="pm-sidebar-group-title">Suporte</div>}
         {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}

@@ -52,6 +52,10 @@ const FirmwareEditorPage      = lazy(() => import('@/pages/app/atualizacoes/Firm
 const RelatoriosPage          = lazy(() => import('@/pages/app/franqueados/RelatoriosPage'))
 const CadastrosPage           = lazy(() => import('@/pages/app/cadastros/CadastrosPage'))
 const AjudaPage               = lazy(() => import('@/pages/app/ajuda/AjudaPage'))
+const MatrizAjudaPage         = lazy(() => import('@/pages/app/ajuda/MatrizAjudaPage'))
+const HelpArticleForm         = lazy(() => import('@/pages/app/ajuda/HelpArticleForm'))
+const AuditoriaPage           = lazy(() => import('@/pages/app/auditoria/AuditoriaPage'))
+const CaixaPage               = lazy(() => import('@/pages/app/caixa/CaixaPage'))
 
 function EmBreve({ titulo }: { titulo: string }) {
   return (
@@ -156,8 +160,10 @@ const router = createBrowserRouter([
           { path: 'atualizacoes',                element: <S><AtualizacoesMatrizPage /></S> },
           { path: 'atualizacoes/:equipmentSlug/novo', element: <S><FirmwareEditorPage /></S> },
           { path: 'atualizacoes/:updateId/editar',    element: <S><FirmwareEditorPage /></S> },
-          { path: 'ajuda',                       element: <S><AjudaPage /></S> },
-          { path: 'auditoria',                   element: <EmBreve titulo="Auditoria" /> },
+          { path: 'ajuda',                       element: <S><MatrizAjudaPage /></S> },
+          { path: 'ajuda/novo',                  element: <S><HelpArticleForm /></S> },
+          { path: 'ajuda/:id/editar',            element: <S><HelpArticleForm /></S> },
+          { path: 'auditoria',                   element: <S><AuditoriaPage /></S> },
           { path: 'loja',                        element: <EmBreve titulo="Loja Online" /> },
         ],
       },
@@ -180,6 +186,7 @@ const router = createBrowserRouter([
           { path: 'clientes/:id/editar',         element: <S><FranqueadoCustomerForm /></S> },
           { path: 'relatorios',                  element: <S><RelatoriosPage /></S> },
           { path: 'cadastros',                   element: <S><CadastrosPage /></S> },
+          { path: 'caixa',                       element: <S><CaixaPage /></S> },
           { path: 'atualizacoes',                element: <S><AtualizacoesPage /></S> },
           { path: 'suporte',                     element: <S><SupportPage /></S> },
           { path: 'suporte/novo',                element: <S><SupportTicketForm /></S> },

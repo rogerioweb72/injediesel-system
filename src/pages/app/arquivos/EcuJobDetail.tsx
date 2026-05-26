@@ -266,7 +266,6 @@ export default function EcuJobDetail() {
   const downloadFile = useDownloadEcuFile()
   const { isMatrixUser, isFranchiseUser } = useProfile()
   const markAsSeen   = useMarkJobAsSeen(id)
-  const { data: myUnit } = useMyUnit()
   const { data: financialEntry } = useEcuJobFinancialEntry(job?.id ?? '')
   const sendToFinance = useSendToFinance()
 

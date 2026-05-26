@@ -4,6 +4,7 @@ import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
 import {
   ArrowLeft, Upload, Download, FileText, Clock,
   ChevronRight, AlertCircle, MessageSquarePlus, X, CheckCircle,
+  CreditCard, CheckCircle2, Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -12,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { PageHeader } from '@/components/shared/PageHeader'
 import { EcuStatusBadge, STATUS_LABELS } from '@/components/shared/EcuStatusBadge'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
-import { useEcuJob, useUpdateEcuJobStatus, useSetMatrixPrice, NEXT_STATUS, type EcuJob } from '@/hooks/useEcuJobs'
+import { useEcuJob, useUpdateEcuJobStatus, useSetMatrixPrice, NEXT_STATUS, useEcuJobFinancialEntry, useSendToFinance, type EcuJob } from '@/hooks/useEcuJobs'
 import { useUploadEcuFile, useDownloadEcuFile } from '@/hooks/useEcuFiles'
 import { useCreateSupportTicket } from '@/hooks/useSupportTickets'
 import { useMyUnit } from '@/hooks/useMyUnit'
@@ -265,6 +266,9 @@ export default function EcuJobDetail() {
   const downloadFile = useDownloadEcuFile()
   const { isMatrixUser, isFranchiseUser } = useProfile()
   const markAsSeen   = useMarkJobAsSeen(id)
+  const { data: myUnit } = useMyUnit()
+  const { data: financialEntry } = useEcuJobFinancialEntry(job?.id ?? '')
+  const sendToFinance = useSendToFinance()
 
   useEffect(() => {
     if (job) markAsSeen()
@@ -333,6 +337,17 @@ export default function EcuJobDetail() {
       r2Key: f.r2_key,
       fileName: f.file_name,
       bucket: f.file_type === 'original' ? 'originals' : 'delivered',
+    })
+  }
+
+  async function handleSendToFinance() {
+    if (!job) return
+    await sendToFinance.mutateAsync({
+      jobId: job.id,
+      unitId: job.unit_id ?? '',
+      amount: job.amount_charged_to_customer ?? 0,
+      serviceType: job.service_type,
+      customerName: job.customers?.name ?? 'Cliente',
     })
   }
 
@@ -582,6 +597,51 @@ export default function EcuJobDetail() {
                   {next === 'cancelado' && <AlertCircle size={14} className="text-red-400" />}
                 </Button>
               ))}
+            </div>
+          )}
+
+          {/* Envio ao financeiro — franquia, job concluído */}
+          {isFranchise && job.status === 'concluido' && (
+            <div className="mt-4">
+              {!financialEntry && (
+                <button
+                  onClick={handleSendToFinance}
+                  disabled={sendToFinance.isPending || !job.amount_charged_to_customer}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-semibold text-sm transition-all disabled:opacity-40"
+                  style={{ background: 'hsl(var(--pm-red-500))', color: '#fff' }}
+                >
+                  {sendToFinance.isPending ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <CreditCard size={16} />
+                  )}
+                  Finalizar e enviar para o financeiro
+                </button>
+              )}
+              {financialEntry?.status === 'pendente' && (
+                <div
+                  className="flex items-center gap-2 justify-center py-2.5 px-4 rounded-xl text-sm font-medium"
+                  style={{ background: 'rgba(251,191,36,0.1)', color: '#FBBF24' }}
+                >
+                  <Clock size={14} /> Aguardando caixa
+                </div>
+              )}
+              {financialEntry?.status === 'pago' && (
+                <div
+                  className="flex items-center gap-2 justify-center py-2.5 px-4 rounded-xl text-sm font-medium"
+                  style={{ background: 'rgba(74,222,128,0.1)', color: '#4ADE80' }}
+                >
+                  <CheckCircle2 size={14} /> Pago
+                  {financialEntry.payment_method && (
+                    <span style={{ opacity: 0.7 }}>· {financialEntry.payment_method}</span>
+                  )}
+                </div>
+              )}
+              {!job.amount_charged_to_customer && !financialEntry && (
+                <p className="text-xs text-center mt-1" style={{ color: 'hsl(var(--pm-gray-500))' }}>
+                  Preencha o valor cobrado do cliente para enviar ao financeiro.
+                </p>
+              )}
             </div>
           )}
 

@@ -38,6 +38,18 @@ CREATE POLICY "service role full access on commission_entries"
   ON public.commission_entries FOR ALL
   TO service_role
   USING (true);
+CREATE POLICY "authenticated can insert commissions"
+  ON public.commission_entries FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
+
+-- Indexes for commission_entries
+CREATE INDEX IF NOT EXISTS idx_commission_entries_seller ON public.commission_entries(seller_id);
+CREATE INDEX IF NOT EXISTS idx_commission_entries_ecu_job ON public.commission_entries(ecu_job_id);
+
+-- Unique constraint: one commission per job
+ALTER TABLE public.commission_entries
+  ADD CONSTRAINT commission_entries_ecu_job_id_unique UNIQUE (ecu_job_id);
 
 -- 4. max_discount_pct em franchise_units
 ALTER TABLE public.franchise_units

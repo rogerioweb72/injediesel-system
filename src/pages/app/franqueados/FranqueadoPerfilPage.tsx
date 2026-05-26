@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
@@ -20,12 +20,14 @@ import { useUpdateProfile } from '@/hooks/useUpdateProfile'
 import { useUploadAvatar } from '@/hooks/useUploadAvatar'
 import { useMyUnit } from '@/hooks/useMyUnit'
 import { useCreateSupportTicket } from '@/hooks/useSupportTickets'
+import { useCommissions } from '@/hooks/useCaixa'
+import { useAuthStore } from '@/stores/auth'
 import { supabase } from '@/lib/supabase'
 
 // ─── Schema ─────────────────────────────────────────────────────────────────
 export const perfilSchema = z.object({
   name:            z.string().min(3, 'Mínimo 3 caracteres'),
-  phone:           z.string().min(10, 'Celular inválido'),
+  phone:           z.string().refine(v => v.replace(/\D/g, '').length >= 10, 'Celular inválido'),
   email:           z.string().email('E-mail inválido').optional().or(z.literal('')),
   emailConfirm:    z.string().optional().or(z.literal('')),
   birth_date:      z.string().optional().or(z.literal('')),
@@ -83,6 +85,93 @@ function PasswordStrengthBar({ password }: { password: string }) {
       </div>
       <p className="text-[10px]" style={{ color: PWD_COLOR[score] }}>{PWD_LABEL[score]}</p>
     </div>
+  )
+}
+
+// ─── PhoneMaskInput ───────────────────────────────────────────────────────────
+function applyPhoneMask(digits: string) {
+  // 11 digits → (XX) XXXXX-XXXX   |   10 digits → (XX) XXXX-XXXX
+  const d = digits.slice(0, 11)
+  if (d.length === 0) return ''
+  if (d.length <= 2)  return `(${d}`
+  if (d.length <= 7)  return `(${d.slice(0, 2)}) ${d.slice(2)}`
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
+}
+
+function PhoneMaskInput({
+  value,
+  onChange,
+  onBlur,
+  name,
+}: {
+  value: string
+  onChange: (v: string) => void
+  onBlur?: () => void
+  name?: string
+}) {
+  const toDisplay = (raw: string) => applyPhoneMask(raw.replace(/\D/g, ''))
+
+  const [display, setDisplay] = useState(() => toDisplay(value ?? ''))
+
+  useEffect(() => {
+    setDisplay(toDisplay(value ?? ''))
+  }, [value])
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = e.target.value.replace(/\D/g, '').slice(0, 11)
+    setDisplay(applyPhoneMask(digits))
+    onChange(applyPhoneMask(digits))
+  }
+
+  return (
+    <Input
+      name={name}
+      value={display}
+      onChange={handleChange}
+      onBlur={onBlur}
+      placeholder="(99) 99999-9999"
+      maxLength={16}
+      inputMode="numeric"
+    />
+  )
+}
+
+// ─── DateMaskInput ────────────────────────────────────────────────────────────
+function DateMaskInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const toDisplay = (iso: string) => {
+    if (!iso || iso.length < 10) return ''
+    const [y, m, d] = iso.split('-')
+    return y && m && d ? `${d}/${m}/${y}` : ''
+  }
+
+  const [display, setDisplay] = useState(() => toDisplay(value))
+
+  useEffect(() => {
+    setDisplay(toDisplay(value))
+  }, [value])
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = e.target.value.replace(/\D/g, '').slice(0, 8)
+    let formatted = digits
+    if (digits.length > 2) formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`
+    if (digits.length > 4) formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`
+    setDisplay(formatted)
+    if (digits.length === 8) {
+      onChange(`${digits.slice(4, 8)}-${digits.slice(2, 4)}-${digits.slice(0, 2)}`)
+    } else {
+      onChange('')
+    }
+  }
+
+  return (
+    <Input
+      value={display}
+      onChange={handleChange}
+      placeholder="DD/MM/AAAA"
+      maxLength={10}
+      inputMode="numeric"
+    />
   )
 }
 
@@ -311,13 +400,17 @@ function PerfilIdentidadePanel({
       </div>
 
       {/* Contrato */}
-      {unit?.contract_start_date && unit?.contract_end_date && (
+      {unit?.contract_start_date && unit?.contract_end_date ? (
         <div className="w-full">
           <ContractProgressBar
             startDate={unit.contract_start_date}
             endDate={unit.contract_end_date}
           />
         </div>
+      ) : (
+        <p className="text-xs text-center w-full" style={{ color: 'hsl(var(--pm-gray-500))' }}>
+          Datas de contrato não configuradas.<br />Entre em contato com a franqueadora.
+        </p>
       )}
 
       {/* Ações */}
@@ -393,7 +486,7 @@ function PerfilFormPanel({
   const [showOld, setShowOld] = useState(false)
   const [oldPwdError, setOldPwdError] = useState('')
 
-  const { register, handleSubmit, setValue, watch, reset, formState: { errors, isSubmitting } } = useForm<PerfilFormData>({
+  const { register, handleSubmit, setValue, watch, reset, control, formState: { errors, isSubmitting } } = useForm<PerfilFormData>({
     resolver: zodResolver(perfilSchema),
     defaultValues: {
       name:           profile?.name ?? '',
@@ -508,11 +601,28 @@ function PerfilFormPanel({
         </FormField>
 
         <FormField label="Celular / WhatsApp *" error={errors.phone?.message}>
-          <Input {...register('phone')} placeholder="(99) 9 9999-9999" />
+          <Controller
+            name="phone"
+            control={control}
+            render={({ field }) => (
+              <PhoneMaskInput
+                name={field.name}
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
         </FormField>
 
         <FormField label="Data de nascimento" error={errors.birth_date?.message}>
-          <Input type="date" {...register('birth_date')} />
+          <Controller
+            name="birth_date"
+            control={control}
+            render={({ field }) => (
+              <DateMaskInput value={field.value ?? ''} onChange={field.onChange} />
+            )}
+          />
         </FormField>
       </div>
 
@@ -627,6 +737,9 @@ export default function FranqueadoPerfilPage() {
   const { data: myUnit, isLoading: loadingUnit } = useMyUnit()
   const unit = myUnit?.franchise_units
   const [renovarOpen, setRenovarOpen] = useState(false)
+  const user = useAuthStore((s) => s.user)
+  const { data: commissions = [] } = useCommissions(user?.id)
+  const totalCommission = commissions.reduce((sum, c) => sum + c.commission_amount, 0)
 
   if (loadingProfile || loadingUnit) {
     return (
@@ -674,6 +787,68 @@ export default function FranqueadoPerfilPage() {
           </div>
         </div>
       </div>
+
+      {commissions.length > 0 && (
+        <div
+          className="mt-6 rounded-2xl p-5 space-y-4"
+          style={{ background: 'hsl(var(--pm-gray-900))', border: '1px solid rgba(255,255,255,0.05)' }}
+        >
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-white">Minhas Comissões</h3>
+            <span
+              className="text-sm font-bold px-3 py-1 rounded-full"
+              style={{ background: 'rgba(74,222,128,0.1)', color: '#4ADE80' }}
+            >
+              Total: {totalCommission.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  {['Data', 'Serviço', 'Cliente', 'Valor Bruto', 'Desconto', '%', 'Comissão'].map((h) => (
+                    <th
+                      key={h}
+                      className="text-left pb-2 pr-4 text-[11px] font-bold uppercase tracking-wide"
+                      style={{ color: 'hsl(var(--pm-gray-500))' }}
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {commissions.map((c) => (
+                  <tr key={c.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                    <td className="py-2 pr-4 whitespace-nowrap" style={{ color: 'hsl(var(--pm-gray-400))', fontFamily: 'var(--pm-font-mono)', fontSize: 11 }}>
+                      {new Date(c.paid_at).toLocaleDateString('pt-BR')}
+                    </td>
+                    <td className="py-2 pr-4 text-white">{c.ecu_jobs?.service_type ?? '—'}</td>
+                    <td className="py-2 pr-4" style={{ color: 'hsl(var(--pm-gray-400))' }}>
+                      {c.ecu_jobs?.customers?.name ?? '—'}
+                    </td>
+                    <td className="py-2 pr-4 whitespace-nowrap" style={{ color: 'hsl(var(--pm-gray-300))' }}>
+                      {c.gross_amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </td>
+                    <td className="py-2 pr-4 whitespace-nowrap" style={{ color: '#F87171' }}>
+                      {c.discount_amount > 0
+                        ? `- ${c.discount_amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`
+                        : '—'}
+                    </td>
+                    <td className="py-2 pr-4" style={{ color: 'hsl(var(--pm-gray-500))' }}>
+                      {c.commission_rate}%
+                    </td>
+                    <td className="py-2 font-semibold whitespace-nowrap" style={{ color: '#4ADE80' }}>
+                      {c.commission_amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <RenovarContratoModal
         open={renovarOpen}

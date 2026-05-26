@@ -8,6 +8,7 @@ export interface FinancialCategory {
   name: string
   type: 'receita' | 'despesa'
   subtipo: 'fixa' | 'variavel' | null
+  active: boolean
 }
 
 export interface FinancialEntry {
@@ -23,6 +24,11 @@ export interface FinancialEntry {
   created_by: string | null
   created_at: string
   financial_categories?: FinancialCategory | null
+  // novos campos
+  ecu_job_id: string | null
+  status: 'pendente' | 'pago'
+  discount_amount: number
+  payment_method: string | null
 }
 
 export interface MonthlyClosing {
@@ -42,7 +48,7 @@ export function useFinancialCategories() {
   return useQuery({
     queryKey: ['financial-categories'],
     queryFn: async () => {
-      const { data, error } = await sb().from('financial_categories').select('*').order('name')
+      const { data, error } = await sb().from('financial_categories').select('*').eq('active', true).order('name')
       if (error) throw error
       return data as FinancialCategory[]
     },
@@ -65,6 +71,19 @@ export function useUpsertFinancialCategory() {
         .single()
       if (error) throw error
       return data as FinancialCategory
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['financial-categories'] })
+    },
+  })
+}
+
+export function useDeactivateFinancialCategory() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (item: FinancialCategory) => {
+      const { error } = await sb().from('financial_categories').update({ active: false }).eq('id', item.id)
+      if (error) throw error
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['financial-categories'] })

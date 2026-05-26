@@ -25,7 +25,8 @@ export function useMyUnit() {
   contract_blocked, contract_blocked_reason,
   razao_social, cnpj, inscricao_estadual, data_abertura,
   plan, financial_status, file_limit,
-  commercial_phone, commercial_email, business_hours, main_technician
+  commercial_phone, commercial_email, business_hours, main_technician,
+  max_discount_pct
 )`)
         .eq('user_id', user!.id)
         .single()
@@ -53,6 +54,7 @@ export function useMyUnit() {
           commercial_email: string | null
           business_hours: string | null
           main_technician: { name: string; contact: string } | null
+          max_discount_pct: number
         }
       }
     },

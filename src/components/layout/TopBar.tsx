@@ -1,7 +1,6 @@
 import { Bell, LogOut, UserCog, UserPlus, Plus } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -242,13 +241,12 @@ export function TopBar({ sidebarExpanded }: TopBarProps) {
       <ProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
     </header>
 
-      {lancamentoOpen && createPortal(
+      {lancamentoOpen && (
         <NovoLancamentoModal
           unitId={myUnit?.unit_id ?? ''}
           onClose={() => setLancamentoOpen(false)}
           onSuccess={() => setLancamentoOpen(false)}
-        />,
-        document.body
+        />
       )}
     </>
   )

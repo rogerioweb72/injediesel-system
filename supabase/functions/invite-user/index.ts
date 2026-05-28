@@ -61,11 +61,27 @@ serve(async (req) => {
     }
   }
 
-  if (isFranchiseRole && !unit_id) {
+  // company_admin/system_ti can create franchise-role users without a unit (matrix-based collaborator)
+  if (isFranchiseRole && !unit_id && !canManageMatrix) {
     return new Response(JSON.stringify({ error: 'unit_id é obrigatório para usuários de franquia' }), { status: 400, headers: CORS })
   }
 
+  // Rate limit: max 10 invites per admin per hour
   const adminClient = createClient(supabaseUrl, serviceKey)
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+  const { count: recentInvites } = await adminClient
+    .from('audit_logs')
+    .select('*', { count: 'exact', head: true })
+    .eq('actor_id', user.id)
+    .eq('action', 'invited')
+    .gte('created_at', oneHourAgo)
+  if ((recentInvites ?? 0) >= 10) {
+    return new Response(
+      JSON.stringify({ error: 'Limite de convites atingido. Aguarde 1 hora antes de enviar novos convites.' }),
+      { status: 429, headers: CORS },
+    )
+  }
+
   const siteUrl = Deno.env.get('SITE_URL') ?? 'http://localhost:5173'
 
   const { data: invited, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
@@ -91,7 +107,11 @@ serve(async (req) => {
       .single()
 
     if (existingProfile) {
-      userId = existingProfile.id
+      // Email já pertence a um usuário ativo — não sobrescrever perfil existente.
+      return new Response(
+        JSON.stringify({ error: 'Este e-mail já está cadastrado no sistema. Edite o usuário existente para alterar permissões.' }),
+        { status: 409, headers: CORS },
+      )
     } else {
       const { data: { users: authUsers } } = await adminClient.auth.admin.listUsers({ perPage: 1000 })
       const authUser = authUsers.find((u: { email?: string }) => u.email === email)

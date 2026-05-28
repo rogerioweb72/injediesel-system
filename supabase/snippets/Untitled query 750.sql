@@ -1,0 +1,1 @@
+DELETE FROM ecu_catalog WHERE id IS NOT NULL;

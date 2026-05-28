@@ -8,6 +8,7 @@ import { useProfileSync } from '@/hooks/useProfileSync'
 import { TunerSplashProvider } from '@/components/branding/TunerSplashProvider'
 import { RoutePrefixProvider } from '@/contexts/RoutePrefixContext'
 import { RoleGuard } from '@/components/auth/RoleGuard'
+import { UnitGuard } from '@/components/auth/UnitGuard'
 import { MATRIX_ROLES, FRANCHISE_ROLES, SYSTEM_ROLES } from '@/types/app'
 
 const Home              = lazy(() => import('@/pages/LandingV2'))
@@ -116,11 +117,13 @@ function FranqueadoLayout() {
   return (
     <AuthGuard loginPath="/login">
       <RoleGuard allowedRoles={FRANCHISE_ROLES} redirectTo="/acesso-negado">
-        <RoutePrefixProvider prefix={`/${unitSlug}/${agentSlug}`}>
-          <FranqueadoShell>
-            <Outlet />
-          </FranqueadoShell>
-        </RoutePrefixProvider>
+        <UnitGuard unitSlug={unitSlug}>
+          <RoutePrefixProvider prefix={`/${unitSlug}/${agentSlug}`}>
+            <FranqueadoShell>
+              <Outlet />
+            </FranqueadoShell>
+          </RoutePrefixProvider>
+        </UnitGuard>
       </RoleGuard>
     </AuthGuard>
   )

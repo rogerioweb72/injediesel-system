@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { useCart } from '@/stores/cart'
+import { setSentryUser, clearSentryUser } from '@/lib/sentry'
 import type { AppUser } from '@/types/app'
 
 export function useAuth() {
@@ -20,7 +22,11 @@ export function useAuth() {
         })
         const rows = await res.json()
         if (cancelled) return
-        if (Array.isArray(rows) && rows[0]) setProfile(rows[0] as unknown as AppUser)
+        if (Array.isArray(rows) && rows[0]) {
+          const p = rows[0] as unknown as AppUser
+          setProfile(p)
+          setSentryUser(p.id, p.role)
+        }
       } catch {
         // ignore — safety timeout will unblock loading
       } finally {
@@ -50,6 +56,8 @@ export function useAuth() {
           }
         } else {
           reset()
+          useCart.getState().clear()
+          clearSentryUser()
         }
       }
     )

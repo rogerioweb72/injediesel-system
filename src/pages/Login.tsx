@@ -18,6 +18,7 @@ import { FRANCHISE_ROLES } from '@/types/app'
 import { supabase } from '@/lib/supabase'
 import { toSlug } from '@/lib/slug'
 import { useSignIn } from '@/hooks/useSignIn'
+import { useLoginThrottle } from '@/hooks/useLoginThrottle'
 
 const schema = z.object({
   email:    z.string().email('E-mail inválido'),
@@ -35,6 +36,7 @@ export default function Login() {
   const [serverError, setServerError] = useState<string | null>(null)
   const [rejected, setRejected] = useState(false)
   const rejectingRef = useRef(false)
+  const { recordFailure, reset: resetThrottle, isThrottled, cooldownLeft } = useLoginThrottle()
 
   const explicitFrom = (location.state as { from?: { pathname: string } })?.from?.pathname
 
@@ -44,13 +46,14 @@ export default function Login() {
 
     if (FRANCHISE_ROLES.includes(profile.role)) {
       rejectingRef.current = true
-      supabase.auth.signOut()
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setRejected(true)
+      supabase.auth.signOut().then(() => setRejected(true))
       return
     }
 
-    const agentSlug = toSlug(profile.name ?? profile.email)
+    // Use only the first word of the name to avoid multi-segment slugs (e.g. "rogerio-lima")
+    // that could be captured by the /:unitSlug/:agentSlug (FranqueadoLayout) route.
+    const namePart = (profile.name ?? '').split(' ')[0] || (profile.email ?? '').split('@')[0]
+    const agentSlug = toSlug(namePart)
     navigate(explicitFrom ?? `/${agentSlug}/dashboard`, { replace: true })
   }, [session, profile, navigate, explicitFrom])
 
@@ -61,11 +64,13 @@ export default function Login() {
   })
 
   async function onSubmit(data: FormData) {
+    if (isThrottled) return
     setServerError(null)
     try {
       await signIn(data.email, data.password)
-      // Navigation handled by useEffect watching session+profile above
+      resetThrottle()
     } catch (err) {
+      recordFailure()
       setServerError(
         err instanceof Error ? err.message
           : typeof err === 'string' ? err
@@ -256,11 +261,15 @@ export default function Login() {
 
                 <Button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isThrottled}
                   className="w-full h-11 rounded-xl text-white font-bold hover:opacity-95 transition-all mt-1 border-0"
                   style={{ background: 'var(--pm-accent-gradient)', boxShadow: '0 0 20px rgba(177,40,37,0.2)' }}
                 >
-                  {isSubmitting ? (
+                  {isThrottled ? (
+                    <span className="flex items-center gap-2">
+                      Aguarde {cooldownLeft}s para tentar novamente
+                    </span>
+                  ) : isSubmitting ? (
                     <span className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       Entrando...

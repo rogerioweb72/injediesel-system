@@ -5,6 +5,7 @@ import type { UserRole, PermissionEntry } from '@/types/app'
 
 export interface Profile {
   id: string
+  email: string
   name: string
   role: UserRole
   active: boolean
@@ -13,6 +14,22 @@ export interface Profile {
   commission_rate: number
   permissions: import('@/types/app').PermissionEntry[] | null
   created_at: string
+  // personal
+  phone: string | null
+  cpf: string | null
+  birth_date: string | null
+  avatar_url: string | null
+  // address
+  cep: string | null
+  street: string | null
+  address_number: string | null
+  complement: string | null
+  neighborhood: string | null
+  city: string | null
+  state: string | null
+  // hr
+  hire_date: string | null
+  salary: number | null
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -55,6 +72,21 @@ interface UpdateUserPayload {
   discount_auth_hash?: string | null
   commission_rate?: number
   permissions?: import('@/types/app').PermissionEntry[] | null
+  // personal
+  phone?: string | null
+  cpf?: string | null
+  birth_date?: string | null
+  // address
+  cep?: string | null
+  street?: string | null
+  address_number?: string | null
+  complement?: string | null
+  neighborhood?: string | null
+  city?: string | null
+  state?: string | null
+  // hr
+  hire_date?: string | null
+  salary?: number | null
 }
 
 interface InviteUserPayload {

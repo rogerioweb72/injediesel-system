@@ -109,19 +109,19 @@ export function useRegisterPayment() {
         .eq('id', entryId)
       if (entryErr) throw entryErr
 
-      // 2. Cria commission_entry se houver vendedor
+      // 2. Cria/atualiza commission_entry se houver vendedor
       if (sellerId && commissionRate > 0) {
         const commissionAmount = Number((netAmount * (commissionRate / 100)).toFixed(2))
         const { error: commErr } = await sb()
           .from('commission_entries')
-          .insert({
+          .upsert({
             ecu_job_id: jobId,
             seller_id: sellerId,
             gross_amount: grossAmount,
             discount_amount: discountAmount,
             commission_rate: commissionRate,
             commission_amount: commissionAmount,
-          })
+          }, { onConflict: 'ecu_job_id' })
         if (commErr) throw commErr
       }
 
@@ -137,6 +137,146 @@ export function useRegisterPayment() {
         action: 'payment_registered',
         metadata: { netAmount, discountPct },
       })
+    },
+  })
+}
+
+export interface EcuReceiptEntry {
+  id: string
+  amount: number
+  description: string | null
+  created_at: string
+  ecu_job_id: string
+  payment_method: string | null
+  discount_amount: number
+  ecu_jobs: {
+    id: string
+    service_type: string
+    amount_charged_to_customer: number
+    customers: { name: string } | null
+  } | null
+}
+
+export function useEcuReceipts(unitId: string | null | undefined) {
+  return useQuery({
+    queryKey: ['ecu-receipts', unitId],
+    enabled: unitId !== undefined,
+    staleTime: 30_000,
+    queryFn: async () => {
+      let q = sb()
+        .from('financial_entries')
+        .select(`
+          id, amount, description, created_at, ecu_job_id, payment_method, discount_amount,
+          ecu_jobs(id, service_type, amount_charged_to_customer, customers(name))
+        `)
+        .eq('status', 'pago')
+        .not('ecu_job_id', 'is', null)
+        .order('created_at', { ascending: false })
+      q = unitId === null ? q.is('unit_id', null) : q.eq('unit_id', unitId)
+      const { data, error } = await q
+      if (error) throw error
+      return (data ?? []) as EcuReceiptEntry[]
+    },
+  })
+}
+
+export interface FranchiseBillingEntry {
+  id: string
+  service_type: string
+  amount_charged_by_matrix: number
+  amount_charged_to_customer: number
+  created_at: string
+  unit_id: string
+  franchise_units: { name: string } | null
+  customers: { name: string } | null
+}
+
+export function useMatrixFranchiseBilling() {
+  return useQuery({
+    queryKey: ['matrix-franchise-billing'],
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data, error } = await sb()
+        .from('ecu_jobs')
+        .select(`
+          id, service_type, amount_charged_by_matrix, amount_charged_to_customer,
+          created_at, unit_id,
+          franchise_units(name), customers(name)
+        `)
+        .not('unit_id', 'is', null)
+        .eq('status', 'concluido')
+        .gt('amount_charged_by_matrix', 0)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return (data ?? []) as FranchiseBillingEntry[]
+    },
+  })
+}
+
+export interface OpenEcuJob {
+  id: string
+  service_type: string
+  status: string
+  created_at: string
+  unit_id: string | null
+  amount_charged_to_customer: number | null
+  customers: { name: string } | null
+  assigned_profile: { name: string } | null
+  creator_profile: { name: string } | null
+}
+
+export function useOpenEcuJobs(unitId: string | null | undefined) {
+  return useQuery({
+    queryKey: ['open-ecu-jobs', unitId],
+    enabled: unitId !== undefined,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      let q = sb()
+        .from('ecu_jobs')
+        .select(`
+          id, service_type, status, created_at, unit_id, amount_charged_to_customer,
+          customers(name),
+          assigned_profile:profiles!assigned_to(name),
+          creator_profile:profiles!created_by(name)
+        `)
+        .neq('status', 'concluido')
+        .neq('status', 'cancelado')
+        .order('created_at', { ascending: true })
+      q = unitId === null ? q.is('unit_id', null) : q.eq('unit_id', unitId)
+      const { data, error } = await q
+      if (error) throw error
+      return (data ?? []) as OpenEcuJob[]
+    },
+  })
+}
+
+export interface OpenOrder {
+  id: string
+  status: string
+  created_at: string
+  unit_id: string | null
+  franchise_units: { name: string } | null
+}
+
+export function useOpenOrders(unitId: string | null | undefined) {
+  return useQuery({
+    queryKey: ['open-orders', unitId],
+    enabled: unitId !== undefined,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      let q = sb()
+        .from('orders')
+        .select('id, status, created_at, unit_id, franchise_units(name)')
+        .in('status', ['aguardando_aprovacao', 'aguardando_pagamento', 'aprovado', 'em_separacao', 'enviado'])
+        .order('created_at', { ascending: false })
+      if (unitId === null) {
+        q = q.not('unit_id', 'is', null)
+      } else {
+        q = q.eq('unit_id', unitId)
+      }
+      const { data, error } = await q
+      if (error) throw error
+      return (data ?? []) as OpenOrder[]
     },
   })
 }

@@ -69,6 +69,31 @@ export function useFranchiseOrderUpdatesCount() {
   })
 }
 
+export function useOverdueEcuJobsCount() {
+  const { isFranchiseUser } = useProfile()
+  const { data: myUnit } = useMyUnit()
+  return useQuery({
+    queryKey: ['overdue-ecu-jobs-count', myUnit?.unit_id],
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const cutoff = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let q = (supabase as any)
+        .from('ecu_jobs')
+        .select('id', { count: 'exact', head: true })
+        .neq('status', 'concluido')
+        .neq('status', 'cancelado')
+        .lt('created_at', cutoff)
+      if (isFranchiseUser() && myUnit?.unit_id) {
+        q = q.eq('unit_id', myUnit.unit_id)
+      }
+      const { count, error } = await q
+      if (error) throw error
+      return (count as number) ?? 0
+    },
+  })
+}
+
 export function useNotifications(prefix: string) {
   const { isFranchiseUser, isMatrixUser } = useProfile()
   const isFranchise = isFranchiseUser()
@@ -79,6 +104,7 @@ export function useNotifications(prefix: string) {
   const { data: b2bCount = 0 } = usePendingB2BCount()
   const { data: orderUpdates = 0 } = useFranchiseOrderUpdatesCount()
   const { data: comprovantePending = 0 } = useComprovatePendingCount()
+  const { data: overdueJobs = 0 } = useOverdueEcuJobsCount()
 
   const items: NotificationItem[] = []
 
@@ -132,7 +158,17 @@ export function useNotifications(prefix: string) {
     })
   }
 
+  if (overdueJobs > 0) {
+    items.push({
+      key: 'overdue',
+      label: 'Arquivos em Aberto',
+      sub: `${overdueJobs} arquivo${overdueJobs === 1 ? '' : 's'} aberto${overdueJobs === 1 ? '' : 's'} há mais de 12h`,
+      count: overdueJobs,
+      route: `${prefix}/arquivos`,
+    })
+  }
+
   const total = items.reduce((s, i) => s + i.count, 0)
 
-  return { total, items, jobCount, supportCount, b2bCount, orderUpdates, comprovantePending }
+  return { total, items, jobCount, supportCount, b2bCount, orderUpdates, comprovantePending, overdueJobs }
 }

@@ -284,7 +284,7 @@ export function useSendToFinance() {
       customerName,
     }: {
       jobId: string
-      unitId: string
+      unitId: string | null
       amount: number
       serviceType: string
       customerName: string

@@ -146,7 +146,7 @@ export function useMatrixDashboard(
         .map(([status, count]) => ({ status, count }))
         .sort((a, b) => b.count - a.count)
 
-      const pendingJobs = allJobs.filter(j => j.status === 'aguardando').length
+      const pendingJobs = allJobs.filter(j => j.status === 'recebido').length
 
       return { totalJobs, totalRevenue, todayJobs, weekJobs, activeUnits, stateRanking, topUnits, bottomUnits, serviceTypeRanking, statusVolume, pendingJobs }
     },

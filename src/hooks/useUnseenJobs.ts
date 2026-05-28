@@ -75,7 +75,7 @@ export function useUnseenJobs(): UnseenResult {
       const { data: rows, error } = await (supabase as any)
         .from('ecu_jobs')
         .select('id')
-        .eq('status', 'aguardando')
+        .eq('status', 'recebido')
       if (error) throw error
       return { count: (rows as { id: string }[]).length, unseenIds: new Set<string>() }
     },

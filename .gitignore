@@ -31,3 +31,20 @@ dist-ssr
 .aidesigner/*
 !.aidesigner/.gitkeep
 .worktrees/
+
+# Staging env
+.env.staging
+
+# Test artifacts
+playwright-report/
+test-results/
+
+# Backup files
+*.bak
+
+# Tool config
+.agents/
+.claude/
+.mcp.json
+.superpowers/
+systen/

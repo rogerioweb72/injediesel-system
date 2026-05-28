@@ -1,17 +1,20 @@
-import { Link } from 'react-router-dom'
-import { ShieldAlert, ArrowLeft } from 'lucide-react'
+import { ShieldAlert, ArrowLeft, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/stores/auth'
 import { getAccountTier } from '@/types/app'
+import { supabase } from '@/lib/supabase'
+import { useNavigate } from 'react-router-dom'
 
 export default function AcessoNegado() {
   const profile = useAuthStore((s) => s.profile)
+  const navigate = useNavigate()
 
-  const dashboardHref = profile
-    ? getAccountTier(profile.role) === 'franchise'
-      ? '/login'
-      : '/appmax'
-    : '/login'
+  const targetLogin = profile && getAccountTier(profile.role) === 'franchise' ? '/login' : '/appmax'
+
+  async function handleGoToMyArea() {
+    await supabase.auth.signOut()
+    navigate(targetLogin, { replace: true })
+  }
 
   return (
     <section
@@ -47,21 +50,20 @@ export default function AcessoNegado() {
 
         <div className="flex flex-col gap-2">
           <Button
-            asChild
+            onClick={handleGoToMyArea}
             className="w-full h-11 rounded-xl font-bold text-white border-0"
             style={{ background: 'var(--pm-accent-gradient)' }}
           >
-            <Link to={dashboardHref}>Ir para minha área</Link>
+            <LogOut className="mr-2 h-4 w-4" />
+            Sair e fazer novo login
           </Button>
           <Button
-            asChild
+            onClick={() => navigate(-1)}
             variant="ghost"
             className="w-full h-10 rounded-xl text-slate-500 hover:text-white hover:bg-white/5"
           >
-            <Link to={-1 as unknown as string}>
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Voltar
-            </Link>
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Voltar
           </Button>
         </div>
       </div>

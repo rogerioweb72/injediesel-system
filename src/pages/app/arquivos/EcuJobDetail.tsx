@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
 import {
   ArrowLeft, Upload, FileText, Clock,
-  ChevronRight, AlertCircle, MessageSquarePlus, X, CheckCircle,
+  ChevronRight, AlertCircle, AlertTriangle, MessageSquarePlus, X, CheckCircle,
   CreditCard, CheckCircle2, Loader2, ShieldAlert, ShieldCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -277,6 +277,7 @@ export default function EcuJobDetail() {
   if (isLoading || !job) return <div className="pm-skeleton h-96 w-full rounded" />
 
   const isFranchise = isFranchiseUser()
+  const canSendToFinance = isFranchise || (isMatrixUser() && job.unit_id === null)
   const allNextStatuses = NEXT_STATUS[job.status] ?? []
   const nextStatuses = isFranchise
     ? (job.status === 'recebido' ? (['cancelado'] as typeof allNextStatuses) : [])
@@ -339,7 +340,7 @@ export default function EcuJobDetail() {
     if (!job) return
     await sendToFinance.mutateAsync({
       jobId: job.id,
-      unitId: job.unit_id ?? '',
+      unitId: job.unit_id,
       amount: job.amount_charged_to_customer ?? 0,
       serviceType: job.service_type,
       customerName: job.customers?.name ?? 'Cliente',
@@ -363,6 +364,24 @@ export default function EcuJobDetail() {
           </Button>
         }
       />
+
+      {/* Alerta: arquivo em aberto >12h */}
+      {(() => {
+        const ageH = (Date.now() - new Date(job.created_at).getTime()) / (1000 * 60 * 60)
+        if (ageH < 12 || job.status === 'concluido' || job.status === 'cancelado') return null
+        const ageD  = Math.floor(ageH / 24)
+        const hours = Math.floor(ageH % 24)
+        const label = ageD > 0 ? `${ageD}d ${hours}h` : `${Math.floor(ageH)}h`
+        return (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl mb-4"
+            style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)' }}>
+            <AlertTriangle size={16} style={{ color: '#FBBF24', flexShrink: 0 }} />
+            <p className="text-sm font-semibold" style={{ color: '#FBBF24' }}>
+              ARQUIVO EM ABERTO — em atendimento há {label} sem finalização
+            </p>
+          </div>
+        )
+      })()}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -607,13 +626,50 @@ export default function EcuJobDetail() {
             </div>
           )}
 
-          {/* Envio ao financeiro — franquia, job concluído */}
-          {isFranchise && job.status === 'concluido' && (
-            <div className="mt-4">
-              {!financialEntry && (
+          {/* Status Financeiro — franchise ou matriz direct, qualquer status */}
+          {canSendToFinance && job.status !== 'cancelado' && (
+            <div className="pm-card space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Status Financeiro
+              </p>
+
+              {/* Serviço 100% completo: job concluído + pago */}
+              {job.status === 'concluido' && financialEntry?.status === 'pago' && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg"
+                  style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)' }}>
+                  <CheckCircle2 size={15} style={{ color: '#4ADE80', flexShrink: 0 }} />
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: '#4ADE80' }}>100% Concluído</p>
+                    <p className="text-[11px]" style={{ color: 'hsl(var(--pm-gray-500))' }}>Serviço finalizado e pago</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Status do pagamento */}
+              {!financialEntry ? (
+                <p className="text-sm" style={{ color: 'hsl(var(--pm-gray-500))' }}>
+                  Financeiro não aberto
+                </p>
+              ) : financialEntry.status === 'pendente' ? (
+                <div className="flex items-center gap-2 justify-center py-2.5 px-4 rounded-xl text-sm font-medium"
+                  style={{ background: 'rgba(251,191,36,0.1)', color: '#FBBF24' }}>
+                  <Clock size={14} /> Aguardando caixa
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 justify-center py-2.5 px-4 rounded-xl text-sm font-medium"
+                  style={{ background: 'rgba(74,222,128,0.1)', color: '#4ADE80' }}>
+                  <CheckCircle2 size={14} /> Pago
+                  {financialEntry.payment_method && (
+                    <span style={{ opacity: 0.7 }}>· {financialEntry.payment_method}</span>
+                  )}
+                </div>
+              )}
+
+              {/* Botão Enviar para o Financeiro — qualquer status, enquanto não enviado */}
+              {!financialEntry && job.amount_charged_to_customer ? (
                 <button
                   onClick={handleSendToFinance}
-                  disabled={sendToFinance.isPending || !job.amount_charged_to_customer}
+                  disabled={sendToFinance.isPending}
                   className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-semibold text-sm transition-all disabled:opacity-40"
                   style={{ background: 'hsl(var(--pm-red-500))', color: '#fff' }}
                 >
@@ -622,33 +678,13 @@ export default function EcuJobDetail() {
                   ) : (
                     <CreditCard size={16} />
                   )}
-                  Finalizar e enviar para o financeiro
+                  Enviar para o Financeiro
                 </button>
-              )}
-              {financialEntry?.status === 'pendente' && (
-                <div
-                  className="flex items-center gap-2 justify-center py-2.5 px-4 rounded-xl text-sm font-medium"
-                  style={{ background: 'rgba(251,191,36,0.1)', color: '#FBBF24' }}
-                >
-                  <Clock size={14} /> Aguardando caixa
-                </div>
-              )}
-              {financialEntry?.status === 'pago' && (
-                <div
-                  className="flex items-center gap-2 justify-center py-2.5 px-4 rounded-xl text-sm font-medium"
-                  style={{ background: 'rgba(74,222,128,0.1)', color: '#4ADE80' }}
-                >
-                  <CheckCircle2 size={14} /> Pago
-                  {financialEntry.payment_method && (
-                    <span style={{ opacity: 0.7 }}>· {financialEntry.payment_method}</span>
-                  )}
-                </div>
-              )}
-              {!job.amount_charged_to_customer && !financialEntry && (
-                <p className="text-xs text-center mt-1" style={{ color: 'hsl(var(--pm-gray-500))' }}>
+              ) : !financialEntry && !job.amount_charged_to_customer ? (
+                <p className="text-xs text-center" style={{ color: 'hsl(var(--pm-gray-500))' }}>
                   Preencha o valor cobrado do cliente para enviar ao financeiro.
                 </p>
-              )}
+              ) : null}
             </div>
           )}
 

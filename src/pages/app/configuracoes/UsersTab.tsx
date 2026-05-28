@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { maskCPF, maskPhone, maskCEP } from '@/lib/validators'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { useUsers, useUpdateUser, useInviteUser, type Profile } from '@/hooks/useUsers'
+import { useFranchiseUnitsList } from '@/hooks/useFranchiseUnits'
 import { getEffectivePermissions, countActivePermissions } from '@/hooks/usePermissions'
 import { useProfile } from '@/hooks/useProfile'
 import { useMyUnit } from '@/hooks/useMyUnit'
@@ -296,17 +298,22 @@ export function UsersTab() {
   const [createEmail, setCreateEmail]         = useState('')
   const [createName, setCreateName]           = useState('')
   const [createRole, setCreateRole]           = useState<UserRole>('unit_seller')
+  const [createUnitId, setCreateUnitId]       = useState<string>('')
   const [createHasCommission, setCreateHasCommission] = useState(false)
   const [createCommission, setCreateCommission] = useState('0')
   const [createMaxDiscount, setCreateMaxDiscount] = useState('0')
   const [createPermissions, setCreatePermissions] = useState<PermissionEntry[]>([])
   const [createShowPerms, setCreateShowPerms] = useState(false)
 
+  const needsUnitSelect = !isFranchise && getAccountTier(createRole) === 'franchise'
+  const { data: unitsList = [] } = useFranchiseUnitsList(!isFranchise)
+
   function openCreate(role?: UserRole) {
     const defaultRole = role ?? (isFranchise ? 'unit_seller' : 'operations_admin')
     setCreateRole(defaultRole)
     setCreateEmail('')
     setCreateName('')
+    setCreateUnitId('')
     setCreateHasCommission(false)
     setCreateCommission('0')
     setCreateMaxDiscount('0')
@@ -318,6 +325,7 @@ export function UsersTab() {
 
   function handleCreateRoleChange(role: UserRole) {
     setCreateRole(role)
+    setCreateUnitId('')
     setCreatePermissions(ROLE_DEFAULT_PERMISSIONS[role] ?? [])
   }
 
@@ -326,7 +334,7 @@ export function UsersTab() {
       email: createEmail.trim(),
       name: createName.trim(),
       role: createRole,
-      unit_id: myUnit?.unit_id ?? null,
+      unit_id: isFranchise ? (myUnit?.unit_id ?? null) : (needsUnitSelect ? createUnitId || null : null),
       commission_rate: createHasCommission ? (parseFloat(createCommission) || 0) : 0,
       max_discount_pct: parseFloat(createMaxDiscount) || 0,
       permissions: createPermissions,
@@ -334,7 +342,7 @@ export function UsersTab() {
     setCreateDone(true)
   }
 
-  // edit sheet state
+  // edit sheet state — acesso
   const [editRole, setEditRole]               = useState<UserRole>('unit_operator')
   const [editMaxDiscount, setEditMaxDiscount] = useState('0')
   const [editHasCommission, setEditHasCommission] = useState(false)
@@ -344,6 +352,25 @@ export function UsersTab() {
   const [editAuthPin2, setEditAuthPin2]       = useState('')
   const [pinMismatch, setPinMismatch]         = useState(false)
   const [showPerms, setShowPerms]             = useState(false)
+  // edit sheet state — dados pessoais
+  const [editName, setEditName]               = useState('')
+  const [editPhone, setEditPhone]             = useState('')
+  const [editCpf, setEditCpf]                 = useState('')
+  const [editBirthDate, setEditBirthDate]     = useState('')
+  // edit sheet state — endereço
+  const [editCep, setEditCep]                 = useState('')
+  const [editStreet, setEditStreet]           = useState('')
+  const [editAddressNumber, setEditAddressNumber] = useState('')
+  const [editComplement, setEditComplement]   = useState('')
+  const [editNeighborhood, setEditNeighborhood] = useState('')
+  const [editCity, setEditCity]               = useState('')
+  const [editState, setEditState]             = useState('')
+  const [cepLoading, setCepLoading]           = useState(false)
+  // edit sheet state — RH
+  const [editHireDate, setEditHireDate]       = useState('')
+  const [editSalary, setEditSalary]           = useState('')
+  // edit sheet sections
+  const [sectionOpen, setSectionOpen]         = useState<'acesso' | 'pessoal' | 'endereco' | 'rh'>('acesso')
 
   function openEdit(user: Profile) {
     setEditUser(user)
@@ -356,6 +383,20 @@ export function UsersTab() {
     setEditAuthPin2('')
     setPinMismatch(false)
     setShowPerms(false)
+    setEditName(user.name ?? '')
+    setEditPhone(maskPhone(user.phone ?? ''))
+    setEditCpf(maskCPF(user.cpf ?? ''))
+    setEditBirthDate(user.birth_date ?? '')
+    setEditCep(maskCEP(user.cep ?? ''))
+    setEditStreet(user.street ?? '')
+    setEditAddressNumber(user.address_number ?? '')
+    setEditComplement(user.complement ?? '')
+    setEditNeighborhood(user.neighborhood ?? '')
+    setEditCity(user.city ?? '')
+    setEditState(user.state ?? '')
+    setEditHireDate(user.hire_date ?? '')
+    setEditSalary(user.salary != null ? String(user.salary) : '')
+    setSectionOpen('acesso')
   }
 
   function handleRoleChange(role: UserRole) {
@@ -367,16 +408,47 @@ export function UsersTab() {
     setEditPermissions(ROLE_DEFAULT_PERMISSIONS[editRole] ?? [])
   }
 
+  async function lookupCep(cep: string) {
+    const digits = cep.replace(/\D/g, '')
+    if (digits.length !== 8) return
+    setCepLoading(true)
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`)
+      const data = await res.json()
+      if (!data.erro) {
+        setEditStreet(data.logradouro ?? '')
+        setEditNeighborhood(data.bairro ?? '')
+        setEditCity(data.localidade ?? '')
+        setEditState(data.uf ?? '')
+      }
+    } catch { /* silent */ } finally {
+      setCepLoading(false)
+    }
+  }
+
   async function saveEdit() {
     if (!editUser) return
     setPinMismatch(false)
 
     const payload: Parameters<typeof updateUser.mutateAsync>[0] = {
       id: editUser.id,
+      name: editName.trim() || editUser.name,
       role: editRole,
       max_discount_pct: parseFloat(editMaxDiscount) || 0,
       commission_rate: editHasCommission ? (parseFloat(editCommission) || 0) : 0,
       permissions: editPermissions,
+      phone: editPhone.replace(/\D/g, '') || null,
+      cpf: editCpf.replace(/\D/g, '') || null,
+      birth_date: editBirthDate || null,
+      cep: editCep.replace(/\D/g, '') || null,
+      street: editStreet.trim() || null,
+      address_number: editAddressNumber.trim() || null,
+      complement: editComplement.trim() || null,
+      neighborhood: editNeighborhood.trim() || null,
+      city: editCity.trim() || null,
+      state: editState.trim() || null,
+      hire_date: editHireDate || null,
+      salary: editSalary ? (parseFloat(editSalary) || null) : null,
     }
 
     if (editAuthPin) {
@@ -481,181 +553,231 @@ export function UsersTab() {
 
       {/* ── Edit sheet ── */}
       <Sheet open={!!editUser} onOpenChange={(v) => !v && setEditUser(null)}>
-        <SheetContent className="overflow-y-auto" style={{ maxWidth: 480, width: '100%' }}>
+        <SheetContent className="overflow-y-auto" style={{ maxWidth: 520, width: '100%' }}>
           <SheetHeader>
-            <SheetTitle>Editar Usuário</SheetTitle>
+            <SheetTitle>Editar Colaborador</SheetTitle>
           </SheetHeader>
 
           {editUser && (
-            <div className="mt-6 space-y-5">
-              <div>
-                <p className="text-xs text-muted-foreground mb-0.5">Usuário</p>
-                <p className="text-sm font-semibold text-foreground">{editUser.name}</p>
-              </div>
+            <div className="mt-4 space-y-2">
 
-              {/* Role */}
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">Cargo / Perfil</label>
-                <Select value={editRole} onValueChange={(v) => handleRoleChange(v as UserRole)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {rolesForSelector.filter((r) => getAccountTier(r) === 'franchise').length > 0 && <>
-                      <p className="px-2 py-1 text-[10px] font-bold uppercase text-muted-foreground">Franquia</p>
-                      {rolesForSelector.filter((r) => getAccountTier(r) === 'franchise').map((r) => (
-                        <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
-                      ))}
-                    </>}
-                    {rolesForSelector.filter((r) => getAccountTier(r) === 'matrix').length > 0 && <>
-                      <p className="px-2 py-1 text-[10px] font-bold uppercase text-muted-foreground mt-1">Matriz</p>
-                      {rolesForSelector.filter((r) => getAccountTier(r) === 'matrix').map((r) => (
-                        <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
-                      ))}
-                    </>}
-                    {rolesForSelector.filter((r) => getAccountTier(r) === 'system').length > 0 && <>
-                      <p className="px-2 py-1 text-[10px] font-bold uppercase text-muted-foreground mt-1">Sistema</p>
-                      {rolesForSelector.filter((r) => getAccountTier(r) === 'system').map((r) => (
-                        <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
-                      ))}
-                    </>}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Commission toggle — available for any role */}
-              <div
-                className="rounded-xl p-3 space-y-3"
-                style={{ background: 'hsl(var(--pm-gray-900))', border: '1px solid rgba(255,255,255,0.07)' }}
-              >
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-medium flex items-center gap-1.5 text-foreground">
-                    <Percent size={12} /> Direito a comissão
-                  </label>
-                  <Switch
-                    checked={editHasCommission}
-                    onCheckedChange={setEditHasCommission}
-                  />
-                </div>
-                {editHasCommission && (
-                  <div className="space-y-1">
-                    <label className="text-[11px] text-muted-foreground">Percentual (%)</label>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={100}
-                      step={0.5}
-                      value={editCommission}
-                      onChange={(e) => setEditCommission(e.target.value)}
-                      placeholder="0"
-                    />
-                    <p className="text-[11px] text-muted-foreground/60">
-                      Calculado sobre o valor líquido pago pelo cliente
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Discount limit */}
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">Desconto máximo autônomo (%)</label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  step={0.5}
-                  value={editMaxDiscount}
-                  onChange={(e) => setEditMaxDiscount(e.target.value)}
-                  placeholder="0"
-                />
-                <p className="text-xs text-muted-foreground/60">0 = nenhum desconto sem aprovação</p>
-              </div>
-
-              {/* Discount auth PIN */}
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">
-                  Senha de autorização de desconto
-                  {editUser.discount_auth_hash && (
-                    <span style={{ marginLeft: 6, color: '#34D399' }}>(já configurada)</span>
-                  )}
-                </label>
-                <Input
-                  type="password"
-                  placeholder={editUser.discount_auth_hash ? 'Nova senha (deixe em branco para manter)' : 'Definir senha...'}
-                  value={editAuthPin}
-                  onChange={(e) => { setEditAuthPin(e.target.value); setPinMismatch(false) }}
-                  autoComplete="new-password"
-                />
-                {editAuthPin && (
-                  <Input
-                    type="password"
-                    placeholder="Confirmar senha"
-                    value={editAuthPin2}
-                    onChange={(e) => { setEditAuthPin2(e.target.value); setPinMismatch(false) }}
-                    autoComplete="new-password"
-                    className="mt-1.5"
-                  />
-                )}
-                {pinMismatch && <p className="text-xs text-red-400">As senhas não coincidem</p>}
-              </div>
-
-              {/* Permissions matrix */}
-              <div
-                className="rounded-xl overflow-hidden"
-                style={{ border: '1px solid rgba(255,255,255,0.07)' }}
-              >
-                <button
-                  type="button"
-                  onClick={() => setShowPerms(!showPerms)}
-                  className="w-full flex items-center justify-between px-4 py-3 text-xs font-semibold"
-                  style={{
-                    background: 'hsl(var(--pm-gray-900))',
-                    color: 'hsl(var(--pm-gray-300))',
-                  }}
-                >
-                  <span className="flex items-center gap-2">
-                    <Shield size={13} />
-                    Permissões de Acesso
-                    <span
-                      className="ml-1 px-1.5 py-0.5 rounded-full text-[10px]"
-                      style={{ background: 'hsl(var(--pm-red-500)/0.15)', color: 'hsl(var(--pm-red-500))' }}
-                    >
-                      {countActivePermissions(editPermissions)}
-                    </span>
-                  </span>
-                  {showPerms ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                </button>
-
-                {showPerms && (
-                  <div
-                    className="px-4 pb-4 pt-3 space-y-3"
-                    style={{ background: 'hsl(var(--pm-gray-900))' }}
+              {/* ── Section tabs ── */}
+              <div className="flex gap-1 p-1 rounded-xl mb-4" style={{ background: 'hsl(var(--pm-gray-900))' }}>
+                {([
+                  { key: 'acesso',   label: 'Acesso' },
+                  { key: 'pessoal',  label: 'Pessoal' },
+                  { key: 'endereco', label: 'Endereço' },
+                  { key: 'rh',       label: 'RH' },
+                ] as const).map(({ key, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setSectionOpen(key)}
+                    className="flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                    style={{
+                      background: sectionOpen === key ? 'hsl(var(--pm-gray-700))' : 'transparent',
+                      color: sectionOpen === key ? 'hsl(var(--pm-gray-100))' : 'hsl(var(--pm-gray-500))',
+                    }}
                   >
-                    <div className="flex items-center justify-between">
-                      <p className="text-[11px]" style={{ color: 'hsl(var(--pm-gray-500))' }}>
-                        Personalize os acessos abaixo ou
-                      </p>
-                      <button
-                        type="button"
-                        onClick={resetPermissions}
-                        className="flex items-center gap-1 text-[11px] transition-colors"
-                        style={{ color: 'hsl(var(--pm-gray-500))' }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = 'hsl(var(--pm-gray-500))')}
-                      >
-                        <RotateCcw size={10} /> restaurar padrão
-                      </button>
-                    </div>
-                    <PermMatrix permissions={editPermissions} onChange={setEditPermissions} />
-                  </div>
-                )}
+                    {label}
+                  </button>
+                ))}
               </div>
 
-              <Button
-                className="w-full"
-                onClick={saveEdit}
-                disabled={updateUser.isPending}
-                style={{ background: 'var(--pm-accent-gradient)' }}
-              >
-                {updateUser.isPending ? 'Salvando...' : 'Salvar'}
+              {/* ════ ACESSO ════ */}
+              {sectionOpen === 'acesso' && (
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">Cargo / Perfil</label>
+                    <Select value={editRole} onValueChange={(v) => handleRoleChange(v as UserRole)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {rolesForSelector.filter((r) => getAccountTier(r) === 'franchise').length > 0 && <>
+                          <p className="px-2 py-1 text-[10px] font-bold uppercase text-muted-foreground">Franquia</p>
+                          {rolesForSelector.filter((r) => getAccountTier(r) === 'franchise').map((r) => (
+                            <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                          ))}
+                        </>}
+                        {rolesForSelector.filter((r) => getAccountTier(r) === 'matrix').length > 0 && <>
+                          <p className="px-2 py-1 text-[10px] font-bold uppercase text-muted-foreground mt-1">Matriz</p>
+                          {rolesForSelector.filter((r) => getAccountTier(r) === 'matrix').map((r) => (
+                            <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                          ))}
+                        </>}
+                        {rolesForSelector.filter((r) => getAccountTier(r) === 'system').length > 0 && <>
+                          <p className="px-2 py-1 text-[10px] font-bold uppercase text-muted-foreground mt-1">Sistema</p>
+                          {rolesForSelector.filter((r) => getAccountTier(r) === 'system').map((r) => (
+                            <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                          ))}
+                        </>}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="rounded-xl p-3 space-y-3" style={{ background: 'hsl(var(--pm-gray-900))', border: '1px solid rgba(255,255,255,0.07)' }}>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-medium flex items-center gap-1.5 text-foreground">
+                        <Percent size={12} /> Direito a comissão
+                      </label>
+                      <Switch checked={editHasCommission} onCheckedChange={setEditHasCommission} />
+                    </div>
+                    {editHasCommission && (
+                      <div className="space-y-1">
+                        <label className="text-[11px] text-muted-foreground">Percentual (%)</label>
+                        <Input type="number" min={0} max={100} step={0.5} value={editCommission}
+                          onChange={(e) => setEditCommission(e.target.value)} placeholder="0" />
+                        <p className="text-[11px] text-muted-foreground/60">Calculado sobre o valor líquido pago pelo cliente</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">Desconto máximo autônomo (%)</label>
+                    <Input type="number" min={0} max={100} step={0.5} value={editMaxDiscount}
+                      onChange={(e) => setEditMaxDiscount(e.target.value)} placeholder="0" />
+                    <p className="text-xs text-muted-foreground/60">0 = nenhum desconto sem aprovação</p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">
+                      Senha de autorização de desconto
+                      {editUser.discount_auth_hash && <span style={{ marginLeft: 6, color: '#34D399' }}>(já configurada)</span>}
+                    </label>
+                    <Input type="password"
+                      placeholder={editUser.discount_auth_hash ? 'Nova senha (deixe em branco para manter)' : 'Definir senha...'}
+                      value={editAuthPin} onChange={(e) => { setEditAuthPin(e.target.value); setPinMismatch(false) }}
+                      autoComplete="new-password" />
+                    {editAuthPin && (
+                      <Input type="password" placeholder="Confirmar senha" value={editAuthPin2}
+                        onChange={(e) => { setEditAuthPin2(e.target.value); setPinMismatch(false) }}
+                        autoComplete="new-password" className="mt-1.5" />
+                    )}
+                    {pinMismatch && <p className="text-xs text-red-400">As senhas não coincidem</p>}
+                  </div>
+
+                  <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.07)' }}>
+                    <button type="button" onClick={() => setShowPerms(!showPerms)}
+                      className="w-full flex items-center justify-between px-4 py-3 text-xs font-semibold"
+                      style={{ background: 'hsl(var(--pm-gray-900))', color: 'hsl(var(--pm-gray-300))' }}>
+                      <span className="flex items-center gap-2">
+                        <Shield size={13} /> Permissões de Acesso
+                        <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px]"
+                          style={{ background: 'hsl(var(--pm-red-500)/0.15)', color: 'hsl(var(--pm-red-500))' }}>
+                          {countActivePermissions(editPermissions)}
+                        </span>
+                      </span>
+                      {showPerms ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                    </button>
+                    {showPerms && (
+                      <div className="px-4 pb-4 pt-3 space-y-3" style={{ background: 'hsl(var(--pm-gray-900))' }}>
+                        <div className="flex items-center justify-between">
+                          <p className="text-[11px]" style={{ color: 'hsl(var(--pm-gray-500))' }}>Personalize os acessos abaixo ou</p>
+                          <button type="button" onClick={resetPermissions}
+                            className="flex items-center gap-1 text-[11px] transition-colors"
+                            style={{ color: 'hsl(var(--pm-gray-500))' }}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = 'hsl(var(--pm-gray-500))')}>
+                            <RotateCcw size={10} /> restaurar padrão
+                          </button>
+                        </div>
+                        <PermMatrix permissions={editPermissions} onChange={setEditPermissions} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* ════ DADOS PESSOAIS ════ */}
+              {sectionOpen === 'pessoal' && (
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">Nome completo</label>
+                    <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Nome do colaborador" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">E-mail</label>
+                    <Input value={editUser.email ?? ''} disabled className="opacity-50 cursor-not-allowed" />
+                    <p className="text-[11px] text-muted-foreground/60">E-mail não pode ser alterado aqui</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs text-muted-foreground">Telefone</label>
+                      <Input value={editPhone} onChange={(e) => setEditPhone(maskPhone(e.target.value))} placeholder="(00) 00000-0000" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-muted-foreground">CPF</label>
+                      <Input value={editCpf} onChange={(e) => setEditCpf(maskCPF(e.target.value))} placeholder="000.000.000-00" />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">Data de nascimento</label>
+                    <Input type="date" value={editBirthDate} onChange={(e) => setEditBirthDate(e.target.value)} />
+                  </div>
+                </div>
+              )}
+
+              {/* ════ ENDEREÇO ════ */}
+              {sectionOpen === 'endereco' && (
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">CEP</label>
+                    <div className="flex gap-2">
+                      <Input value={editCep} onChange={(e) => setEditCep(maskCEP(e.target.value))}
+                        onBlur={(e) => lookupCep(e.target.value)} placeholder="00000-000" className="flex-1" />
+                      {cepLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin self-center" />}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground/60">Preenche endereço automaticamente ao sair do campo</p>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">Logradouro</label>
+                    <Input value={editStreet} onChange={(e) => setEditStreet(e.target.value)} placeholder="Rua, Avenida..." />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs text-muted-foreground">Número</label>
+                      <Input value={editAddressNumber} onChange={(e) => setEditAddressNumber(e.target.value)} placeholder="123" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-muted-foreground">Complemento</label>
+                      <Input value={editComplement} onChange={(e) => setEditComplement(e.target.value)} placeholder="Apto, sala..." />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">Bairro</label>
+                    <Input value={editNeighborhood} onChange={(e) => setEditNeighborhood(e.target.value)} placeholder="Bairro" />
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="col-span-2 space-y-1">
+                      <label className="text-xs text-muted-foreground">Cidade</label>
+                      <Input value={editCity} onChange={(e) => setEditCity(e.target.value)} placeholder="Cidade" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-muted-foreground">UF</label>
+                      <Input value={editState} onChange={(e) => setEditState(e.target.value)} placeholder="PR" maxLength={2} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ════ RH ════ */}
+              {sectionOpen === 'rh' && (
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">Data de contratação</label>
+                    <Input type="date" value={editHireDate} onChange={(e) => setEditHireDate(e.target.value)} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">Salário / Remuneração (R$)</label>
+                    <Input type="number" min={0} step={0.01} value={editSalary}
+                      onChange={(e) => setEditSalary(e.target.value)} placeholder="0,00" />
+                    <p className="text-[11px] text-muted-foreground/60">Dado interno — não visível ao colaborador</p>
+                  </div>
+                </div>
+              )}
+
+              <Button className="w-full mt-4" onClick={saveEdit} disabled={updateUser.isPending}
+                style={{ background: 'var(--pm-accent-gradient)' }}>
+                {updateUser.isPending ? 'Salvando...' : 'Salvar alterações'}
               </Button>
             </div>
           )}
@@ -733,6 +855,25 @@ export function UsersTab() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Unit selector — optional when matrix user invites a franchise-role */}
+              {needsUnitSelect && (
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">Vincular à unidade (opcional)</label>
+                  <Select value={createUnitId || '_matrix'} onValueChange={(v) => setCreateUnitId(v === '_matrix' ? '' : v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="_matrix">Colaborador Matriz (sem unidade)</SelectItem>
+                      {unitsList.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[11px] text-muted-foreground/60">
+                    Sem unidade = colaborador vinculado à matriz
+                  </p>
+                </div>
+              )}
 
               {/* Commission toggle — available for any role */}
               <div

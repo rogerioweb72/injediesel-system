@@ -1,14 +1,21 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { useProfile } from '@/hooks/useProfile'
-import { usePendingPayments, type PendingPayment } from '@/hooks/useCaixa'
+import {
+  usePendingPayments, useEcuReceipts, useMatrixFranchiseBilling, useOpenEcuJobs, useOpenOrders,
+  type PendingPayment, type OpenEcuJob, type OpenOrder,
+} from '@/hooks/useCaixa'
 import { useLancamentos, useDeleteLancamento, CATEGORIA_LABELS, type Lancamento } from '@/hooks/useLancamentos'
 import { NovoLancamentoModal } from '@/pages/app/caixa/NovoLancamentoModal'
 import {
   CreditCard, Loader2, CheckCircle2, Plus,
-  TrendingUp, TrendingDown, Scale, Trash2, FileEdit,
+  TrendingUp, TrendingDown, Scale, Trash2, FileEdit, Receipt, Building2, AlertTriangle,
 } from 'lucide-react'
 import { EcuPaymentSheet } from '@/components/shared/EcuPaymentSheet'
+import { EcuStatusBadge } from '@/components/shared/EcuStatusBadge'
+import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
+import type { FileStatus } from '@/types/app'
 
 function fmtBRL(value: number) {
   return Math.abs(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -101,12 +108,18 @@ function LancamentoRow({ item, unitId }: { item: Lancamento; unitId: string | nu
 }
 
 export default function FinanceiroPage() {
+  const navigate = useNavigate()
+  const prefix   = useRoutePrefix()
   const { profile } = useProfile()
   const unitId = null  // matriz: jobs e entries sem unit_id
   const maxDiscountPct = profile?.max_discount_pct ?? 100
 
   const { data: payments = [], isLoading: loadingPay } = usePendingPayments(unitId)
   const { data: lancamentos = [], isLoading: loadingLanc } = useLancamentos(unitId)
+  const { data: ecuReceipts = [] } = useEcuReceipts(unitId)
+  const { data: franchiseBilling = [] } = useMatrixFranchiseBilling()
+  const { data: openJobs = [] } = useOpenEcuJobs(unitId)
+  const { data: openOrders = [] } = useOpenOrders(unitId)
 
   const [selected, setSelected]   = useState<PendingPayment | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
@@ -117,11 +130,13 @@ export default function FinanceiroPage() {
 
   const resumo = useMemo(() => {
     const lancados = lancamentos.filter((l) => l.status === 'lancado')
-    const receitas = lancados.filter((l) => l.type === 'receita').reduce((s, l) => s + Math.abs(l.amount), 0)
+    const receitasManuais = lancados.filter((l) => l.type === 'receita').reduce((s, l) => s + Math.abs(l.amount), 0)
     const despesas = lancados.filter((l) => l.type === 'despesa').reduce((s, l) => s + Math.abs(l.amount), 0)
     const ajustes  = lancados.filter((l) => l.type === 'ajuste').reduce((s, l) => s + l.amount, 0)
+    const receitasEcu = ecuReceipts.reduce((s, r) => s + r.amount, 0)
+    const receitas = receitasManuais + receitasEcu
     return { receitas, despesas, saldo: receitas - despesas + ajustes }
-  }, [lancamentos])
+  }, [lancamentos, ecuReceipts])
 
   const lancamentosFiltrados = useMemo(() => {
     return lancamentos.filter((l) => {
@@ -163,6 +178,86 @@ export default function FinanceiroPage() {
         <SummaryCard label="Total Receitas" value={resumo.receitas} icon={TrendingUp} color="#4ADE80" bg="rgba(74,222,128,0.1)" />
         <SummaryCard label="Total Despesas" value={resumo.despesas} icon={TrendingDown} color="#F87171" bg="rgba(248,113,113,0.1)" />
       </div>
+
+      {/* Em Aberto — ECU diretos + pedidos franquias */}
+      {(openJobs.length > 0 || openOrders.length > 0) && (
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle size={14} style={{ color: '#FBBF24' }} />
+            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: '#FBBF24' }}>
+              Em Aberto
+            </p>
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+              style={{ background: 'rgba(251,191,36,0.15)', color: '#FBBF24' }}>
+              {openJobs.length + openOrders.length}
+            </span>
+          </div>
+          <div className="rounded-xl overflow-hidden"
+            style={{ background: 'hsl(var(--pm-gray-900))', border: '1px solid rgba(251,191,36,0.2)' }}>
+            {openJobs.map((job: OpenEcuJob, i: number) => {
+              const ageH      = Math.floor((Date.now() - new Date(job.created_at).getTime()) / (1000 * 60 * 60))
+              const ageD      = Math.floor(ageH / 24)
+              const isOverdue = ageH >= 12
+              const techName  = job.assigned_profile?.name ?? job.creator_profile?.name ?? '—'
+              const ageLabel  = ageD > 0 ? `${ageD}d ${ageH % 24}h` : ageH > 0 ? `${ageH}h` : '< 1h'
+              return (
+                <div key={job.id}
+                  className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                  style={{ borderTop: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.05)' }}
+                  onClick={() => navigate(`${prefix}/arquivos/${job.id}`)}
+                >
+                  <div className="w-1.5 h-1.5 rounded-full shrink-0"
+                    style={{ background: isOverdue ? '#FBBF24' : 'hsl(var(--pm-gray-600))' }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">
+                      {job.customers?.name ?? '—'}
+                      <span className="text-muted-foreground font-normal"> · {job.service_type}</span>
+                    </p>
+                    <p className="text-xs truncate" style={{ color: 'hsl(var(--pm-gray-500))' }}>
+                      Técnico: {techName}
+                      {isOverdue
+                        ? <span style={{ color: '#FBBF24' }}> · ⚠ {ageLabel} em aberto</span>
+                        : <span> · {ageLabel}</span>}
+                    </p>
+                  </div>
+                  <EcuStatusBadge status={job.status as FileStatus} />
+                </div>
+              )
+            })}
+            {openOrders.map((order: OpenOrder, i: number) => {
+              const idx = openJobs.length + i
+              const ORDER_STATUS_LABELS: Record<string, string> = {
+                aguardando_aprovacao: 'Aguardando aprovação',
+                aguardando_pagamento: 'Aguardando pagamento',
+                aprovado: 'Aprovado — pend. envio',
+                em_separacao: 'Em separação',
+                enviado: 'Enviado — pend. confirmação',
+              }
+              return (
+                <div key={order.id}
+                  className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                  style={{ borderTop: idx === 0 ? 'none' : '1px solid rgba(255,255,255,0.05)' }}
+                  onClick={() => navigate(`${prefix}/pedidos-b2b`)}
+                >
+                  <div className="w-1.5 h-1.5 rounded-full shrink-0 bg-blue-400" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">
+                      Pedido B2B{order.franchise_units ? ` · ${order.franchise_units.name}` : ''}
+                    </p>
+                    <p className="text-xs" style={{ color: 'hsl(var(--pm-gray-500))' }}>
+                      {ORDER_STATUS_LABELS[order.status] ?? order.status}
+                    </p>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded font-semibold"
+                    style={{ background: 'rgba(96,165,250,0.1)', color: '#60A5FA' }}>
+                    B2B
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Cobranças ECU pendentes */}
       <section>
@@ -213,6 +308,102 @@ export default function FinanceiroPage() {
               </div>
             ))}
           </div>
+        )}
+      </section>
+
+      {/* Serviços ECU realizados (pagos) */}
+      {ecuReceipts.length > 0 && (
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'hsl(var(--pm-gray-500))' }}>
+              Serviços ECU Realizados
+            </p>
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+              style={{ background: 'rgba(74,222,128,0.1)', color: '#4ADE80' }}>
+              {ecuReceipts.length}
+            </span>
+          </div>
+          <div className="rounded-xl overflow-hidden"
+            style={{ background: 'hsl(var(--pm-gray-900))', border: '1px solid rgba(255,255,255,0.06)' }}>
+            {ecuReceipts.map((r, i) => (
+              <div key={r.id} className="flex items-center gap-4 px-4 py-3"
+                style={{ borderTop: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.05)' }}>
+                <Receipt size={14} style={{ color: '#4ADE80', flexShrink: 0 }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white truncate">
+                    {r.ecu_jobs?.customers?.name ?? '—'}
+                  </p>
+                  <p className="text-xs truncate" style={{ color: 'hsl(var(--pm-gray-500))' }}>
+                    {r.ecu_jobs?.service_type ?? r.description ?? '—'} · {fmtDateTime(r.created_at)}
+                    {r.payment_method && <span> · {r.payment_method}</span>}
+                  </p>
+                </div>
+                <span className="font-semibold text-sm shrink-0" style={{ color: '#4ADE80' }}>
+                  +{fmtBRL(r.amount)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Faturamento inter-franquias (comparativo separado) */}
+      <section>
+        <div className="flex items-center gap-2 mb-3">
+          <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'hsl(var(--pm-gray-500))' }}>
+            Faturamento Inter-Franquias
+          </p>
+          {franchiseBilling.length > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+              style={{ background: 'rgba(96,165,250,0.1)', color: '#60A5FA' }}>
+              {franchiseBilling.length}
+            </span>
+          )}
+        </div>
+        {franchiseBilling.length === 0 ? (
+          <div className="rounded-xl flex items-center justify-center py-8 gap-2"
+            style={{ background: 'hsl(var(--pm-gray-900))', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <Building2 size={16} style={{ color: 'hsl(var(--pm-gray-700))' }} />
+            <p className="text-sm" style={{ color: 'hsl(var(--pm-gray-600))' }}>Nenhum serviço cobrado às franquias</p>
+          </div>
+        ) : (
+          <>
+            <div className="rounded-xl p-4 mb-3 flex items-center gap-4"
+              style={{ background: 'hsl(var(--pm-gray-900))', border: '1px solid rgba(96,165,250,0.15)' }}>
+              <div className="p-2.5 rounded-lg" style={{ background: 'rgba(96,165,250,0.1)' }}>
+                <Building2 size={18} style={{ color: '#60A5FA' }} />
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--pm-gray-500))' }}>
+                  Total Cobrado às Franquias
+                </p>
+                <p className="text-lg font-bold mt-0.5" style={{ color: '#60A5FA' }}>
+                  {fmtBRL(franchiseBilling.reduce((s, e) => s + e.amount_charged_by_matrix, 0))}
+                </p>
+              </div>
+            </div>
+            <div className="rounded-xl overflow-hidden"
+              style={{ background: 'hsl(var(--pm-gray-900))', border: '1px solid rgba(255,255,255,0.06)' }}>
+              {franchiseBilling.map((e, i) => (
+                <div key={e.id} className="flex items-center gap-4 px-4 py-3"
+                  style={{ borderTop: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.05)' }}>
+                  <Building2 size={14} style={{ color: '#60A5FA', flexShrink: 0 }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">
+                      {e.franchise_units?.name ?? e.unit_id}
+                    </p>
+                    <p className="text-xs truncate" style={{ color: 'hsl(var(--pm-gray-500))' }}>
+                      {e.service_type} · {e.customers?.name ?? '—'} · {fmtDateTime(e.created_at)}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="font-semibold text-sm" style={{ color: '#60A5FA' }}>{fmtBRL(e.amount_charged_by_matrix)}</p>
+                    <p className="text-xs" style={{ color: 'hsl(var(--pm-gray-600))' }}>cobrado ao cliente: {fmtBRL(e.amount_charged_to_customer)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </section>
 

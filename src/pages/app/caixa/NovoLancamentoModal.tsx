@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { X, Loader2, RefreshCw, Check } from 'lucide-react'
+import { Loader2, RefreshCw, Check, X } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   useCreateLancamento,
   LANCAMENTO_CATEGORIAS,
@@ -67,7 +73,6 @@ export function NovoLancamentoModal({ unitId, onClose, onSuccess }: Props) {
   const [periodicidade, setPeriodicidade]   = useState<'diario' | 'semanal' | 'mensal' | 'anual'>('mensal')
   const [repeticoes, setRepeticoes]         = useState('2')
 
-  // inline create category
   const [newCatName, setNewCatName]         = useState('')
   const [showNewCat, setShowNewCat]         = useState(false)
 
@@ -95,7 +100,6 @@ export function NovoLancamentoModal({ unitId, onClose, onSuccess }: Props) {
       setNewCatName('')
       setShowNewCat(false)
     } catch {
-      // duplicate or error — still select by name
       setCategoria(name)
       setNewCatName('')
       setShowNewCat(false)
@@ -125,38 +129,40 @@ export function NovoLancamentoModal({ unitId, onClose, onSuccess }: Props) {
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') handleSave()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onClose, handleSave])
+  }, [handleSave])
 
   const tipoColor = tipo === 'receita' ? '#4ADE80' : tipo === 'despesa' ? '#F87171' : '#FBBF24'
 
-  // all selectable categories
   const hasCustom = customCats.length > 0
   const isCustomSelected = categoria !== '' && categoria !== NEW_CAT_VALUE &&
     !LANCAMENTO_CATEGORIAS.includes(categoria as LancamentoCategoria)
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.7)' }}
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-xl rounded-2xl flex flex-col max-h-[90vh]"
-        style={{ background: 'hsl(var(--pm-gray-900))', border: '1px solid rgba(255,255,255,0.09)' }}
-        onClick={(e) => e.stopPropagation()}
+    <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
+      <DialogContent
+        className="max-w-xl p-0 flex flex-col max-h-[90vh] overflow-hidden gap-0 [&>button:last-child]:hidden"
+        style={{
+          background: 'hsl(var(--pm-gray-900))',
+          border: '1px solid rgba(255,255,255,0.09)',
+          borderRadius: '1rem',
+        }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-          <h3 className="font-semibold text-white text-base">Novo Lançamento</h3>
+        <DialogHeader
+          className="flex-row items-center justify-between px-6 py-4"
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <DialogTitle className="font-semibold text-white text-base">
+            Novo Lançamento
+          </DialogTitle>
           <button onClick={onClose} style={{ color: 'hsl(var(--pm-gray-500))' }}>
             <X size={18} />
           </button>
-        </div>
+        </DialogHeader>
 
         {/* Body */}
         <div className="overflow-y-auto px-6 py-5 space-y-4 flex-1">
@@ -213,7 +219,6 @@ export function NovoLancamentoModal({ unitId, onClose, onSuccess }: Props) {
               </optgroup>
             </select>
 
-            {/* Inline create */}
             {showNewCat && (
               <div
                 className="flex gap-2 mt-1 p-3 rounded-xl"
@@ -394,7 +399,7 @@ export function NovoLancamentoModal({ unitId, onClose, onSuccess }: Props) {
             </button>
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

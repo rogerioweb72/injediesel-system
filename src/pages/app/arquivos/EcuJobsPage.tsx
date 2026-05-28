@@ -67,20 +67,24 @@ function ElapsedCell({ createdAt, status }: { createdAt: string; status: FileSta
   }
 
   // eslint-disable-next-line react-hooks/purity
-  const diffMs  = Date.now() - new Date(createdAt).getTime()
-  const diffMin = Math.floor(diffMs / 60_000)
-  const diffH   = Math.floor(diffMin / 60)
-  const diffD   = Math.floor(diffH / 24)
-  const isLate  = diffH >= 24
+  const diffMs    = Date.now() - new Date(createdAt).getTime()
+  const diffMin   = Math.floor(diffMs / 60_000)
+  const diffH     = Math.floor(diffMin / 60)
+  const diffD     = Math.floor(diffH / 24)
+  const isWarning = diffH >= 12 && diffH < 24
+  const isLate    = diffH >= 24
 
   let label: string
   if (diffMin < 1) {
     label = 'chegou há: < 1min'
   } else if (diffMin < 60) {
     label = `chegou há: ${diffMin}min`
-  } else if (diffH < 24) {
+  } else if (diffH < 12) {
     const m = diffMin % 60
     label = `chegou há: ${diffH}h${m > 0 ? ` ${m}min` : ''}`
+  } else if (diffH < 24) {
+    const m = diffMin % 60
+    label = `⚠ em aberto: ${diffH}h${m > 0 ? ` ${m}min` : ''}`
   } else {
     const h = diffH % 24
     const m = diffMin % 60
@@ -90,7 +94,10 @@ function ElapsedCell({ createdAt, status }: { createdAt: string; status: FileSta
   return (
     <span
       className="text-xs font-mono whitespace-nowrap"
-      style={{ color: isLate ? 'hsl(var(--pm-red-400))' : 'hsl(var(--pm-gray-400))', fontWeight: isLate ? 700 : 400 }}
+      style={{
+        color: isLate ? 'hsl(var(--pm-red-400))' : isWarning ? '#FBBF24' : 'hsl(var(--pm-gray-400))',
+        fontWeight: isLate || isWarning ? 700 : 400,
+      }}
     >
       {label}
     </span>

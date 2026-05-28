@@ -1,41 +1,38 @@
-import { useState } from 'react'
 import { PageHeader } from '@/components/shared/PageHeader'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { UsersTab } from './UsersTab'
 import { CompanyTab } from './CompanyTab'
 
-type Tab = 'usuarios' | 'empresa'
-
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'usuarios', label: 'Usuários' },
-  { id: 'empresa',  label: 'Empresa' },
-]
-
 export default function ConfigPage() {
-  const [tab, setTab] = useState<Tab>('usuarios')
-
   return (
     <div>
       <PageHeader title="Configurações" subtitle="Usuários e configurações gerais da empresa" />
 
-      {/* Tab strip */}
-      <div className="flex gap-1 border-b border-[hsl(var(--pm-gray-700))] mb-6">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              tab === t.id
-                ? 'text-foreground border-b-2 border-[hsl(var(--pm-red-500))] -mb-px'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
+      <Tabs defaultValue="usuarios">
+        <TabsList
+          className="h-auto bg-transparent border-b border-[hsl(var(--pm-gray-700))] rounded-none p-0 mb-6 gap-1 justify-start w-full"
+        >
+          <TabsTrigger
+            value="usuarios"
+            className="rounded-none px-4 py-2 text-sm font-medium bg-transparent data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[hsl(var(--pm-red-500))] data-[state=active]:-mb-px text-muted-foreground hover:text-foreground"
           >
-            {t.label}
-          </button>
-        ))}
-      </div>
+            Usuários
+          </TabsTrigger>
+          <TabsTrigger
+            value="empresa"
+            className="rounded-none px-4 py-2 text-sm font-medium bg-transparent data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[hsl(var(--pm-red-500))] data-[state=active]:-mb-px text-muted-foreground hover:text-foreground"
+          >
+            Empresa
+          </TabsTrigger>
+        </TabsList>
 
-      {tab === 'usuarios' && <UsersTab />}
-      {tab === 'empresa'  && <CompanyTab />}
+        <TabsContent value="usuarios">
+          <UsersTab />
+        </TabsContent>
+        <TabsContent value="empresa">
+          <CompanyTab />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

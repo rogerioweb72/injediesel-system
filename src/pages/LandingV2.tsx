@@ -516,6 +516,7 @@ function HeroSection({ onLogin }: { onLogin: () => void }) {
       paddingBottom: isMobile ? '3rem' : 0,
       display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr' : '1fr 1fr',
       position: 'relative', overflow: 'hidden',
+      maxWidth: '100vw',
     }}>
       {/* Grid texture */}
       <div style={{
@@ -574,8 +575,8 @@ function HeroSection({ onLogin }: { onLogin: () => void }) {
         position: 'relative', zIndex: 2,
         background: 'linear-gradient(to right, rgba(8,8,9,0.98) 0%, rgba(8,8,9,0.65) 100%)',
       }}>
-        {/* Category tabs — interactive */}
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
+        {/* Category tabs — hidden on mobile, interactive on desktop */}
+        <div style={{ display: isMobile ? 'none' : 'flex', gap: '0.5rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
           {V2_VEHICLES.map((v, i) => (
             <button key={v.slug} onClick={() => goToSlide(i)} style={{
               fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.2em',
@@ -630,38 +631,40 @@ function HeroSection({ onLogin }: { onLogin: () => void }) {
         </p>
 
         {/* KPIs — dynamic per vehicle, count-up */}
-        <div key={`kpi-${currentSlide}`} style={{
+        <div style={{
           display: 'flex', gap: '0', marginBottom: '2.5rem',
-          animation: 'v2-fade-in 0.75s ease 0.62s both',
         }}>
-          <div style={{ paddingRight: '2rem' }}>
+          <div style={{ paddingRight: '2rem', minWidth: isMobile ? '80px' : '100px', flexShrink: 0 }}>
             <p style={{
               fontFamily: 'var(--pm-font-display)', fontWeight: 900,
-              fontStyle: 'italic', fontSize: '2rem', color: '#fff', lineHeight: 1,
-            }}>+{powerVal} <span style={{ fontSize: '0.95rem', color: 'hsl(var(--pm-gray-400))' }}>{vehicle.powerUnit}</span></p>
+              fontStyle: 'italic', fontSize: isMobile ? '1.6rem' : '2rem', color: '#fff', lineHeight: 1,
+              whiteSpace: 'nowrap',
+            }}>+{powerVal} <span style={{ fontSize: '0.85rem', color: 'hsl(var(--pm-gray-400))' }}>{vehicle.powerUnit}</span></p>
             <p style={{
               fontSize: '0.56rem', color: 'hsl(var(--pm-gray-400))',
               letterSpacing: '0.15em', textTransform: 'uppercase',
               fontFamily: 'var(--pm-font-mono)', marginTop: '3px',
             }}>Potência</p>
           </div>
-          <div style={{ width: '1px', background: BORDER, marginRight: '2rem', alignSelf: 'stretch' }} />
-          <div style={{ paddingRight: '2rem' }}>
+          <div style={{ width: '1px', background: BORDER, marginRight: '2rem', alignSelf: 'stretch', flexShrink: 0 }} />
+          <div style={{ paddingRight: '2rem', minWidth: isMobile ? '80px' : '100px', flexShrink: 0 }}>
             <p style={{
               fontFamily: 'var(--pm-font-display)', fontWeight: 900,
-              fontStyle: 'italic', fontSize: '2rem', color: '#fff', lineHeight: 1,
-            }}>+{torqueVal} <span style={{ fontSize: '0.95rem', color: 'hsl(var(--pm-gray-400))' }}>{vehicle.torqueUnit}</span></p>
+              fontStyle: 'italic', fontSize: isMobile ? '1.6rem' : '2rem', color: '#fff', lineHeight: 1,
+              whiteSpace: 'nowrap',
+            }}>+{torqueVal} <span style={{ fontSize: '0.85rem', color: 'hsl(var(--pm-gray-400))' }}>{vehicle.torqueUnit}</span></p>
             <p style={{
               fontSize: '0.56rem', color: 'hsl(var(--pm-gray-400))',
               letterSpacing: '0.15em', textTransform: 'uppercase',
               fontFamily: 'var(--pm-font-mono)', marginTop: '3px',
             }}>Torque</p>
           </div>
-          <div style={{ width: '1px', background: BORDER, marginRight: '2rem', alignSelf: 'stretch' }} />
-          <div>
+          <div style={{ width: '1px', background: BORDER, marginRight: '2rem', alignSelf: 'stretch', flexShrink: 0 }} />
+          <div style={{ minWidth: isMobile ? '70px' : '90px', flexShrink: 0 }}>
             <p style={{
               fontFamily: 'var(--pm-font-display)', fontWeight: 900,
-              fontStyle: 'italic', fontSize: '2rem', color: '#fff', lineHeight: 1,
+              fontStyle: 'italic', fontSize: isMobile ? '1.6rem' : '2rem', color: '#fff', lineHeight: 1,
+              whiteSpace: 'nowrap',
             }}>+10%</p>
             <p style={{
               fontSize: '0.56rem', color: 'hsl(var(--pm-gray-400))',
@@ -795,8 +798,9 @@ function HeroSection({ onLogin }: { onLogin: () => void }) {
         </div>
       </div>
 
-      {/* BASE card — único, canto inferior direito */}
+      {/* BASE card — hidden on mobile */}
       <div key={`base-${currentSlide}`} style={{
+        display: (isMobile || isTablet) ? 'none' : 'block',
         position: 'absolute', bottom: '40px', right: '56px',
         background: 'rgba(5,7,11,0.84)',
         backdropFilter: 'blur(20px)',
@@ -826,11 +830,12 @@ function HeroSection({ onLogin }: { onLogin: () => void }) {
         }}>{vehicle.base}</p>
       </div>
 
-      {/* Slider navigation — bottom center absolute */}
+      {/* Slider navigation — hidden on mobile */}
       <div style={{
+        display: isMobile ? 'none' : 'flex',
         position: 'absolute', bottom: '28px',
         left: '50%', transform: 'translateX(-50%)',
-        display: 'flex', alignItems: 'center', gap: '0.6rem',
+        alignItems: 'center', gap: '0.6rem',
         zIndex: 4,
       }}>
         <button
@@ -1075,7 +1080,7 @@ function NumbersSection() {
 const HW_THRESHOLDS = [0.16, 0.34, 0.52, 0.70, 0.88]
 
 function HowItWorks() {
-  const isMobile = useBreakpoint(640)
+  const isMobile = useBreakpoint(768)
   const steps = [
     { n: '01', title: 'Diagnóstico',     desc: 'Entendemos veículo, objetivo e sintomas.' },
     { n: '02', title: 'Leitura ECU',     desc: 'O arquivo original é lido e analisado.' },
@@ -1125,7 +1130,7 @@ function HowItWorks() {
 
   return (
     <section ref={sectionRef} id="como-funciona" style={{
-      background: 'hsl(222 8% 6%)', padding: '7rem 3rem',
+      background: 'hsl(222 8% 6%)', padding: 'clamp(4rem,8vw,7rem) clamp(1.5rem,5vw,3rem)',
       borderBottom: `1px solid ${BORDER}`,
     }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -1142,15 +1147,15 @@ function HowItWorks() {
           </p>
         </div>
 
-        {/* Horizontal timeline */}
+        {/* Timeline — horizontal desktop, vertical mobile */}
         <div ref={timelineRef} style={{ position: 'relative' }}>
 
-          {/* Meteor SVG — overlaid above base, behind circles */}
+          {/* Meteor SVG — desktop only */}
           <svg
             width="100%" height="56"
             viewBox="0 0 1000 56"
             preserveAspectRatio="none"
-            style={{ position: 'absolute', top: 0, left: 0, overflow: 'visible', zIndex: 1, pointerEvents: 'none' }}
+            style={{ display: isMobile ? 'none' : undefined, position: 'absolute', top: 0, left: 0, overflow: 'visible', zIndex: 1, pointerEvents: 'none' }}
           >
             <defs>
               {/* glow filter for tail */}
@@ -1207,21 +1212,44 @@ function HowItWorks() {
           </svg>
 
           {/* Step grid */}
+          {/* Mobile vertical connector */}
+          {isMobile && (
+            <div style={{
+              position: 'absolute', left: '27px', top: '28px', bottom: '28px',
+              width: '2px', background: 'rgba(255,255,255,0.08)', zIndex: 0,
+            }}>
+              <div style={{
+                width: '100%',
+                height: `${Math.min(progress * 100, 100)}%`,
+                background: 'linear-gradient(to bottom, #c10d19, #ff3348)',
+                transition: 'height 0.3s ease',
+              }} />
+            </div>
+          )}
+
           <div style={{
-            display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)', gap: '1.5rem',
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(5, 1fr)',
+            gap: isMobile ? '0' : '1.5rem',
           }}>
             {steps.map((s, i) => (
               <div key={s.n} style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                textAlign: 'center', position: 'relative',
+                display: 'flex',
+                flexDirection: isMobile ? 'row' : 'column',
+                alignItems: isMobile ? 'flex-start' : 'center',
+                textAlign: isMobile ? 'left' : 'center',
+                position: 'relative',
+                gap: isMobile ? '1rem' : 0,
+                paddingBottom: isMobile ? '2rem' : 0,
+                paddingLeft: isMobile ? '0' : 0,
               }}>
                 {/* Circle */}
                 <div style={{
-                  width: '56px', height: '56px', borderRadius: '50%',
+                  width: '56px', height: '56px', borderRadius: '50%', flexShrink: 0,
                   background: DARK,
                   border: `2px solid ${active[i] ? '#c10d19' : 'rgba(255,255,255,0.14)'}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  marginBottom: '1.5rem', position: 'relative', zIndex: 2,
+                  marginBottom: isMobile ? 0 : '1.5rem', position: 'relative', zIndex: 2,
                   boxShadow: active[i]
                     ? '0 0 24px rgba(193,13,25,0.55), 0 0 8px rgba(193,13,25,0.25)'
                     : 'none',
@@ -1460,7 +1488,7 @@ function ResultsSection() {
 
   return (
     <section ref={sectionRef} id="resultados" style={{
-      background: 'hsl(222 8% 6%)', padding: '7rem 3rem',
+      background: 'hsl(222 8% 6%)', padding: 'clamp(4rem,8vw,7rem) clamp(1.5rem,5vw,3rem)',
       borderBottom: `1px solid ${BORDER}`,
     }}>
       <div style={{
@@ -1742,29 +1770,31 @@ function LojaSection() {
         </div>
 
         <div className="v2-observe" style={{
-          marginTop: '2rem', padding: '1.75rem 2rem', borderRadius: '12px',
+          marginTop: '2rem', padding: '1.5rem', borderRadius: '12px',
           border: `1px solid hsl(var(--pm-red-500)/0.2)`,
           background: 'hsl(var(--pm-red-500)/0.04)',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? '1rem' : 0,
         }}>
           <div>
             <p style={{
               fontFamily: 'var(--pm-font-display)', fontWeight: 800,
-              fontSize: '1.15rem', textTransform: 'uppercase', fontStyle: 'italic', color: '#fff',
+              fontSize: '1.1rem', textTransform: 'uppercase', fontStyle: 'italic', color: '#fff',
             }}>
-              539 produtos disponíveis no catálogo completo
+              539 produtos no catálogo
             </p>
             <p style={{ fontSize: '0.78rem', color: 'hsl(var(--pm-gray-400))', marginTop: '0.2rem' }}>
-              Preços especiais para franqueados parceiros Promax Tuner
+              Preços especiais para franqueados parceiros
             </p>
           </div>
-          <div style={{ display: 'flex', gap: '0.75rem', flexShrink: 0 }}>
-            <a href="/loja">
-            <Button variant="outline" style={{ borderColor: BORDER, fontSize: '0.72rem' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', flexShrink: 0, width: isMobile ? '100%' : 'auto' }}>
+            <a href="/loja" style={{ flex: isMobile ? 1 : 'none' }}>
+            <Button variant="outline" style={{ borderColor: BORDER, fontSize: '0.72rem', width: isMobile ? '100%' : 'auto' }}>
               <ShoppingBag size={13} style={{ marginRight: '6px' }} /> Ver Catálogo
             </Button>
             </a>
-            <Button style={{ background: RED, fontSize: '0.72rem', fontWeight: 700 }}>
+            <Button style={{ background: RED, fontSize: '0.72rem', fontWeight: 700, flex: isMobile ? 1 : 'none' }}>
               Seja Parceiro <ArrowRight size={13} style={{ marginLeft: '4px' }} />
             </Button>
           </div>
@@ -1788,7 +1818,7 @@ function AboutSection() {
 
   return (
     <section id="sobre" style={{
-      background: 'hsl(222 8% 6%)', padding: '7rem 3rem',
+      background: 'hsl(222 8% 6%)', padding: 'clamp(4rem,8vw,7rem) clamp(1.5rem,5vw,3rem)',
       borderBottom: `1px solid ${BORDER}`,
     }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -2029,7 +2059,7 @@ function CTASection({ onLogin }: { onLogin: () => void }) {
 function Footer() {
   const isMobile = useBreakpoint(640)
   return (
-    <footer style={{ background: '#000', padding: isMobile ? '3rem 1.5rem 2rem' : '4rem 3rem 2rem', borderTop: `1px solid hsl(var(--pm-gray-800))` }}>
+    <footer style={{ background: '#000', padding: isMobile ? '2rem 1.25rem 1.5rem' : '3rem 3rem 1.5rem', borderTop: `1px solid hsl(var(--pm-gray-800))` }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <div style={{
           display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr 1fr',

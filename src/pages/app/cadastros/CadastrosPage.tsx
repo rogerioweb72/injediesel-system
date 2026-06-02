@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BookOpen } from 'lucide-react'
 import { useMyUnit } from '@/hooks/useMyUnit'
 import { useModulePermission } from '@/hooks/usePermissions'
@@ -14,6 +14,14 @@ export default function CadastrosPage() {
   const { data: myUnit, isLoading } = useMyUnit()
   const [activeTab, setActiveTab] = useState<TabId>('fornecedores')
   const permConfig = useModulePermission('configuracoes')
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024)
+    check()
+    window.addEventListener('resize', check, { passive: true })
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   // undefined = loading, null = matrix, string = franchise
   const unitId: string | null | undefined = isLoading ? undefined : (myUnit?.unit_id ?? null)
@@ -33,21 +41,43 @@ export default function CadastrosPage() {
         <h1 className="text-xl font-bold text-white">Cadastros</h1>
       </div>
 
-      <div className="flex gap-0 overflow-x-auto border-b border-zinc-700">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
-              activeTab === tab.id
-                ? 'border-red-500 text-white'
-                : 'border-transparent text-zinc-400 hover:text-white'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      {isMobile ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 4 }}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                padding: '8px 4px', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                textAlign: 'center', border: '1px solid',
+                borderRadius: 6,
+                borderColor: activeTab === tab.id ? 'hsl(var(--pm-red-500))' : 'rgba(255,255,255,0.1)',
+                background: activeTab === tab.id ? 'hsl(var(--pm-red-500)/0.15)' : 'transparent',
+                color: activeTab === tab.id ? '#fff' : 'hsl(var(--muted-foreground))',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="flex gap-0 overflow-x-auto border-b border-zinc-700">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                activeTab === tab.id
+                  ? 'border-red-500 text-white'
+                  : 'border-transparent text-zinc-400 hover:text-white'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {activeTab === 'fornecedores'     && <TabFornecedores    unitId={unitId} />}
       {activeTab === 'formas-pagamento' && <TabFormasPagamento unitId={unitId} />}

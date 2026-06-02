@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
 import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, Banknote, Smartphone, CheckCircle2, X, Wallet, Lock } from 'lucide-react'
@@ -113,6 +113,15 @@ export default function PdvPage() {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
   const [cart, setCart] = useState<CartItem[]>([])
+  const [isMobile, setIsMobile] = useState(false)
+  const [mobileTab, setMobileTab] = useState<'products' | 'cart'>('products')
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024)
+    check()
+    window.addEventListener('resize', check, { passive: true })
+    return () => window.removeEventListener('resize', check)
+  }, [])
   const [customerId, setCustomerId] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('pix')
   const [installments, setInstallments] = useState(1)
@@ -142,7 +151,7 @@ export default function PdvPage() {
   const { data: companySettings } = useCompanySettings()
   const pdv = { ...PDV_DEFAULTS, ...(companySettings?.pdv_settings ?? {}) }
 
-  const { data: productsData, isLoading: loadingProducts } = useProducts({ q: search, category, pageSize: 30 })
+  const { data: productsData, isLoading: loadingProducts } = useProducts({ q: search, category, pageSize: 100 })
   const { data: categories = [] } = useProductCategories()
   const { data: customersData } = useCustomers({ pageSize: 100 })
   const { data: managerHashes = [] } = useManagerDiscountHashes()
@@ -277,10 +286,30 @@ export default function PdvPage() {
     <div>
       <PageHeader title="PDV" subtitle="Ponto de Venda" />
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5" style={{ height: 'calc(100vh - 160px)' }}>
+      {/* Mobile tab switcher */}
+      {isMobile && (
+        <div style={{ display: 'flex', gap: 0, marginBottom: 12, borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+          {(['products', 'cart'] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setMobileTab(tab)}
+              style={{
+                flex: 1, padding: '10px', fontSize: 13, fontWeight: 700, cursor: 'pointer', border: 'none',
+                background: mobileTab === tab ? 'hsl(var(--pm-red-500))' : 'rgba(255,255,255,0.05)',
+                color: mobileTab === tab ? '#fff' : 'hsl(var(--muted-foreground))',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              }}
+            >
+              {tab === 'products' ? <>🔍 Produtos</> : <><ShoppingCart size={14} /> Carrinho {cart.length > 0 ? `(${cart.length})` : ''}</>}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5" style={isMobile ? undefined : { height: 'calc(100vh - 160px)' }}>
 
         {/* ── Produtos ── */}
-        <div className="lg:col-span-3 flex flex-col gap-2 overflow-hidden">
+        <div className="lg:col-span-3 flex flex-col gap-2 overflow-hidden" style={isMobile && mobileTab !== 'products' ? { display: 'none' } : undefined}>
           {/* Search */}
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -376,7 +405,7 @@ export default function PdvPage() {
         </div>
 
         {/* ── Carrinho ── */}
-        <div className="lg:col-span-2 flex flex-col gap-3">
+        <div className="lg:col-span-2 flex flex-col gap-3" style={isMobile && mobileTab !== 'cart' ? { display: 'none' } : undefined}>
 
           {/* Cliente */}
           <div style={{ ...CARD_BASE, padding: 14 }}>

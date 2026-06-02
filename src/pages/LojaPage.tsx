@@ -260,7 +260,7 @@ export default function LojaPage() {
 
       {/* ── HEADER ── */}
       <header style={{ position:'sticky', top:0, zIndex:50, background:'rgba(8,8,9,0.97)', backdropFilter:'blur(12px)', borderBottom:`1px solid ${BORDER}` }}>
-        <div style={{ padding: isMobile ? '0 1rem' : '0 2rem', height:'64px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div style={{ padding: isMobile ? '0 1rem' : '0 2rem', height:'64px', display:'flex', alignItems:'center', justifyContent: isMobile ? 'center' : 'space-between', position:'relative' }}>
           <Link to="/" style={{ lineHeight:0 }}>
             <img src="/tuner-logo.svg" alt="Promax Tuner" style={{ height:'22px', width:'auto' }} />
           </Link>
@@ -449,7 +449,7 @@ export default function LojaPage() {
             </aside>
 
             {/* Grid */}
-            <div style={{ flexGrow:1, padding: isMobile ? '1rem' : '2rem', display:'flex', flexDirection:'column', gap:'1.5rem' }}>
+            <div style={{ flexGrow:1, padding: isMobile ? '.5rem' : '2rem', display:'flex', flexDirection:'column', gap:'1rem' }}>
               <div style={{ display:'flex', alignItems:'center', gap:'1rem', borderBottom:`1px solid ${BORDER}`, paddingBottom:'1rem', flexWrap:'wrap' }}>
                 <div style={{ position:'relative', flex:1, minWidth:'180px' }}>
                   <span style={{ position:'absolute', left:'12px', top:'50%', transform:'translateY(-50%)', color:MUTED, fontSize:'14px', pointerEvents:'none' }}>⌕</span>
@@ -565,7 +565,7 @@ export default function LojaPage() {
           </aside>
 
           {/* Grid */}
-          <div style={{ flexGrow:1, padding: isMobile ? '1rem' : '2rem', display:'flex', flexDirection:'column', gap:'1.5rem' }}>
+          <div style={{ flexGrow:1, padding: isMobile ? '.5rem' : '2rem', display:'flex', flexDirection:'column', gap:'1rem' }}>
             <div style={{ display:'flex', alignItems:'center', gap:'1rem', borderBottom:`1px solid ${BORDER}`, paddingBottom:'1rem', flexWrap:'wrap' }}>
               <div style={{ position:'relative', flex:1, minWidth:'180px' }}>
                 <span style={{ position:'absolute', left:'12px', top:'50%', transform:'translateY(-50%)', color:MUTED, fontSize:'14px', pointerEvents:'none' }}>⌕</span>

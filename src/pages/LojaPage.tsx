@@ -1066,36 +1066,71 @@ function ProductCard({ row, delay, compact = false }: { row: EcuCatalogRow; dela
           </div>
         )}
         <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,transparent 35%,#1a1a1d 100%)', zIndex:2 }} />
-        <div style={{ position:'absolute', top:'12px', left:'12px', zIndex:10 }}>
-          <span style={{ fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:700, color:'#fff', background:RED, padding:'1px 8px', textTransform:'uppercase', fontSize:'11px', letterSpacing:'.1em' }}>{badge}</span>
-        </div>
+        {/* Badge só no desktop — no compact o gain fica no body */}
+        {!compact && (
+          <div style={{ position:'absolute', top:'12px', left:'12px', zIndex:10 }}>
+            <span style={{ fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:700, color:'#fff', background:RED, padding:'1px 8px', textTransform:'uppercase', fontSize:'11px', letterSpacing:'.1em' }}>{badge}</span>
+          </div>
+        )}
       </div>
 
       <div style={{ padding: compact ? '.5rem .6rem' : '1rem 1.25rem', display:'flex', flexDirection:'column', flexGrow:1, minWidth:0 }}>
-        {!compact && <span style={{ fontFamily:'"JetBrains Mono",monospace', color:RED, textTransform:'uppercase', fontSize:'9px', letterSpacing:'.2em', marginBottom:'.2rem' }}>{row.categoria || 'ECU'}</span>}
-        <h2 style={{ fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:900, color:'#fff', textTransform:'uppercase', lineHeight:1.05, marginBottom:'.2rem', fontSize: compact ? '.85rem' : '1.35rem', letterSpacing:'-.01em', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-          {title}
-        </h2>
-        {!compact && subtitle && (
-          <span style={{ fontSize:'.7rem', color:MUTED, marginBottom:'.5rem', lineHeight:1.3 }}>{subtitle}{row.ano ? ` · ${row.ano}` : ''}</span>
-        )}
-        {compact && row.ano && <span style={{ fontSize:'.6rem', color:MUTED, marginBottom:'.2rem' }}>{row.ano}</span>}
 
-        {row.ganho && (
-          <div style={{ display:'flex', alignItems:'flex-end', gap: compact ? '.2rem' : '.4rem', margin: compact ? '.1rem 0 .3rem' : '.15rem 0 .5rem' }}>
-            <span style={{ fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:900, color:RED, lineHeight:.85, fontSize: compact ? '1.3rem' : '2.2rem' }}>{gainNum}</span>
-            <span style={{ fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:700, color:RED, marginBottom:'1px', fontSize: compact ? '.7rem' : '1rem' }}>{gainUnit}</span>
-          </div>
+        {compact ? (
+          /* ── COMPACT LAYOUT ── */
+          <>
+            {/* Row 1: title + gain */}
+            <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:'.3rem', marginBottom:'.2rem' }}>
+              <h2 style={{ fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:900, color:'#fff', textTransform:'uppercase', lineHeight:1.05, fontSize:'.9rem', letterSpacing:'-.01em', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1, minWidth:0 }}>
+                {title}
+              </h2>
+              {row.ganho && (
+                <span style={{ fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:900, color:RED, fontSize:'.85rem', lineHeight:1.05, flexShrink:0, whiteSpace:'nowrap' }}>
+                  {gainNum}{gainUnit}
+                </span>
+              )}
+            </div>
+            {/* Row 2: subtitle + year */}
+            {subtitle && <span style={{ fontSize:'.6rem', color:MUTED, lineHeight:1.2, marginBottom:'.2rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{subtitle}</span>}
+            {row.ano && <span style={{ fontSize:'.58rem', color:'#555', marginBottom:'.3rem' }}>{row.ano}</span>}
+            {/* Row 3: price + button */}
+            <div style={{ borderTop:`1px solid ${BORDER}`, paddingTop:'.35rem', marginTop:'auto', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'.25rem' }}>
+              <span style={{ fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:700, color: price === 'Consultar' ? MUTED : '#fff', fontSize:'.85rem' }}>{price}</span>
+              <div className="btn-skew" style={{ background:RED, flexShrink:0 }}>
+                <a href={waLink(row)} target="_blank" rel="noopener noreferrer" className="btn-skew-text" style={{ padding:'.28rem .45rem', fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:700, textTransform:'uppercase', fontSize:'.7rem', color:'#fff', textDecoration:'none', display:'flex', alignItems:'center' }}>
+                  →
+                </a>
+              </div>
+            </div>
+          </>
+        ) : (
+          /* ── FULL LAYOUT (desktop) ── */
+          <>
+            <span style={{ fontFamily:'"JetBrains Mono",monospace', color:RED, textTransform:'uppercase', fontSize:'9px', letterSpacing:'.2em', marginBottom:'.2rem' }}>{row.categoria || 'ECU'}</span>
+            <h2 style={{ fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:900, color:'#fff', textTransform:'uppercase', lineHeight:1.05, marginBottom:'.2rem', fontSize:'1.35rem', letterSpacing:'-.01em', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+              {title}
+            </h2>
+            {subtitle && <span style={{ fontSize:'.7rem', color:MUTED, marginBottom:'.5rem', lineHeight:1.3 }}>{subtitle}{row.ano ? ` · ${row.ano}` : ''}</span>}
+            {row.ganho && (
+              <div style={{ display:'flex', alignItems:'flex-end', gap:'.4rem', margin:'.15rem 0 .5rem' }}>
+                <span style={{ fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:900, color:RED, lineHeight:.85, fontSize:'2.2rem' }}>{gainNum}</span>
+                <span style={{ fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:700, color:RED, marginBottom:'2px', fontSize:'1rem' }}>{gainUnit}</span>
+                <span style={{ fontSize:'.62rem', color:MUTED, marginBottom:'2px', paddingLeft:'.4rem', borderLeft:`1px solid ${BORDER}` }}>ganho</span>
+              </div>
+            )}
+            <div style={{ borderTop:`1px solid ${BORDER}`, paddingTop:'.7rem', marginTop:'auto', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'.5rem' }}>
+              <div>
+                <span style={{ fontFamily:'"JetBrains Mono",monospace', color:MUTED, textTransform:'uppercase', display:'block', fontSize:'9px', letterSpacing:'.15em' }}>Remapeamento ECU</span>
+                <span style={{ fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:700, color: price === 'Consultar' ? MUTED : '#fff', fontSize:'1.2rem' }}>{price}</span>
+              </div>
+              <div className="btn-skew" style={{ background:RED, flexShrink:0 }}>
+                <a href={waLink(row)} target="_blank" rel="noopener noreferrer" className="btn-skew-text" style={{ padding:'.45rem .85rem', fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:700, textTransform:'uppercase', whiteSpace:'nowrap', fontSize:'.85rem', letterSpacing:'.07em', color:'#fff', textDecoration:'none', display:'flex', alignItems:'center', gap:'4px' }}>
+                  Solicitar <span className="arrow-slide">→</span>
+                </a>
+              </div>
+            </div>
+          </>
         )}
-
-        <div style={{ borderTop:`1px solid ${BORDER}`, paddingTop: compact ? '.35rem' : '.7rem', marginTop:'auto', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'.3rem' }}>
-          <span style={{ fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:700, color: price === 'Consultar' ? MUTED : '#fff', fontSize: compact ? '.9rem' : '1.2rem' }}>{price}</span>
-          <div className="btn-skew" style={{ background:RED, flexShrink:0 }}>
-            <a href={waLink(row)} target="_blank" rel="noopener noreferrer" className="btn-skew-text" style={{ padding: compact ? '.3rem .5rem' : '.45rem .85rem', fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:700, textTransform:'uppercase', whiteSpace:'nowrap', fontSize: compact ? '.72rem' : '.85rem', letterSpacing:'.05em', color:'#fff', textDecoration:'none', display:'flex', alignItems:'center', gap:'3px' }}>
-              {compact ? '→' : <>Solicitar <span className="arrow-slide">→</span></>}
-            </a>
-          </div>
-        </div>
       </div>
     </article>
   )

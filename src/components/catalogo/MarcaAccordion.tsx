@@ -9,25 +9,34 @@ interface Props {
   marca: EcuMarca
   readOnly?: boolean
   isMobile?: boolean
+  // controlled mode (used on mobile via CategoriaAccordion to enforce one-at-a-time)
+  isOpen?: boolean
+  onToggle?: () => void
 }
 
-export function MarcaAccordion({ marca, readOnly = false, isMobile = false }: Props) {
+export function MarcaAccordion({ marca, readOnly = false, isMobile = false, isOpen: controlledOpen, onToggle: controlledToggle }: Props) {
   const allItems = marca.modelos.flatMap(m => m.motorizacoes)
-  const [isOpen, setIsOpen] = useState(isMobile) // auto-open on mobile
+  // uncontrolled fallback for desktop
+  const [internalOpen, setInternalOpen] = useState(false)
   const [openCardId, setOpenCardId] = useState<string | null>(null)
 
-  const handleToggle = useCallback((id: string) => {
+  const isOpen   = controlledOpen !== undefined ? controlledOpen : internalOpen
+  const toggle   = controlledToggle ?? (() => setInternalOpen(v => !v))
+
+  const handleCardToggle = useCallback((id: string) => {
     setOpenCardId(prev => (prev === id ? null : id))
   }, [])
 
-  // Mobile: accordion mantido, flush lateral, cards com margem mínima interna
   if (isMobile) {
     return (
-      <div className={cn('w-full border-b border-white/[0.05]', isOpen && 'bg-black/10')}>
-        {/* Brand header — accordion toggle */}
+      <div
+        className={cn('w-full', isOpen && 'bg-black/10')}
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: 7 }}
+      >
+        {/* Brand header */}
         <button
-          onClick={() => setIsOpen(v => !v)}
-          className="flex w-full items-center gap-3 px-3 py-2.5 text-left"
+          onClick={toggle}
+          className="flex w-full items-center gap-3 px-3 py-3 text-left"
         >
           <h2 className="text-xs font-black tracking-[0.1em] uppercase leading-none flex-1" style={{ color: '#E60000' }}>
             {marca.marca}
@@ -35,22 +44,21 @@ export function MarcaAccordion({ marca, readOnly = false, isMobile = false }: Pr
           <span className="text-[9px] text-gray-600 uppercase tracking-widest font-mono">
             {allItems.length} reg.
           </span>
-          <div className={cn('w-5 h-5 rounded-full flex items-center justify-center border transition-all duration-200', isOpen ? 'rotate-180 bg-[#E60000]/15 border-[#E60000]/40' : 'bg-white/5 border-white/10')}>
+          <div className={cn('w-5 h-5 rounded-full flex items-center justify-center border transition-all duration-200 shrink-0', isOpen ? 'rotate-180 bg-[#E60000]/15 border-[#E60000]/40' : 'bg-white/5 border-white/10')}>
             <ChevronDown size={10} className={cn(isOpen ? 'text-[#E60000]' : 'text-gray-500')} />
           </div>
         </button>
-
-        {/* Cards com margem mínima */}
         {isOpen && (
-          <div className="px-2 pb-2 border-t border-white/[0.04]">
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', padding: '4px 8px 8px' }}>
             {allItems.map(item => (
-              <MotorizacaoCard
-                key={item.id}
-                row={item as EcuCatalogRow}
-                isOpen={openCardId === item.id}
-                onToggle={handleToggle}
-                readOnly={readOnly}
-              />
+              <div key={item.id} style={{ marginBottom: 7 }}>
+                <MotorizacaoCard
+                  row={item as EcuCatalogRow}
+                  isOpen={openCardId === item.id}
+                  onToggle={handleCardToggle}
+                  readOnly={readOnly}
+                />
+              </div>
             ))}
           </div>
         )}
@@ -67,9 +75,8 @@ export function MarcaAccordion({ marca, readOnly = false, isMobile = false }: Pr
           : 'border-white/[0.06] bg-transparent hover:border-white/[0.12]',
       )}
     >
-      {/* ── BRAND HEADER ── */}
       <button
-        onClick={() => setIsOpen(v => !v)}
+        onClick={toggle}
         className="flex w-full items-center gap-4 px-5 py-4 hover:bg-white/[0.02] transition-colors text-left"
       >
         <h2
@@ -86,8 +93,6 @@ export function MarcaAccordion({ marca, readOnly = false, isMobile = false }: Pr
           <ChevronDown size={14} className={cn('transition-colors duration-300', isOpen ? 'text-[#E60000]' : 'text-gray-500')} />
         </div>
       </button>
-
-      {/* ── VEHICLE CARDS ── */}
       {isOpen && (
         <div className="px-4 pb-4 pt-2 border-t border-white/[0.05]">
           <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
@@ -96,7 +101,7 @@ export function MarcaAccordion({ marca, readOnly = false, isMobile = false }: Pr
                 key={item.id}
                 row={item as EcuCatalogRow}
                 isOpen={openCardId === item.id}
-                onToggle={handleToggle}
+                onToggle={handleCardToggle}
                 readOnly={readOnly}
               />
             ))}

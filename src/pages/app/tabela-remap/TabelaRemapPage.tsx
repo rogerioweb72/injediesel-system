@@ -1,5 +1,5 @@
 // src/pages/app/tabela-remap/TabelaRemapPage.tsx
-import { useState, useMemo, useRef, useCallback } from 'react'
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import { Search, Download, Upload, FileDown, Settings2, X, CheckCircle2, AlertCircle, Zap, Plus } from 'lucide-react'
 import { BulkActionsPanel } from '@/components/catalogo/BulkActionsPanel'
 import { CategoriaAccordion } from '@/components/catalogo/CategoriaAccordion'
@@ -35,6 +35,14 @@ export default function TabelaRemapPage() {
   const [filtros, setFiltros] = useState<FiltrosValue>(DEFAULT_FILTROS)
   const [busca, setBusca] = useState('')
   const [openCategory, setOpenCategory] = useState<string | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024)
+    check()
+    window.addEventListener('resize', check, { passive: true })
+    return () => window.removeEventListener('resize', check)
+  }, [])
   const [catModalOpen, setCatModalOpen] = useState(false)
   const [canaisModalOpen, setCanaisModalOpen] = useState(false)
   const [newRecordOpen, setNewRecordOpen] = useState(false)
@@ -357,7 +365,10 @@ export default function TabelaRemapPage() {
           ))}
         </div>
       ) : (
-        <div className="space-y-2">
+        <div
+          className="space-y-2"
+          style={isMobile ? { margin: '0 -1.5rem' } : undefined}
+        >
           {categorias.map(cat => {
             const catRows = filtered.filter(r => r.categoria_slug === cat.slug)
             return (

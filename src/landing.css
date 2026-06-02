@@ -185,12 +185,34 @@
 
 /* ── SCROLL ANIMATIONS ───────────────────────────────────────────────────────── */
 .lp-observe {
-  opacity: 0;
-  transform: translateY(24px);
+  /* content visible by default — animation is enhancement only */
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .lp-observe.animate-in {
   animation: lp-fadeInUp 0.7s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-observe.animate-in { animation: none; }
+}
+
+/* ── RESPONSIVE SECTION HELPERS ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .lp-hero-subtitle {
+    font-size: 0.85rem;
+  }
+
+  .lp-arrow {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* ── TOUCH TARGET MINIMUMS ───────────────────────────────────────────────────── */
+button, a, [role="button"] {
+  touch-action: manipulation;
 }
 
 /* Stagger for grid children */

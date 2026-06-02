@@ -1,4 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
+
+// ── Responsive breakpoint hook ────────────────────────────────────────────────
+function useBreakpoint(bp: number) {
+  const [match, setMatch] = useState(false)
+  useEffect(() => {
+    const check = () => setMatch(window.innerWidth <= bp)
+    check()
+    window.addEventListener('resize', check, { passive: true })
+    return () => window.removeEventListener('resize', check)
+  }, [bp])
+  return match
+}
 import logoUrl from '@/assets/tuner-logo.svg'
 import vehicleCarros  from '@/assets/vehicle-carros.jpg'
 import vehiclePickups from '@/assets/vehicle-pickups.jpg'
@@ -18,6 +30,7 @@ import {
   LayoutGrid, ShieldCheck, Settings2, Headphones,
   Wrench, Cpu, FlameKindling, ShoppingBag, ArrowRight,
   Star, Phone, Mail, MapPin, Zap, ChevronRight, ChevronLeft,
+  Menu, X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -325,10 +338,12 @@ function useCountUp(target: number, slide: number, delay = 500, duration = 1100)
 }
 
 // ── NAVBAR V2 ─────────────────────────────────────────────────────────────────
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function Navbar({ onLogin: _onLogin, scrolled }: { onLogin: () => void; scrolled: boolean }) {
-  const mainLinks = ['Serviços', 'Veículos', 'Como Funciona', 'Resultados', 'Sobre']
-  const lastLink  = 'Loja'
+  const isMobile = useBreakpoint(768)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const allLinks = ['Serviços', 'Veículos', 'Como Funciona', 'Resultados', 'Sobre', 'Loja']
 
   const linkStyle: React.CSSProperties = {
     fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.18em',
@@ -336,84 +351,123 @@ function Navbar({ onLogin: _onLogin, scrolled }: { onLogin: () => void; scrolled
     textDecoration: 'none', transition: 'color 0.2s',
   }
 
+  const mobileLinkStyle: React.CSSProperties = {
+    fontSize: '1.1rem', fontWeight: 700, letterSpacing: '0.12em',
+    textTransform: 'uppercase', color: 'rgba(255,255,255,0.75)',
+    textDecoration: 'none', padding: '0.75rem 0',
+    borderBottom: `1px solid ${BORDER}`, display: 'block',
+  }
+
   return (
-    <header style={{
-      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
-      background: scrolled ? 'rgba(8,8,9,0.97)' : 'transparent',
-      backdropFilter: 'blur(12px)',
-      WebkitBackdropFilter: 'blur(12px)',
-      borderBottom: scrolled ? `1px solid ${BORDER}` : '1px solid transparent',
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '0 3rem', height: '64px',
-      transition: 'background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease',
-      boxShadow: scrolled ? '0 4px 32px rgba(0,0,0,0.5)' : 'none',
-    }}>
-      <style>{`
-        @keyframes nav-cta-drift {
-          0%, 100% { transform: translateX(0px); }
-          50%       { transform: translateX(5px); }
-        }
-      `}</style>
+    <>
+      <header style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
+        background: (scrolled || menuOpen) ? 'rgba(8,8,9,0.97)' : 'transparent',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderBottom: (scrolled || menuOpen) ? `1px solid ${BORDER}` : '1px solid transparent',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: isMobile ? '0 1.25rem' : '0 3rem', height: '64px',
+        transition: 'background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease',
+        boxShadow: scrolled ? '0 4px 32px rgba(0,0,0,0.5)' : 'none',
+      }}>
+        <style>{`
+          @keyframes nav-cta-drift {
+            0%, 100% { transform: translateX(0px); }
+            50%       { transform: translateX(5px); }
+          }
+        `}</style>
 
-      {/* Logo */}
-      <img src={logoUrl} alt="Promax Tuner"
-        style={{ height: '24px', width: 'auto', display: 'block' }} />
+        <img src={logoUrl} alt="Promax Tuner"
+          style={{ height: '22px', width: 'auto', display: 'block' }} />
 
-      <nav style={{ display: 'flex', alignItems: 'center', gap: '2.25rem' }}>
-        {mainLinks.map(l => (
-          <a key={l} href={`#${l.toLowerCase().replace(' ', '-')}`} style={linkStyle}
-            onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}
-          >{l}</a>
-        ))}
-        {/* Separator */}
-        <div style={{ width: '1px', height: '14px', background: 'rgba(255,255,255,0.16)', flexShrink: 0 }} />
-        <a href="/loja" style={linkStyle}
-          onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}
-        >{lastLink}</a>
-      </nav>
+        {/* Desktop nav */}
+        {!isMobile && (
+          <>
+            <nav style={{ display: 'flex', alignItems: 'center', gap: '2.25rem' }}>
+              {['Serviços', 'Veículos', 'Como Funciona', 'Resultados', 'Sobre'].map(l => (
+                <a key={l} href={`#${l.toLowerCase().replace(' ', '-')}`} style={linkStyle}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}
+                >{l}</a>
+              ))}
+              <div style={{ width: '1px', height: '14px', background: 'rgba(255,255,255,0.16)', flexShrink: 0 }} />
+              <a href="/loja" style={linkStyle}
+                onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}
+              >Loja</a>
+            </nav>
+            <div style={{ transform: 'skewX(-12deg)', display: 'inline-flex' }}>
+              <button onClick={openWA} style={{
+                background: RED, border: 'none', cursor: 'pointer',
+                animation: 'nav-cta-drift 3.2s ease-in-out infinite',
+                transition: 'filter 0.2s ease',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.animationPlayState = 'paused'; e.currentTarget.style.filter = 'brightness(1.22)' }}
+                onMouseLeave={e => { e.currentTarget.style.filter = ''; e.currentTarget.style.animationPlayState = 'running' }}
+              >
+                <span style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  transform: 'skewX(12deg)', padding: '0 1.35rem', height: '38px',
+                  fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.12em',
+                  textTransform: 'uppercase', color: '#fff', fontFamily: 'var(--pm-font-body)',
+                }}>
+                  Analisar Veículo <ChevronRight size={11} />
+                </span>
+              </button>
+            </div>
+          </>
+        )}
 
-      {/* Analisar Veículo — parallelogram + subtle drift */}
-      <div style={{ transform: 'skewX(-12deg)', display: 'inline-flex' }}>
-        <button
-          onClick={openWA}
-          style={{
-            background: RED, border: 'none', cursor: 'pointer',
-            animation: 'nav-cta-drift 3.2s ease-in-out infinite',
-            transition: 'filter 0.2s ease',
-          }}
-          onMouseEnter={e => {
-            const el = e.currentTarget
-            el.style.animationPlayState = 'paused'
-            el.style.filter = 'brightness(1.22)'
-            el.style.transform = 'translateX(5px)'
-          }}
-          onMouseLeave={e => {
-            const el = e.currentTarget
-            el.style.filter = ''
-            el.style.transform = ''
-            el.style.animationPlayState = 'running'
-          }}
-        >
-          <span style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            transform: 'skewX(12deg)',
-            padding: '0 1.35rem', height: '38px',
-            fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.12em',
-            textTransform: 'uppercase', color: '#fff',
-            fontFamily: 'var(--pm-font-body)',
+        {/* Mobile hamburger */}
+        {isMobile && (
+          <button
+            onClick={() => setMenuOpen(v => !v)}
+            aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: '#fff', padding: '0.5rem', minWidth: '44px', minHeight: '44px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            {menuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        )}
+      </header>
+
+      {/* Mobile drawer */}
+      {isMobile && menuOpen && (
+        <div style={{
+          position: 'fixed', top: '64px', left: 0, right: 0, bottom: 0,
+          background: 'rgba(8,8,9,0.98)', zIndex: 49,
+          padding: '2rem 1.5rem', overflowY: 'auto',
+          display: 'flex', flexDirection: 'column',
+        }}>
+          {allLinks.map(l => (
+            <a key={l}
+              href={l === 'Loja' ? '/loja' : `#${l.toLowerCase().replace(' ', '-')}`}
+              style={mobileLinkStyle}
+              onClick={() => setMenuOpen(false)}
+            >{l}</a>
+          ))}
+          <button onClick={() => { openWA(); setMenuOpen(false) }} style={{
+            marginTop: '2rem', background: RED, border: 'none', cursor: 'pointer',
+            padding: '1rem', color: '#fff', fontSize: '0.85rem', fontWeight: 700,
+            letterSpacing: '0.1em', textTransform: 'uppercase', borderRadius: '6px',
+            minHeight: '52px',
           }}>
-            Analisar Veículo <ChevronRight size={11} />
-          </span>
-        </button>
-      </div>
-    </header>
+            Analisar Veículo →
+          </button>
+        </div>
+      )}
+    </>
   )
 }
 
 // ── HERO V2 — split screen ────────────────────────────────────────────────────
 function HeroSection({ onLogin }: { onLogin: () => void }) {
+  const isMobile = useBreakpoint(768)
+  const isTablet = useBreakpoint(1024)
   const [currentSlide, setCurrentSlide] = useState(0)
   const [gaugeVal, setGaugeVal] = useState(0)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -458,8 +512,9 @@ function HeroSection({ onLogin }: { onLogin: () => void }) {
 
   return (
     <section id="serviços" style={{
-      minHeight: '100vh',
-      display: 'grid', gridTemplateColumns: '1fr 1fr',
+      minHeight: isMobile ? 'auto' : '100vh',
+      paddingBottom: isMobile ? '3rem' : 0,
+      display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr' : '1fr 1fr',
       position: 'relative', overflow: 'hidden',
     }}>
       {/* Grid texture */}
@@ -485,6 +540,7 @@ function HeroSection({ onLogin }: { onLogin: () => void }) {
           }}>
             <img
               src={v.image} alt={v.modelName}
+              loading={i === 0 ? 'eager' : 'lazy'}
               style={{
                 width: '100%', height: '100%',
                 objectFit: 'cover', objectPosition: 'center center',
@@ -514,7 +570,7 @@ function HeroSection({ onLogin }: { onLogin: () => void }) {
       {/* Left: content */}
       <div style={{
         display: 'flex', flexDirection: 'column', justifyContent: 'center',
-        padding: '120px 3.5rem 4rem 6rem',
+        padding: isMobile ? '96px 1.5rem 3rem' : isTablet ? '100px 3rem 4rem' : '120px 3.5rem 4rem 6rem',
         position: 'relative', zIndex: 2,
         background: 'linear-gradient(to right, rgba(8,8,9,0.98) 0%, rgba(8,8,9,0.65) 100%)',
       }}>
@@ -523,7 +579,7 @@ function HeroSection({ onLogin }: { onLogin: () => void }) {
           {V2_VEHICLES.map((v, i) => (
             <button key={v.slug} onClick={() => goToSlide(i)} style={{
               fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.2em',
-              padding: '3px 10px',
+              padding: '8px 12px', minHeight: '32px',
               border: `1px solid ${i === currentSlide ? RED : BORDER}`,
               borderRadius: '999px', cursor: 'pointer',
               background: i === currentSlide ? 'rgba(193,13,25,0.1)' : 'none',
@@ -540,19 +596,20 @@ function HeroSection({ onLogin }: { onLogin: () => void }) {
             <h1 style={{
               fontFamily: 'var(--pm-font-display)',
               fontWeight: 900, fontStyle: 'italic',
-              fontSize: 'clamp(3.5rem, 5.5vw, 6.5rem)',
+              fontSize: isMobile ? 'clamp(2.8rem, 10vw, 3.75rem)' : 'clamp(3.5rem, 5.5vw, 5.75rem)',
               lineHeight: 0.88, letterSpacing: '-0.02em',
               textTransform: 'uppercase', color: 'hsl(var(--pm-gray-50))',
+              textWrap: 'balance' as React.CSSProperties['textWrap'],
               animation: 'v2-slide-up 0.65s cubic-bezier(0.16,1,0.3,1) 0.05s both',
             }}>
               {vehicle.titleLine1}
             </h1>
           </div>
           <div style={{ overflow: 'hidden' }}>
-            <h1 style={{
+            <h1 aria-hidden style={{
               fontFamily: 'var(--pm-font-display)',
               fontWeight: 900, fontStyle: 'italic',
-              fontSize: 'clamp(3.5rem, 5.5vw, 6.5rem)',
+              fontSize: isMobile ? 'clamp(2.8rem, 10vw, 3.75rem)' : 'clamp(3.5rem, 5.5vw, 5.75rem)',
               lineHeight: 0.88, letterSpacing: '-0.02em',
               textTransform: 'uppercase', color: RED,
               animation: 'v2-slide-up 0.65s cubic-bezier(0.16,1,0.3,1) 0.18s both',
@@ -683,9 +740,10 @@ function HeroSection({ onLogin }: { onLogin: () => void }) {
 
       </div>
 
-      {/* Right: gauge — moved up, sits above the vehicle image */}
+      {/* Right: gauge — hidden on mobile/tablet */}
       <div style={{
-        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+        display: (isMobile || isTablet) ? 'none' : 'flex',
+        alignItems: 'flex-start', justifyContent: 'center',
         position: 'relative', zIndex: 3,
         background: 'linear-gradient(to left, rgba(8,8,9,0.72) 0%, rgba(8,8,9,0.08) 100%)',
         paddingTop: '95px',
@@ -883,11 +941,15 @@ function HeroSection({ onLogin }: { onLogin: () => void }) {
           to   { transform: rotate(360deg); }
         }
         .v2-observe {
-          opacity: 0;
-          transform: translateY(28px);
+          opacity: 1;
+          transform: translateY(0);
         }
         .v2-observe.v2-in {
           animation: v2-fade-up 0.65s cubic-bezier(0.16,1,0.3,1) forwards;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .v2-observe.v2-in { animation: none; }
+          .lp-observe.animate-in { animation: none; }
         }
         .v2-stagger .v2-observe:nth-child(1) { animation-delay: 0.00s; }
         .v2-stagger .v2-observe:nth-child(2) { animation-delay: 0.07s; }
@@ -940,6 +1002,7 @@ function MarqueeBar() {
 
 // ── NUMBERS — big impact ──────────────────────────────────────────────────────
 function NumbersSection() {
+  const isMobile = useBreakpoint(640)
   const nums = [
     { value: '+15mil',   label: 'Veículos Recalibrados', sub: 'desde 2014' },
     { value: '+10anos',  label: 'de Experiência',        sub: 'em performance' },
@@ -949,7 +1012,7 @@ function NumbersSection() {
 
   return (
     <section style={{
-      background: DARK, padding: '7rem 3rem', position: 'relative', overflow: 'hidden',
+      background: DARK, padding: 'clamp(4rem,8vw,7rem) clamp(1.5rem,5vw,3rem)', position: 'relative', overflow: 'hidden',
       borderBottom: `1px solid ${BORDER}`,
     }}>
       {/* Ghost text */}
@@ -963,20 +1026,21 @@ function NumbersSection() {
 
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <div className="v2-observe" style={{ marginBottom: '5rem' }}>
-          <Eyebrow>Números que Importam</Eyebrow>
+          {/* Eyebrow removed — section heading is self-evident */}
           <Display size="clamp(2.5rem,4vw,3.5rem)">
             Resultado que se <Accent>mede.</Accent>
           </Display>
         </div>
 
         <div className="v2-stagger" style={{
-          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+          display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
           gap: '0', borderTop: `1px solid ${BORDER}`,
         }}>
           {nums.map((n, i) => (
             <div key={n.label} className="v2-observe" style={{
-              padding: '2.5rem 2rem',
-              borderRight: i < 3 ? `1px solid ${BORDER}` : 'none',
+              padding: isMobile ? '1.75rem 1.25rem' : '2.5rem 2rem',
+              borderRight: isMobile ? (i % 2 === 0 ? `1px solid ${BORDER}` : 'none') : (i < 3 ? `1px solid ${BORDER}` : 'none'),
+              borderBottom: isMobile && i < 2 ? `1px solid ${BORDER}` : 'none',
             }}>
               <p style={{
                 fontFamily: 'var(--pm-font-display)', fontWeight: 900, fontStyle: 'italic',
@@ -1011,6 +1075,7 @@ function NumbersSection() {
 const HW_THRESHOLDS = [0.16, 0.34, 0.52, 0.70, 0.88]
 
 function HowItWorks() {
+  const isMobile = useBreakpoint(640)
   const steps = [
     { n: '01', title: 'Diagnóstico',     desc: 'Entendemos veículo, objetivo e sintomas.' },
     { n: '02', title: 'Leitura ECU',     desc: 'O arquivo original é lido e analisado.' },
@@ -1065,7 +1130,7 @@ function HowItWorks() {
     }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <div className="v2-observe" style={{ marginBottom: '5rem', textAlign: 'center' }}>
-          <Eyebrow>Processo Técnico</Eyebrow>
+          {/* Eyebrow removed */}
           <Display center size="clamp(2.5rem, 4.5vw, 4rem)">
             Como funciona a <Accent>Calibração</Accent>
           </Display>
@@ -1143,7 +1208,7 @@ function HowItWorks() {
 
           {/* Step grid */}
           <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1.5rem',
+            display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)', gap: '1.5rem',
           }}>
             {steps.map((s, i) => (
               <div key={s.n} style={{
@@ -1238,7 +1303,7 @@ function VehicleCard({ label, desc, img, slug }: { label: string; desc: string; 
       }}
     >
       {/* Photo — muted silhouette */}
-      <img src={img} alt={label} style={{
+      <img src={img} alt={label} loading="lazy" style={{
         position: 'absolute', inset: 0, width: '100%', height: '100%',
         objectFit: 'cover',
         opacity: hovered ? 1.0 : 0.78,
@@ -1308,6 +1373,8 @@ function VehicleCard({ label, desc, img, slug }: { label: string; desc: string; 
 }
 
 function VehiclesSection() {
+  const isMobile = useBreakpoint(640)
+  const isTablet = useBreakpoint(900)
   const cats = [
     { slug: 'carros-e-suvs', label: 'Carros & SUVs', desc: 'Hatch, sedan, SUV e esportivos', img: catCarros },
     { slug: 'pickups',  label: 'Pickups',        desc: 'Leves e pesadas',                  img: catPickups  },
@@ -1343,7 +1410,7 @@ function VehiclesSection() {
 
         <div className="v2-stagger" style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
+          gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
           gap: '1.25rem',
         }}>
           {cats.map(c => <VehicleCard key={c.label} {...c} />)}
@@ -1363,6 +1430,7 @@ const RS_BARS = [
 const RS_CURVE = [30, 45, 55, 60, 70, 80, 85, 90, 95, 100, 98, 96]
 
 function ResultsSection() {
+  const isMobile = useBreakpoint(900)
   const sectionRef   = useRef<HTMLElement>(null)
   const [triggered, setTriggered] = useState(false)
   const triggeredRef = useRef(false)
@@ -1397,7 +1465,7 @@ function ResultsSection() {
     }}>
       <div style={{
         maxWidth: '1200px', margin: '0 auto',
-        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6rem', alignItems: 'center',
+        display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '2rem' : '6rem', alignItems: 'center',
       }}>
 
         {/* Right panel: diagnostic mockup */}
@@ -1510,7 +1578,7 @@ function ResultsSection() {
 
         {/* Left: text + animated bars */}
         <div className="v2-observe" style={{ order: 2 }}>
-          <Eyebrow>Resultado Mensurável</Eyebrow>
+          {/* Eyebrow removed */}
           <Display size="clamp(2rem, 3.5vw, 3.25rem)">
             Mais que potência:<br /><Accent>comportamento</Accent><br />transformado
           </Display>
@@ -1585,6 +1653,7 @@ function ResultsSection() {
 
 // ── LOJA ──────────────────────────────────────────────────────────────────────
 function LojaSection() {
+  const isMobile = useBreakpoint(640)
   const categories = [
     { icon: Zap,         title: 'Pro Booster',        desc: 'Módulos de potência com bluetooth e app dedicado.', price: 'A partir de R$ 890', badge: 'MAIS VENDIDO' },
     { icon: Cpu,         title: 'Piggy Back',          desc: 'Módulos de interceptação para ajuste de sinal.', price: 'A partir de R$ 1.200', badge: 'TÉCNICO' },
@@ -1617,7 +1686,7 @@ function LojaSection() {
         </div>
 
         <div className="v2-stagger" style={{
-          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1px',
+          display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1px',
           border: `1px solid ${BORDER}`, borderRadius: '16px', overflow: 'hidden',
         }}>
           {categories.map((c, i) => (
@@ -1707,6 +1776,7 @@ function LojaSection() {
 
 // ── SOBRE / FEATURES ──────────────────────────────────────────────────────────
 function AboutSection() {
+  const isMobile = useBreakpoint(768)
   const features = [
     { icon: Settings2,   title: 'Calibração sob Medida',  desc: 'Mapas ajustados exclusivamente para o veículo e objetivo do cliente.' },
     { icon: ShieldCheck, title: 'Foco em Segurança',      desc: 'Ganhos reais respeitando os limites mecânicos e térmicos.' },
@@ -1724,8 +1794,8 @@ function AboutSection() {
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {/* Two-column header */}
         <div style={{
-          display: 'grid', gridTemplateColumns: '1fr 1fr',
-          gap: '4rem', alignItems: 'end', marginBottom: '5rem',
+          display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+          gap: isMobile ? '1.5rem' : '4rem', alignItems: 'end', marginBottom: '5rem',
         }}>
           <div className="v2-observe">
             <Eyebrow>Autoridade Técnica</Eyebrow>
@@ -1744,7 +1814,7 @@ function AboutSection() {
 
         {/* Features: 2-column table-like layout */}
         <div className="v2-stagger" style={{
-          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0',
+          display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '0',
           border: `1px solid ${BORDER}`, borderRadius: '12px', overflow: 'hidden',
         }}>
           {features.map((f, i) => (
@@ -1784,6 +1854,7 @@ function AboutSection() {
 
 // ── DEPOIMENTOS (nova seção) ──────────────────────────────────────────────────
 function TestimonialsSection() {
+  const isMobile = useBreakpoint(768)
   const reviews = [
     {
       name: 'Rafael M.',
@@ -1811,14 +1882,14 @@ function TestimonialsSection() {
     }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <div className="v2-observe" style={{ textAlign: 'center', marginBottom: '4rem' }}>
-          <Eyebrow>Quem já calibrou</Eyebrow>
+          {/* Eyebrow removed */}
           <Display center size="clamp(2.5rem, 4vw, 3.5rem)">
             Resultados que <Accent>falam</Accent> por si
           </Display>
         </div>
 
         <div className="v2-stagger" style={{
-          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.25rem',
+          display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1.25rem',
         }}>
           {reviews.map((r) => (
             <div key={r.name} className="v2-observe" style={{
@@ -1868,6 +1939,7 @@ function TestimonialsSection() {
 
 // ── CTA FINAL ─────────────────────────────────────────────────────────────────
 function CTASection({ onLogin }: { onLogin: () => void }) {
+  const isMobile = useBreakpoint(640)
   return (
     <section id="contato" style={{
       background: 'hsl(222 8% 5%)', padding: '8rem 3rem',
@@ -1925,7 +1997,7 @@ function CTASection({ onLogin }: { onLogin: () => void }) {
 
         {/* Contact strip */}
         <div className="v2-observe" style={{
-          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+          display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
           gap: '0', border: `1px solid ${BORDER}`, borderRadius: '12px',
           overflow: 'hidden',
         }}>
@@ -1955,12 +2027,13 @@ function CTASection({ onLogin }: { onLogin: () => void }) {
 
 // ── FOOTER ────────────────────────────────────────────────────────────────────
 function Footer() {
+  const isMobile = useBreakpoint(640)
   return (
-    <footer style={{ background: '#000', padding: '4rem 3rem 2rem', borderTop: `1px solid hsl(var(--pm-gray-800))` }}>
+    <footer style={{ background: '#000', padding: isMobile ? '3rem 1.5rem 2rem' : '4rem 3rem 2rem', borderTop: `1px solid hsl(var(--pm-gray-800))` }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <div style={{
-          display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr',
-          gap: '3rem', marginBottom: '3rem',
+          display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr 1fr',
+          gap: isMobile ? '2rem' : '3rem', marginBottom: '3rem',
         }}>
           <div>
             <div style={{ marginBottom: '1rem' }}>

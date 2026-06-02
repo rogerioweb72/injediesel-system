@@ -291,12 +291,11 @@ export default function LojaPage() {
       </header>
 
       {/* ── BANNER ── */}
-      <section style={{ overflow:'hidden', position:'relative', background:'#0a0a0b', borderBottom:`2px solid ${BORDER}` }}>
+      <section style={{ overflow:'hidden', position:'relative', background:'#0a0a0b', borderBottom:`1px solid ${BORDER}` }}>
         <div style={{ position:'absolute', inset:0 }}>
-          <div style={{ position:'absolute', inset:0, background:'linear-gradient(105deg,#0a0a0b 0%,#0a0a0b 52%,#1a0505 52%,#0f0303 100%)' }} />
-          <div style={{ position:'absolute', top:0, bottom:0, left:'51%', width:'3px', background:RED, transform:'skewX(-6deg)', zIndex:1 }} />
-          <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 70% 50%,rgba(231,43,43,.08) 0%,transparent 65%)', zIndex:1 }} />
-          <div style={{ position:'absolute', inset:0, backgroundImage:'linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px)', backgroundSize:'48px 48px', zIndex:1 }} />
+          <div style={{ position:'absolute', inset:0, background:'linear-gradient(135deg,#0a0a0b 0%,#0f0303 100%)' }} />
+          <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 70% 50%,rgba(231,43,43,.07) 0%,transparent 65%)', zIndex:1 }} />
+          <div style={{ position:'absolute', inset:0, backgroundImage:'linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px)', backgroundSize:'48px 48px', zIndex:1 }} />
         </div>
         <div style={{ position:'relative', zIndex:2, display:'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent:'space-between', flexDirection: isMobile ? 'column' : 'row', gap:'1.5rem', padding: isMobile ? '1.25rem 1rem 1.5rem' : '1.5rem 2rem', minHeight: isMobile ? 'auto' : '165px' }}>
           <div style={{ flex:1 }}>
@@ -341,13 +340,6 @@ export default function LojaPage() {
         </div>
       </section>
 
-      {/* ── SEPARATOR ── */}
-      <div style={{ background:BORDER, borderBottom:`1px solid #2e3035`, padding: isMobile ? '.75rem 1rem' : '.9rem 2rem', display:'flex', alignItems:'center', justifyContent:'center' }}>
-        <span style={{ ...MONO, fontSize:'.58rem', letterSpacing:'.22em', textTransform:'uppercase', color:'#6b6e73' }}>
-          escolha entre produtos ou remap no menu abaixo
-        </span>
-      </div>
-
       {/* ── SECTION SWITCHER ── */}
       <div style={{ display:'flex', background:'#0a0a0b', borderBottom:`2px solid ${BORDER}`, position:'relative' }}>
         {(['remap','acessorios'] as const).map(s => {
@@ -381,14 +373,24 @@ export default function LojaPage() {
       {section === 'remap' && (
         <>
           {/* Category tabs */}
-          <div style={{ background:BORDER, marginTop:'50px' }}>
-            <div style={{ padding:'.75rem 2rem', display:'flex', gap:'.5rem', overflowX:'auto', maxWidth:'1920px', margin:'0 auto' }}>
+          <div style={{ background:BORDER }}>
+            <div style={{
+              padding: isMobile ? '.75rem 1rem' : '.75rem 2rem',
+              maxWidth:'1920px', margin:'0 auto',
+              display: isMobile ? 'grid' : 'flex',
+              gridTemplateColumns: isMobile ? 'repeat(3,1fr)' : undefined,
+              gap: isMobile ? '10px' : '.5rem',
+              flexWrap: isMobile ? undefined : 'nowrap',
+              overflowX: isMobile ? undefined : 'auto',
+            }}>
               {CATEGORIES.map(c => {
                 const active = category === c.key
                 return (
                   <button key={c.key} onClick={() => setCategory(c.key)} style={{
-                    ...DISP, fontWeight:700, textTransform:'uppercase', fontSize:'.9rem', letterSpacing:'.08em',
-                    padding:'.6rem 1.75rem', whiteSpace:'nowrap', cursor:'pointer',
+                    ...DISP, fontWeight:700, textTransform:'uppercase',
+                    fontSize: isMobile ? '.8rem' : '.9rem', letterSpacing:'.06em',
+                    padding: isMobile ? '.55rem .5rem' : '.6rem 1.75rem',
+                    whiteSpace:'nowrap', cursor:'pointer', textAlign:'center',
                     background: active ? RED : 'transparent', color: active ? '#fff' : MUTED,
                     border: active ? 'none' : `1px solid rgba(255,255,255,.12)`,
                     transition:'all .15s',
@@ -476,7 +478,7 @@ export default function LojaPage() {
               </div>
 
               {isLoading ? (
-                <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2,1fr)', gap:'1rem' }}>
+                <div style={{ display:'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: isMobile ? '.5rem' : '1rem' }}>
                   {Array.from({ length: 6 }).map((_, i) => (
                     <div key={i} style={{ background:CARD, border:`1px solid ${BORDER}`, height:'180px', opacity: 0.4 + (i % 6) * 0.08 }} />
                   ))}
@@ -487,7 +489,7 @@ export default function LojaPage() {
                   <div style={{ fontSize:'.75rem' }}>Registros para esta categoria sendo preparados</div>
                 </div>
               ) : (
-                <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2,1fr)', gap:'1rem' }}>
+                <div style={{ display:'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: isMobile ? '.5rem' : '1rem' }}>
                   {visible.map((row, i) => <ProductCard key={row.id} row={row} delay={i * 20} />)}
                 </div>
               )}
@@ -517,7 +519,7 @@ export default function LojaPage() {
 
       {/* ── ACESSÓRIOS ── */}
       {section === 'acessorios' && (
-        <div style={{ display:'flex', flex:1, flexDirection: isMobile ? 'column' : 'row', maxWidth:'1920px', margin:'50px auto 0', width:'100%' }}>
+        <div style={{ display:'flex', flex:1, flexDirection: isMobile ? 'column' : 'row', maxWidth:'1920px', margin:'0 auto', width:'100%' }}>
           {/* Mobile filter toggle for accessories */}
           {isMobile && (
             <div style={{ padding:'.75rem 1rem', borderBottom:`1px solid ${BORDER}`, background:DARK }}>
@@ -586,7 +588,7 @@ export default function LojaPage() {
             </div>
 
             {accLoading ? (
-              <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2,1fr)', gap:'1rem' }}>
+              <div style={{ display:'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: isMobile ? '.5rem' : '1rem' }}>
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} style={{ background:CARD, border:`1px solid ${BORDER}`, height:'200px', opacity: 0.4 + (i % 6) * 0.08 }} />
                 ))}
@@ -597,7 +599,7 @@ export default function LojaPage() {
                 <div style={{ fontSize:'.75rem' }}>Tente outro filtro ou busca</div>
               </div>
             ) : (
-              <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2,1fr)', gap:'1rem' }}>
+              <div style={{ display:'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: isMobile ? '.5rem' : '1rem' }}>
                 {accVisible.map((p, i) => <ProductItemCard key={p.id} product={p} delay={i * 20} onAddToCart={addToCart} onBuyNow={buyNow} />)}
               </div>
             )}

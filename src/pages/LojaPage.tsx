@@ -261,9 +261,17 @@ export default function LojaPage() {
       {/* ── HEADER ── */}
       <header style={{ position:'sticky', top:0, zIndex:50, background:'rgba(8,8,9,0.97)', backdropFilter:'blur(12px)', borderBottom:`1px solid ${BORDER}` }}>
         <div style={{ padding: isMobile ? '0 1rem' : '0 2rem', height:'64px', display:'flex', alignItems:'center', justifyContent: isMobile ? 'center' : 'space-between', position:'relative' }}>
-          <Link to="/" style={{ lineHeight:0 }}>
-            <img src="/tuner-logo.svg" alt="Promax Tuner" style={{ height:'22px', width:'auto' }} />
-          </Link>
+          {isMobile ? (
+            <div style={{ position:'absolute', left:'50%', transform:'translateX(-50%)', lineHeight:0 }}>
+              <Link to="/" style={{ lineHeight:0 }}>
+                <img src="/tuner-logo.svg" alt="Promax Tuner" style={{ height:'22px', width:'auto' }} />
+              </Link>
+            </div>
+          ) : (
+            <Link to="/" style={{ lineHeight:0 }}>
+              <img src="/tuner-logo.svg" alt="Promax Tuner" style={{ height:'22px', width:'auto' }} />
+            </Link>
+          )}
           <nav style={{ display: isMobile ? 'none' : 'flex', alignItems:'center', gap:'2.25rem', fontWeight:700, fontSize:'11px', letterSpacing:'0.15em', textTransform:'uppercase' }}>
             {[
               { label:'Serviços',      href:'/#serviços' },
@@ -490,7 +498,7 @@ export default function LojaPage() {
                 </div>
               ) : (
                 <div style={{ display:'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: isMobile ? '.5rem' : '1rem' }}>
-                  {visible.map((row, i) => <ProductCard key={row.id} row={row} delay={i * 20} />)}
+                  {visible.map((row, i) => <ProductCard key={row.id} row={row} delay={i * 20} compact={isMobile} />)}
                 </div>
               )}
 
@@ -600,7 +608,7 @@ export default function LojaPage() {
               </div>
             ) : (
               <div style={{ display:'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: isMobile ? '.5rem' : '1rem' }}>
-                {accVisible.map((p, i) => <ProductItemCard key={p.id} product={p} delay={i * 20} onAddToCart={addToCart} onBuyNow={buyNow} />)}
+                {accVisible.map((p, i) => <ProductItemCard key={p.id} product={p} delay={i * 20} onAddToCart={addToCart} onBuyNow={buyNow} compact={isMobile} />)}
               </div>
             )}
 
@@ -937,7 +945,7 @@ export default function LojaPage() {
   )
 }
 
-function ProductItemCard({ product, delay, onAddToCart, onBuyNow }: { product: ProductWithPrices; delay: number; onAddToCart: (p: ProductWithPrices) => void; onBuyNow: (p: ProductWithPrices) => void }) {
+function ProductItemCard({ product, delay, onAddToCart, onBuyNow, compact = false }: { product: ProductWithPrices; delay: number; onAddToCart: (p: ProductWithPrices) => void; onBuyNow: (p: ProductWithPrices) => void; compact?: boolean }) {
   const clientePrice = product.product_prices?.find(p => p.tier === 'cliente_final')?.price ?? null
   const price = clientePrice
     ? 'R$ ' + Number(clientePrice).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
@@ -945,7 +953,7 @@ function ProductItemCard({ product, delay, onAddToCart, onBuyNow }: { product: P
 
   return (
     <article className="product-card" style={{ background:CARD, border:`1px solid ${BORDER}`, display:'flex', flexDirection:'column', animationDelay:`${delay}ms` }}>
-      <div className="card-img" style={{ height:'180px', background:'#000', position:'relative', overflow:'hidden' }}>
+      <div className="card-img" style={{ height: compact ? '100px' : '180px', background:'#000', position:'relative', overflow:'hidden' }}>
         {product.image_url ? (
           <img
             src={product.image_url}
@@ -971,20 +979,20 @@ function ProductItemCard({ product, delay, onAddToCart, onBuyNow }: { product: P
         )}
       </div>
 
-      <div style={{ padding:'1rem 1.25rem', display:'flex', flexDirection:'column', flexGrow:1 }}>
-        <h2 style={{ ...DISP, fontWeight:900, color:'#fff', textTransform:'uppercase', lineHeight:1.05, marginBottom:'.5rem', fontSize:'1.1rem', letterSpacing:'-.01em' }}>
+      <div style={{ padding: compact ? '.5rem .6rem' : '1rem 1.25rem', display:'flex', flexDirection:'column', flexGrow:1 }}>
+        <h2 style={{ ...DISP, fontWeight:900, color:'#fff', textTransform:'uppercase', lineHeight:1.05, marginBottom: compact ? '.25rem' : '.5rem', fontSize: compact ? '.85rem' : '1.1rem', letterSpacing:'-.01em', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
           {product.name}
         </h2>
-        {product.description && (
+        {!compact && product.description && (
           <p style={{ fontSize:'.7rem', color:MUTED, marginBottom:'.5rem', lineHeight:1.4, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>
             {product.description}
           </p>
         )}
 
-        <div style={{ borderTop:`1px solid ${BORDER}`, paddingTop:'.7rem', marginTop:'auto', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'.5rem' }}>
-          <span style={{ ...DISP, fontWeight:700, color: clientePrice ? '#fff' : MUTED, fontSize:'1.35rem' }}>{price}</span>
-          {/* dual-button block — single skewed container */}
-          <div style={{ display:'flex', alignItems:'stretch', transform:'skewX(-12deg)', flexShrink:0, overflow:'hidden', height:36 }}>
+        <div style={{ borderTop:`1px solid ${BORDER}`, paddingTop: compact ? '.4rem' : '.7rem', marginTop:'auto', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'.25rem', flexWrap: compact ? 'wrap' : 'nowrap' }}>
+          <span style={{ ...DISP, fontWeight:700, color: clientePrice ? '#fff' : MUTED, fontSize: compact ? '1rem' : '1.35rem' }}>{price}</span>
+          {/* dual-button block */}
+          <div style={{ display:'flex', alignItems:'stretch', transform:'skewX(-12deg)', flexShrink:0, overflow:'hidden', height: compact ? 28 : 36 }}>
             {/* cart icon half — dark */}
             <button
               onClick={() => onAddToCart(product)}
@@ -1034,7 +1042,7 @@ function FilterSection({ label, children }: { label: string; children: React.Rea
   )
 }
 
-function ProductCard({ row, delay }: { row: EcuCatalogRow; delay: number }) {
+function ProductCard({ row, delay, compact = false }: { row: EcuCatalogRow; delay: number; compact?: boolean }) {
   const { num: gainNum, unit: gainUnit } = parseGain(row.ganho)
   const title    = [row.marca, row.secao_original].filter(Boolean).join(' · ') || '—'
   const subtitle = row.modelo_descricao || ''
@@ -1047,8 +1055,8 @@ function ProductCard({ row, delay }: { row: EcuCatalogRow; delay: number }) {
     : { background:'linear-gradient(135deg,#1a1a1d 0%,#0d0d0f 100%)' }
 
   return (
-    <article className="product-card" style={{ background:CARD, border:`1px solid ${BORDER}`, display:'flex', flexDirection:'column', animationDelay:`${delay}ms` }}>
-      <div className="card-img" style={{ height:'160px', background:'#000', position:'relative', overflow:'hidden', ...imgStyle }}>
+    <article className="product-card" style={{ background:CARD, border:`1px solid ${BORDER}`, display:'flex', flexDirection:'column', animationDelay:`${delay}ms`, minWidth:0 }}>
+      <div className="card-img" style={{ height: compact ? '90px' : '160px', background:'#000', position:'relative', overflow:'hidden', ...imgStyle }}>
         {imgSrc && (
           <img src={imgSrc} alt={title} referrerPolicy="no-referrer" style={{ width:'100%', height:'100%', objectFit:'cover', mixBlendMode:'lighten', opacity:.82 }} />
         )}
@@ -1063,33 +1071,28 @@ function ProductCard({ row, delay }: { row: EcuCatalogRow; delay: number }) {
         </div>
       </div>
 
-      <div style={{ padding:'1rem 1.25rem', display:'flex', flexDirection:'column', flexGrow:1 }}>
-        <span style={{ fontFamily:'"JetBrains Mono",monospace', color:RED, textTransform:'uppercase', fontSize:'9px', letterSpacing:'.2em', marginBottom:'.2rem' }}>
-          {row.categoria || 'ECU'}
-        </span>
-        <h2 style={{ fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:900, color:'#fff', textTransform:'uppercase', lineHeight:1.05, marginBottom:'.2rem', fontSize:'1.35rem', letterSpacing:'-.01em' }}>
+      <div style={{ padding: compact ? '.5rem .6rem' : '1rem 1.25rem', display:'flex', flexDirection:'column', flexGrow:1, minWidth:0 }}>
+        {!compact && <span style={{ fontFamily:'"JetBrains Mono",monospace', color:RED, textTransform:'uppercase', fontSize:'9px', letterSpacing:'.2em', marginBottom:'.2rem' }}>{row.categoria || 'ECU'}</span>}
+        <h2 style={{ fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:900, color:'#fff', textTransform:'uppercase', lineHeight:1.05, marginBottom:'.2rem', fontSize: compact ? '.85rem' : '1.35rem', letterSpacing:'-.01em', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
           {title}
         </h2>
-        {subtitle && (
+        {!compact && subtitle && (
           <span style={{ fontSize:'.7rem', color:MUTED, marginBottom:'.5rem', lineHeight:1.3 }}>{subtitle}{row.ano ? ` · ${row.ano}` : ''}</span>
         )}
+        {compact && row.ano && <span style={{ fontSize:'.6rem', color:MUTED, marginBottom:'.2rem' }}>{row.ano}</span>}
 
         {row.ganho && (
-          <div style={{ display:'flex', alignItems:'flex-end', gap:'.4rem', margin:'.15rem 0 .5rem' }}>
-            <span style={{ fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:900, color:RED, lineHeight:.85, fontSize:'2.2rem' }}>{gainNum}</span>
-            <span style={{ fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:700, color:RED, marginBottom:'2px', fontSize:'1rem' }}>{gainUnit}</span>
-            <span style={{ fontSize:'.62rem', color:MUTED, marginBottom:'2px', paddingLeft:'.4rem', borderLeft:`1px solid ${BORDER}` }}>ganho</span>
+          <div style={{ display:'flex', alignItems:'flex-end', gap: compact ? '.2rem' : '.4rem', margin: compact ? '.1rem 0 .3rem' : '.15rem 0 .5rem' }}>
+            <span style={{ fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:900, color:RED, lineHeight:.85, fontSize: compact ? '1.3rem' : '2.2rem' }}>{gainNum}</span>
+            <span style={{ fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:700, color:RED, marginBottom:'1px', fontSize: compact ? '.7rem' : '1rem' }}>{gainUnit}</span>
           </div>
         )}
 
-        <div style={{ borderTop:`1px solid ${BORDER}`, paddingTop:'.7rem', marginTop:'auto', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'.5rem' }}>
-          <div>
-            <span style={{ fontFamily:'"JetBrains Mono",monospace', color:MUTED, textTransform:'uppercase', display:'block', fontSize:'9px', letterSpacing:'.15em' }}>Remapeamento ECU</span>
-            <span style={{ fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:700, color: price === 'Consultar' ? MUTED : '#fff', fontSize:'1.2rem' }}>{price}</span>
-          </div>
+        <div style={{ borderTop:`1px solid ${BORDER}`, paddingTop: compact ? '.35rem' : '.7rem', marginTop:'auto', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'.3rem' }}>
+          <span style={{ fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:700, color: price === 'Consultar' ? MUTED : '#fff', fontSize: compact ? '.9rem' : '1.2rem' }}>{price}</span>
           <div className="btn-skew" style={{ background:RED, flexShrink:0 }}>
-            <a href={waLink(row)} target="_blank" rel="noopener noreferrer" className="btn-skew-text" style={{ padding:'.45rem .85rem', fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:700, textTransform:'uppercase', whiteSpace:'nowrap', fontSize:'.85rem', letterSpacing:'.07em', color:'#fff', textDecoration:'none', display:'flex', alignItems:'center', gap:'4px' }}>
-              Solicitar <span className="arrow-slide">→</span>
+            <a href={waLink(row)} target="_blank" rel="noopener noreferrer" className="btn-skew-text" style={{ padding: compact ? '.3rem .5rem' : '.45rem .85rem', fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:700, textTransform:'uppercase', whiteSpace:'nowrap', fontSize: compact ? '.72rem' : '.85rem', letterSpacing:'.05em', color:'#fff', textDecoration:'none', display:'flex', alignItems:'center', gap:'3px' }}>
+              {compact ? '→' : <>Solicitar <span className="arrow-slide">→</span></>}
             </a>
           </div>
         </div>

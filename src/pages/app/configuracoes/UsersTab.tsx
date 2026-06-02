@@ -133,8 +133,8 @@ function RoleCard({ info, onClick }: { info: RoleInfo; onClick?: () => void }) {
       style={{
         background: 'hsl(var(--pm-gray-900))',
         border: '1px solid rgba(255,255,255,0.08)',
-        padding: 20,
-        minHeight: 168,
+        padding: 'clamp(10px, 2.5vw, 20px)',
+        minHeight: 'clamp(110px, 15vw, 168px)',
         cursor: onClick ? 'pointer' : 'default',
         boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
         outline: 'none',
@@ -514,7 +514,7 @@ export function UsersTab() {
             <Plus size={17} /> Convidar Usuário
           </button>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {FRANCHISE_ROLE_PROFILES.map((info) => (
             <RoleCard key={info.role} info={info} onClick={() => openCreate(info.role)} />
           ))}
@@ -532,7 +532,7 @@ export function UsersTab() {
               Cargos restritos para gerenciamento e operações centrais.
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {MATRIX_ROLE_PROFILES.map((info) => (
               <RoleCard key={info.role} info={info} onClick={() => openCreate(info.role)} />
             ))}

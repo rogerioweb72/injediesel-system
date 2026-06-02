@@ -256,7 +256,7 @@ export default function LojaPage() {
   const visible    = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
   return (
-    <div className="loja-pg" style={{ background:DARK, color:'#fff', minHeight:'100vh', display:'flex', flexDirection:'column', fontFamily:'"DM Sans",sans-serif' }}>
+    <div className="loja-pg" style={{ background:DARK, color:'#fff', minHeight:'100vh', display:'flex', flexDirection:'column', fontFamily:'"DM Sans",sans-serif', overflowX:'hidden', maxWidth:'100vw' }}>
 
       {/* ── HEADER ── */}
       <header style={{ position:'sticky', top:0, zIndex:50, background:'rgba(8,8,9,0.97)', backdropFilter:'blur(12px)', borderBottom:`1px solid ${BORDER}` }}>

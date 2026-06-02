@@ -1695,8 +1695,11 @@ function LojaSection() {
     <section id="loja" style={{ background: DARK, padding: '7rem 3rem', borderBottom: `1px solid ${BORDER}` }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <div style={{
-          display: 'flex', justifyContent: 'space-between',
-          alignItems: 'flex-end', marginBottom: '3.5rem',
+          display: 'flex', justifyContent: isMobile ? 'flex-start' : 'space-between',
+          flexDirection: isMobile ? 'column' : 'row',
+          alignItems: isMobile ? 'flex-start' : 'flex-end',
+          gap: isMobile ? '1rem' : 0,
+          marginBottom: '3.5rem',
         }}>
           <div className="v2-observe">
             <Eyebrow>Loja Virtual</Eyebrow>
@@ -1708,6 +1711,7 @@ function LojaSection() {
             display: 'flex', alignItems: 'center', gap: '0.5rem',
             color: RED, fontSize: '0.72rem', fontWeight: 700,
             letterSpacing: '0.12em', textTransform: 'uppercase', textDecoration: 'none',
+            flexShrink: 0,
           }}>
             Ver catálogo completo <ArrowRight size={13} />
           </a>
@@ -2033,8 +2037,8 @@ function CTASection({ onLogin }: { onLogin: () => void }) {
         }}>
           {[
             { icon: Mail,   label: 'E-MAIL',        value: 'contato@promaxtuner.com.br' },
-            { icon: Phone,  label: 'WHATSAPP',       value: '+55 (11) 99999-9999' },
-            { icon: MapPin, label: 'UNIDADE MATRIZ', value: 'São Paulo, SP' },
+            { icon: Phone,  label: 'WHATSAPP',       value: '+55 (45) 99998-5254' },
+            { icon: MapPin, label: 'UNIDADE MATRIZ', value: 'Cascavel, PR' },
           ].map((c, i) => (
             <div key={c.label} style={{
               padding: '1.5rem', textAlign: 'center',
@@ -2082,10 +2086,18 @@ function Footer() {
             <p style={{ fontSize: '0.6rem', color: RED, letterSpacing: '0.25em', fontWeight: 700, marginBottom: '1.25rem', fontFamily: 'var(--pm-font-mono)' }}>
               PERFORMANCE
             </p>
-            {['Stage 1 & 2', 'Custom Tuning', 'Dyno Test', 'Track Day'].map((l) => (
-              <p key={l} style={{ fontSize: '0.78rem', color: 'hsl(var(--pm-gray-500))', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.7rem', cursor: 'pointer' }}>
-                {l}
-              </p>
+            {[
+              { label: 'Stage 1 & 2', href: '#serviços' },
+              { label: 'Custom Tuning', href: '#serviços' },
+              { label: 'Tabela ECU', href: '/veiculos/carros-e-suvs' },
+              { label: 'Solicitar Orçamento', href: `https://wa.me/5545999985254` },
+            ].map((l) => (
+              <a key={l.label} href={l.href} style={{ fontSize: '0.78rem', color: 'hsl(var(--pm-gray-500))', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.7rem', display: 'block', textDecoration: 'none', transition: 'color 0.2s' }}
+                onMouseEnter={e => (e.currentTarget.style.color = RED)}
+                onMouseLeave={e => (e.currentTarget.style.color = 'hsl(var(--pm-gray-500))')}
+              >
+                {l.label}
+              </a>
             ))}
           </div>
 
@@ -2093,10 +2105,19 @@ function Footer() {
             <p style={{ fontSize: '0.6rem', color: RED, letterSpacing: '0.25em', fontWeight: 700, marginBottom: '1.25rem', fontFamily: 'var(--pm-font-mono)' }}>
               NAVEGAÇÃO
             </p>
-            {['Serviços', 'Veículos', 'Como Funciona', 'Loja Virtual', 'Contato'].map((l) => (
-              <p key={l} style={{ fontSize: '0.78rem', color: 'hsl(var(--pm-gray-500))', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.7rem', cursor: 'pointer' }}>
-                {l}
-              </p>
+            {[
+              { label: 'Serviços', href: '#serviços' },
+              { label: 'Veículos', href: '#veículos' },
+              { label: 'Como Funciona', href: '#como-funciona' },
+              { label: 'Loja Virtual', href: '/loja' },
+              { label: 'Contato', href: '#contato' },
+            ].map((l) => (
+              <a key={l.label} href={l.href} style={{ fontSize: '0.78rem', color: 'hsl(var(--pm-gray-500))', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.7rem', display: 'block', textDecoration: 'none', transition: 'color 0.2s' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'hsl(var(--pm-gray-500))')}
+              >
+                {l.label}
+              </a>
             ))}
           </div>
         </div>

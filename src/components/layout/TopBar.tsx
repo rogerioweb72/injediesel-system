@@ -1,4 +1,4 @@
-import { Bell, LogOut, UserCog, UserPlus, Plus } from 'lucide-react'
+import { Bell, LogOut, UserCog, UserPlus, Plus, Menu } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
@@ -59,9 +59,11 @@ function getGreeting(): string {
 
 interface TopBarProps {
   sidebarExpanded: boolean
+  isMobile?: boolean
+  onMobileMenuToggle?: () => void
 }
 
-export function TopBar({ sidebarExpanded }: TopBarProps) {
+export function TopBar({ sidebarExpanded, isMobile = false, onMobileMenuToggle }: TopBarProps) {
   const location = useLocation()
   const { profile } = useProfile()
   const { state: pageHeader } = usePageHeaderContext()
@@ -102,15 +104,34 @@ export function TopBar({ sidebarExpanded }: TopBarProps) {
     <>
     <header className="pm-topbar">
 
-      {/* Logo — aparece quando sidebar está recolhida */}
-      <div
-        className="pm-topbar-logo-wrap"
-        data-show={String(!sidebarExpanded)}
-        aria-hidden={sidebarExpanded}
-      >
-        <TunerLogo className="pm-topbar-logo" />
-        <div className="pm-topbar-logo-sep" />
-      </div>
+      {/* Mobile: hamburger + logo */}
+      {isMobile && (
+        <>
+          <button
+            onClick={onMobileMenuToggle}
+            style={{ background: 'none', border: 'none', color: 'var(--pm-text-primary, #fff)', cursor: 'pointer', padding: '6px', marginRight: '8px', display: 'flex', alignItems: 'center' }}
+            aria-label="Abrir menu"
+          >
+            <Menu size={22} />
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '12px' }}>
+            <TunerLogo className="pm-topbar-logo" />
+            <div className="pm-topbar-logo-sep" />
+          </div>
+        </>
+      )}
+
+      {/* Desktop: Logo — aparece quando sidebar está recolhida */}
+      {!isMobile && (
+        <div
+          className="pm-topbar-logo-wrap"
+          data-show={String(!sidebarExpanded)}
+          aria-hidden={sidebarExpanded}
+        >
+          <TunerLogo className="pm-topbar-logo" />
+          <div className="pm-topbar-logo-sep" />
+        </div>
+      )}
 
       {/* Saudação (dashboard) ou nome da seção */}
       <div className="flex-1 min-w-0 flex flex-col justify-center">

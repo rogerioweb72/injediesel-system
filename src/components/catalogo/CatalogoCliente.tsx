@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import type { EcuCatalogRow } from '@/types/ecu-catalog'
 import { brandLogos } from '@/data/brand-logos'
@@ -9,14 +9,16 @@ const RED = 'hsl(var(--pm-red-500))'
 const MONO = 'var(--pm-font-mono, "JetBrains Mono", monospace)'
 const DISP = 'var(--pm-font-display, "Barlow Condensed", "Arial Narrow", Arial, sans-serif)'
 
-function MotorizacaoRow({ record }: { record: EcuCatalogRow }) {
+function MotorizacaoRow({ record, mobile = false }: { record: EcuCatalogRow; mobile?: boolean }) {
   const [isOpen, setIsOpen] = useState(false)
 
   const title = [record.secao_original, record.modelo_descricao].filter(Boolean).join(' – ')
 
   return (
     <div
-      className={`mt-2 w-full transition-all duration-300 rounded-xl overflow-hidden border ${
+      className={`mt-2 w-full transition-all duration-300 overflow-hidden border ${
+        mobile ? 'rounded-none border-l-0 border-r-0' : 'rounded-xl'
+      } ${
         isOpen
           ? 'border-[#E60000]/15 bg-[#121319] shadow-[0_0_40px_rgba(230,0,0,0.06)]'
           : 'border-white/5 bg-[#121319]/80 hover:bg-[#121319] hover:border-white/10'
@@ -25,7 +27,7 @@ function MotorizacaoRow({ record }: { record: EcuCatalogRow }) {
       {/* ── HEADER ── */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-6 text-left focus:outline-none cursor-pointer bg-transparent border-0"
+        className={`w-full flex items-center justify-between text-left focus:outline-none cursor-pointer bg-transparent border-0 ${mobile ? 'p-3' : 'p-6'}`}
       >
         <div className="flex items-start gap-4">
           <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${isOpen ? 'bg-[#E60000]' : 'bg-slate-600'}`} />
@@ -33,10 +35,10 @@ function MotorizacaoRow({ record }: { record: EcuCatalogRow }) {
             <span className="text-[11px] font-bold text-[#E60000] tracking-[0.15em] uppercase block mb-1">
               {record.marca}
             </span>
-            <h3 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2 m-0">
+            <h3 className={`font-bold text-white tracking-tight flex items-center gap-2 m-0 ${mobile ? 'text-base' : 'text-2xl'}`}>
               {title || '—'}
               {record.ano && (
-                <span className="text-slate-500 font-normal text-lg tracking-normal">
+                <span className={`text-slate-500 font-normal tracking-normal ${mobile ? 'text-sm' : 'text-lg'}`}>
                   ({record.ano})
                 </span>
               )}
@@ -61,7 +63,7 @@ function MotorizacaoRow({ record }: { record: EcuCatalogRow }) {
   )
 }
 
-function MarcaSection({ marca, records, initialOpen = false }: { marca: string; records: EcuCatalogRow[]; initialOpen?: boolean }) {
+function MarcaSection({ marca, records, initialOpen = false, mobile = false }: { marca: string; records: EcuCatalogRow[]; initialOpen?: boolean; mobile?: boolean }) {
   const [isOpen, setIsOpen] = useState(initialOpen)
   const logoUrl = brandLogos[marca.toUpperCase()]
 
@@ -95,7 +97,7 @@ function MarcaSection({ marca, records, initialOpen = false }: { marca: string; 
       {isOpen && (
         <div>
           {records.map(record => (
-            <MotorizacaoRow key={record.id} record={record} />
+            <MotorizacaoRow key={record.id} record={record} mobile={mobile} />
           ))}
         </div>
       )}
@@ -107,6 +109,14 @@ export function CatalogoCliente({ categorySlug }: { categorySlug: string }) {
   const { data: records = [], isLoading: loading } = useEcuCatalogPublic(categorySlug)
   const [search, setSearch] = useState('')
   const [marcaFilter, setMarcaFilter] = useState('Todas as Marcas')
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check, { passive: true })
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   const allMarcas = useMemo(() => [...new Set(records.map(r => r.marca).filter((m): m is string => Boolean(m)))].sort(), [records])
 
@@ -148,12 +158,12 @@ export function CatalogoCliente({ categorySlug }: { categorySlug: string }) {
   if (records.length === 0) return null
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 3rem' }}>
-      <div style={{ marginBottom: '2rem' }}>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '0 0.75rem' : '0 3rem' }}>
+      <div style={{ marginBottom: isMobile ? '1.25rem' : '2rem' }}>
         <p style={{ fontFamily: MONO, fontSize: '0.72rem', fontWeight: 700, color: RED, letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
           Veículos Compatíveis
         </p>
-        <h2 style={{ fontFamily: DISP, fontWeight: 500, fontSize: 'clamp(2.2rem, 3.5vw, 3rem)', textTransform: 'uppercase', color: '#fff', lineHeight: 1.0, letterSpacing: '0.10em' }}>
+        <h2 style={{ fontFamily: DISP, fontWeight: 500, fontSize: isMobile ? '1.8rem' : 'clamp(2.2rem, 3.5vw, 3rem)', textTransform: 'uppercase', color: '#fff', lineHeight: 1.0, letterSpacing: '0.10em' }}>
           Tabela de Aplicação
         </h2>
       </div>
@@ -209,7 +219,7 @@ export function CatalogoCliente({ categorySlug }: { categorySlug: string }) {
       ) : (
         <div>
           {sortedMarcas.map((marca, i) => (
-            <MarcaSection key={marca} marca={marca} records={marcas[marca]} initialOpen={i === 0} />
+            <MarcaSection key={marca} marca={marca} records={marcas[marca]} initialOpen={i === 0} mobile={isMobile} />
           ))}
         </div>
       )}

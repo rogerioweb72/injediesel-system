@@ -899,15 +899,13 @@ export default function LojaPage() {
       {/* ── FOOTER ── */}
       <footer style={{ background:'#000', padding:'4rem 3rem 2rem', borderTop:'1px solid #1f222a', marginTop:'auto' }}>
         <div style={{ maxWidth:'1200px', margin:'0 auto' }}>
-          <div style={{ display:'grid', gridTemplateColumns:'1.5fr 1fr 1fr', gap:'3rem', marginBottom:'3rem' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'3rem', marginBottom:'3rem' }}>
             <div>
               <img src="/tuner-logo.svg" alt="Promax Tuner" style={{ height:'36px', opacity:.92, display:'block', marginBottom:'1rem' }} />
               <p style={{ fontSize:'.75rem', color:'#71717a', lineHeight:1.8, maxWidth:'280px' }}>
                 Desempenho real. Resultados reais.<br/>Excelência técnica em remapeamento e performance automotiva.
               </p>
-            </div>
-            <div>
-              <p style={{ ...MONO, textTransform:'uppercase', fontSize:'.55rem', color:RED, letterSpacing:'.25em', marginBottom:'1.25rem' }}>Performance</p>
+              <p style={{ ...MONO, textTransform:'uppercase', fontSize:'.55rem', color:RED, letterSpacing:'.25em', marginBottom:'1.25rem', marginTop:'1.5rem' }}>Performance</p>
               {['Stage 1 & 2','Custom Tuning','Dyno Test','Track Day'].map(i => (
                 <p key={i} style={{ fontSize:'.78rem', color:'#71717a', textTransform:'uppercase', letterSpacing:'.08em', marginBottom:'.7rem' }}>{i}</p>
               ))}

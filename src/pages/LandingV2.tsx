@@ -830,18 +830,19 @@ function HeroSection({ onLogin }: { onLogin: () => void }) {
         }}>{vehicle.base}</p>
       </div>
 
-      {/* Slider navigation — hidden on mobile */}
+      {/* Slider navigation — shown on all devices */}
       <div style={{
-        display: isMobile ? 'none' : 'flex',
-        position: 'absolute', bottom: '28px',
+        display: 'flex',
+        position: 'absolute', bottom: isMobile ? '16px' : '28px',
         left: '50%', transform: 'translateX(-50%)',
-        alignItems: 'center', gap: '0.6rem',
+        alignItems: 'center', gap: isMobile ? '0.4rem' : '0.6rem',
         zIndex: 4,
       }}>
         <button
           onClick={() => goToSlide((currentSlide - 1 + V2_VEHICLES.length) % V2_VEHICLES.length)}
           style={{
-            width: '34px', height: '34px',
+            width: isMobile ? '28px' : '34px',
+            height: isMobile ? '28px' : '34px',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             background: 'rgba(255,255,255,0.05)',
             border: '1px solid rgba(255,255,255,0.14)',
@@ -865,7 +866,8 @@ function HeroSection({ onLogin }: { onLogin: () => void }) {
             key={i}
             onClick={() => goToSlide(i)}
             style={{
-              width: '42px', height: '3px',
+              width: isMobile ? '28px' : '42px',
+              height: '3px',
               position: 'relative', overflow: 'hidden',
               background: 'rgba(255,255,255,0.16)',
               border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0,
@@ -892,7 +894,8 @@ function HeroSection({ onLogin }: { onLogin: () => void }) {
         <button
           onClick={() => goToSlide((currentSlide + 1) % V2_VEHICLES.length)}
           style={{
-            width: '34px', height: '34px',
+            width: isMobile ? '28px' : '34px',
+            height: isMobile ? '28px' : '34px',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             background: 'rgba(255,255,255,0.05)',
             border: '1px solid rgba(255,255,255,0.14)',

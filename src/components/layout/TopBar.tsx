@@ -1,4 +1,4 @@
-import { Bell, LogOut, UserCog, UserPlus, Plus, Menu } from 'lucide-react'
+import { Bell, LogOut, UserCog, UserPlus, Plus } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
@@ -59,11 +59,9 @@ function getGreeting(): string {
 
 interface TopBarProps {
   sidebarExpanded: boolean
-  isMobile?: boolean
-  onMobileSidebarToggle?: () => void
 }
 
-export function TopBar({ sidebarExpanded, isMobile = false, onMobileSidebarToggle }: TopBarProps) {
+export function TopBar({ sidebarExpanded }: TopBarProps) {
   const location = useLocation()
   const { profile } = useProfile()
   const { state: pageHeader } = usePageHeaderContext()
@@ -104,23 +102,11 @@ export function TopBar({ sidebarExpanded, isMobile = false, onMobileSidebarToggl
     <>
     <header className="pm-topbar">
 
-      {/* Mobile hamburger menu */}
-      {isMobile && (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onMobileSidebarToggle}
-          className="mr-2"
-        >
-          <Menu size={20} />
-        </Button>
-      )}
-
       {/* Logo — aparece quando sidebar está recolhida */}
       <div
         className="pm-topbar-logo-wrap"
-        data-show={String(!sidebarExpanded && !isMobile)}
-        aria-hidden={sidebarExpanded || isMobile}
+        data-show={String(!sidebarExpanded)}
+        aria-hidden={sidebarExpanded}
       >
         <TunerLogo className="pm-topbar-logo" />
         <div className="pm-topbar-logo-sep" />

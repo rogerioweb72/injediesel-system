@@ -50,9 +50,10 @@ import type { SidebarMode } from './AppShell'
 interface SidebarProps {
   mode: SidebarMode
   onTogglePin: () => void
+  onNavClick?: () => void
 }
 
-export function Sidebar({ mode, onTogglePin }: SidebarProps) {
+export function Sidebar({ mode, onTogglePin, onNavClick }: SidebarProps) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   useProfile()
   const prefix = useRoutePrefix()
@@ -113,40 +114,40 @@ export function Sidebar({ mode, onTogglePin }: SidebarProps) {
       <nav className="flex-1 py-3 overflow-y-auto overflow-x-hidden">
         {!collapsed && <div className="pm-sidebar-group-title">Operação</div>}
         {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
-        <NavItem to={`${prefix}/dashboard`}    icon={LayoutDashboard} label="Dashboard"    collapsed={collapsed} />
-        <NavItem to={`${prefix}/arquivos`}     icon={Files}           label="Arquivos ECU" collapsed={collapsed} badge={unseenJobs} />
-        <NavItem to={`${prefix}/tabela-remap`} icon={IconTabelaRemap as unknown as LucideIcon} label="Tabela Remap" collapsed={collapsed} />
-        <NavItem to={`${prefix}/clientes`}     icon={Users}           label="Clientes"     collapsed={collapsed} />
+        <NavItem to={`${prefix}/dashboard`}    icon={LayoutDashboard} label="Dashboard"    collapsed={collapsed} onNavigate={onNavClick} />
+        <NavItem to={`${prefix}/arquivos`}     icon={Files}           label="Arquivos ECU" collapsed={collapsed} onNavigate={onNavClick} badge={unseenJobs} />
+        <NavItem to={`${prefix}/tabela-remap`} icon={IconTabelaRemap as unknown as LucideIcon} label="Tabela Remap" collapsed={collapsed} onNavigate={onNavClick} />
+        <NavItem to={`${prefix}/clientes`}     icon={Users}           label="Clientes"     collapsed={collapsed} onNavigate={onNavClick} />
         {permFranqueados.canView && (
-          <NavItem to={`${prefix}/franqueados`} icon={Building2} label="Franqueados" collapsed={collapsed} />
+          <NavItem to={`${prefix}/franqueados`} icon={Building2} label="Franqueados" collapsed={collapsed} onNavigate={onNavClick} />
         )}
 
         {!collapsed && <div className="pm-sidebar-group-title">Loja</div>}
         {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
-        <NavItem to={`${prefix}/pdv`}      icon={ShoppingBag}  label="PDV"      collapsed={collapsed} />
-        <NavItem to={`${prefix}/pedidos`}     icon={IconHistoricoPedidos as unknown as LucideIcon} label="Pedidos" collapsed={collapsed} />
-        <NavItem to={`${prefix}/pedidos-b2b`} icon={ClipboardList} label="Pedidos B2B"  collapsed={collapsed} badge={b2bPending} />
-        <NavItem to={`${prefix}/produtos`} icon={Package}      label="Produtos" collapsed={collapsed} />
+        <NavItem to={`${prefix}/pdv`}      icon={ShoppingBag}  label="PDV"      collapsed={collapsed} onNavigate={onNavClick} />
+        <NavItem to={`${prefix}/pedidos`}     icon={IconHistoricoPedidos as unknown as LucideIcon} label="Pedidos" collapsed={collapsed} onNavigate={onNavClick} />
+        <NavItem to={`${prefix}/pedidos-b2b`} icon={ClipboardList} label="Pedidos B2B"  collapsed={collapsed} onNavigate={onNavClick} badge={b2bPending} />
+        <NavItem to={`${prefix}/produtos`} icon={Package}      label="Produtos" collapsed={collapsed} onNavigate={onNavClick} />
 
         {!collapsed && <div className="pm-sidebar-group-title">Gestão</div>}
         {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
         {permFinanceiro.canView && (
-          <NavItem to={`${prefix}/financeiro`} icon={IconFinanceiro as unknown as LucideIcon} label="Financeiro" collapsed={collapsed} />
+          <NavItem to={`${prefix}/financeiro`} icon={IconFinanceiro as unknown as LucideIcon} label="Financeiro" collapsed={collapsed} onNavigate={onNavClick} />
         )}
-        <NavItem to={`${prefix}/cadastros`} icon={BookOpen} label="Cadastros" collapsed={collapsed} />
-        <NavItem to={`${prefix}/suporte`}   icon={Headphones} label="Suporte"       collapsed={collapsed} badge={unreadSupport} />
-        <NavItem to={`${prefix}/materiais`} icon={Megaphone}  label="Materiais MKT" collapsed={collapsed} />
+        <NavItem to={`${prefix}/cadastros`} icon={BookOpen} label="Cadastros" collapsed={collapsed} onNavigate={onNavClick} />
+        <NavItem to={`${prefix}/suporte`}   icon={Headphones} label="Suporte"       collapsed={collapsed} onNavigate={onNavClick} badge={unreadSupport} />
+        <NavItem to={`${prefix}/materiais`} icon={Megaphone}  label="Materiais MKT" collapsed={collapsed} onNavigate={onNavClick} />
       </nav>
 
       {/* Footer — configurações + power */}
       <div className="flex flex-col">
         {permConfig.canView && (
-          <NavItem to={`${prefix}/configuracoes`} icon={Settings} label="Configurações" collapsed={collapsed} />
+          <NavItem to={`${prefix}/configuracoes`} icon={Settings} label="Configurações" collapsed={collapsed} onNavigate={onNavClick} />
         )}
         {permConfig.canView && (
-          <NavItem to={`${prefix}/auditoria`} icon={Shield} label="Auditoria" collapsed={collapsed} />
+          <NavItem to={`${prefix}/auditoria`} icon={Shield} label="Auditoria" collapsed={collapsed} onNavigate={onNavClick} />
         )}
-        <NavItem to={`${prefix}/ajuda`} icon={HelpCircle} label="Base de Conhecimento" collapsed={collapsed} />
+        <NavItem to={`${prefix}/ajuda`} icon={HelpCircle} label="Base de Conhecimento" collapsed={collapsed} onNavigate={onNavClick} />
         <div className="h-px mx-3 my-1 bg-[hsl(var(--pm-gray-800))]" />
         <div className={['flex items-center py-3', collapsed ? 'justify-center px-0' : 'px-4 gap-3'].join(' ')}>
           {!collapsed && <span className="text-xs text-muted-foreground flex-1">v1.0.0</span>}

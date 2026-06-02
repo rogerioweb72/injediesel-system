@@ -104,12 +104,19 @@ export function useDownloadEcuFile() {
         throw new Error((err as { error?: string }).error ?? 'Download falhou')
       }
       const { downloadUrl } = await res.json() as { downloadUrl: string }
-      const a = document.createElement('a')
-      a.href = downloadUrl
-      a.download = fileName
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
+      // iOS Safari blocks programmatic a.click() — use window.open for mobile
+      const isMobileSafari = /iP(hone|od|ad)/.test(navigator.userAgent)
+      if (isMobileSafari) {
+        window.open(downloadUrl, '_blank')
+      } else {
+        const a = document.createElement('a')
+        a.href = downloadUrl
+        a.download = fileName
+        a.target = '_blank'
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+      }
     },
   })
 }

@@ -367,7 +367,7 @@ export default function TabelaRemapPage() {
       ) : (
         <div
           className="space-y-2"
-          style={isMobile ? { margin: '0 -1.5rem' } : undefined}
+          style={isMobile ? { margin: '1.5rem -1.5rem 0' } : { marginTop: '0.5rem' }}
         >
           {categorias.map(cat => {
             const catRows = filtered.filter(r => r.categoria_slug === cat.slug)

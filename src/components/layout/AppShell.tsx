@@ -85,7 +85,7 @@ export function AppShell({ children }: AppShellProps) {
               style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 48 }}
             />
             <div style={{ position: 'fixed', left: 0, top: 0, bottom: 0, width: 'var(--pm-sidebar-width)', zIndex: 49, boxShadow: '4px 0 24px rgba(0,0,0,0.4)' }}>
-              <Sidebar mode="pinned" onTogglePin={() => setMobileOpen(false)} />
+              <Sidebar mode="pinned" onTogglePin={() => setMobileOpen(false)} onNavClick={() => setMobileOpen(false)} />
             </div>
           </>
         )}

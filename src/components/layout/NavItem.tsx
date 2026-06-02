@@ -8,15 +8,17 @@ interface NavItemProps {
   collapsed?: boolean
   end?: boolean
   badge?: number
+  onNavigate?: () => void
 }
 
-export function NavItem({ to, icon: Icon, label, collapsed, end, badge }: NavItemProps) {
+export function NavItem({ to, icon: Icon, label, collapsed, end, badge, onNavigate }: NavItemProps) {
   const hasBadge = !!badge && badge > 0
   return (
     <NavLink
       to={to}
       title={label}
       end={end}
+      onClick={onNavigate}
       {...(collapsed ? { 'data-label': label } : {})}
       className={({ isActive }) =>
         cn('pm-sidebar-item', isActive && 'active', collapsed && 'pm-sidebar-item--icon')

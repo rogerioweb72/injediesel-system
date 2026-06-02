@@ -1085,7 +1085,7 @@ function ProductCard({ row, delay, compact = false }: { row: EcuCatalogRow; dela
                 {title}
               </h2>
               {row.ganho && (
-                <span style={{ fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:900, color:RED, fontSize:'.85rem', lineHeight:1.05, flexShrink:0, whiteSpace:'nowrap' }}>
+                <span style={{ fontFamily:'"Barlow Condensed",sans-serif', fontStyle:'italic', fontWeight:900, color:RED, fontSize:'1.1rem', lineHeight:1.05, flexShrink:0, whiteSpace:'nowrap' }}>
                   {gainNum}{gainUnit}
                 </span>
               )}

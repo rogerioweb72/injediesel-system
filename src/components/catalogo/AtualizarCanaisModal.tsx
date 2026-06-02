@@ -351,7 +351,7 @@ export function AtualizarCanaisModal({ open, onClose }: Props) {
                     {result.logs.map((l, i) => (
                       <div key={i} className="flex gap-2 text-[10px] font-mono leading-relaxed">
                         <span className="text-[hsl(var(--pm-gray-600))] shrink-0 select-none">
-                          {l.ts.slice(11, 19)}
+                          {new Date(l.ts).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                         </span>
                         <span className={`shrink-0 w-10 ${levelColor(l.level)}`}>
                           {levelPrefix(l.level)}

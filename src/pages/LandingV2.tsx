@@ -2069,7 +2069,7 @@ function Footer() {
     <footer style={{ background: '#000', padding: isMobile ? '2rem 1.25rem 1.5rem' : '3rem 3rem 1.5rem', borderTop: `1px solid hsl(var(--pm-gray-800))` }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <div style={{
-          display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr 1fr',
+          display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
           gap: isMobile ? '2rem' : '3rem', marginBottom: '3rem',
         }}>
           <div>
@@ -2078,14 +2078,11 @@ function Footer() {
             </div>
             <p style={{
               fontSize: '0.75rem', color: 'hsl(var(--pm-gray-500))',
-              lineHeight: 1.8, maxWidth: '280px',
+              lineHeight: 1.8, maxWidth: '280px', marginBottom: '1.5rem',
             }}>
               Desempenho real. Resultados reais.<br />
               Excelência técnica em remapeamento e performance automotiva.
             </p>
-          </div>
-
-          <div>
             <p style={{ fontSize: '0.6rem', color: RED, letterSpacing: '0.25em', fontWeight: 700, marginBottom: '1.25rem', fontFamily: 'var(--pm-font-mono)' }}>
               PERFORMANCE
             </p>

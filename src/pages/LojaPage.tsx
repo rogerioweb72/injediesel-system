@@ -298,7 +298,7 @@ export default function LojaPage() {
           <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 70% 50%,rgba(231,43,43,.08) 0%,transparent 65%)', zIndex:1 }} />
           <div style={{ position:'absolute', inset:0, backgroundImage:'linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px)', backgroundSize:'48px 48px', zIndex:1 }} />
         </div>
-        <div style={{ position:'relative', zIndex:2, display:'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent:'space-between', flexDirection: isMobile ? 'column' : 'row', gap:'1.5rem', padding: isMobile ? '1.25rem 1rem 1.5rem' : '1.5rem 3rem', minHeight: isMobile ? 'auto' : '165px' }}>
+        <div style={{ position:'relative', zIndex:2, display:'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent:'space-between', flexDirection: isMobile ? 'column' : 'row', gap:'1.5rem', padding: isMobile ? '1.25rem 1rem 1.5rem' : '1.5rem 2rem', minHeight: isMobile ? 'auto' : '165px' }}>
           <div style={{ flex:1 }}>
             <div style={{ display:'flex', alignItems:'center', gap:'.6rem', marginBottom:'.5rem' }}>
               <span style={{ width:'28px', height:'2px', background:RED, display:'inline-block' }} />
@@ -342,7 +342,7 @@ export default function LojaPage() {
       </section>
 
       {/* ── SEPARATOR ── */}
-      <div style={{ background:BORDER, borderBottom:`1px solid #2e3035`, padding: isMobile ? '.75rem 1rem' : '.9rem 3rem', display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <div style={{ background:BORDER, borderBottom:`1px solid #2e3035`, padding: isMobile ? '.75rem 1rem' : '.9rem 2rem', display:'flex', alignItems:'center', justifyContent:'center' }}>
         <span style={{ ...MONO, fontSize:'.58rem', letterSpacing:'.22em', textTransform:'uppercase', color:'#6b6e73' }}>
           escolha entre produtos ou remap no menu abaixo
         </span>
@@ -897,7 +897,7 @@ export default function LojaPage() {
       )}
 
       {/* ── FOOTER ── */}
-      <footer style={{ background:'#000', padding:'4rem 3rem 2rem', borderTop:'1px solid #1f222a', marginTop:'auto' }}>
+      <footer style={{ background:'#000', padding:'4rem 2rem 2rem', borderTop:'1px solid #1f222a', marginTop:'auto' }}>
         <div style={{ maxWidth:'1200px', margin:'0 auto' }}>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'3rem', marginBottom:'3rem' }}>
             <div>

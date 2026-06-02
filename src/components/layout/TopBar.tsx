@@ -102,22 +102,26 @@ export function TopBar({ sidebarExpanded, isMobile = false, onMobileMenuToggle }
 
   return (
     <>
-    <header className="pm-topbar">
+    {/* Fixed header on mobile — spacer to push content below */}
+    {isMobile && <div style={{ height: 'var(--pm-topbar-height)' }} />}
+
+    <header
+      className="pm-topbar"
+      style={isMobile ? { position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50 } : undefined}
+    >
 
       {/* Mobile: hamburger + logo */}
       {isMobile && (
         <>
           <button
             onClick={onMobileMenuToggle}
-            style={{ background: 'none', border: 'none', color: 'var(--pm-text-primary, #fff)', cursor: 'pointer', padding: '6px', marginRight: '8px', display: 'flex', alignItems: 'center' }}
+            style={{ background: 'none', border: 'none', color: 'var(--pm-text-primary, #fff)', cursor: 'pointer', padding: '6px', marginRight: '4px', display: 'flex', alignItems: 'center' }}
             aria-label="Abrir menu"
           >
             <Menu size={22} />
           </button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '12px' }}>
-            <TunerLogo className="pm-topbar-logo" />
-            <div className="pm-topbar-logo-sep" />
-          </div>
+          <TunerLogo className="pm-topbar-logo" style={{ flexShrink: 0 }} />
+          <div className="flex-1" />
         </>
       )}
 
@@ -133,36 +137,38 @@ export function TopBar({ sidebarExpanded, isMobile = false, onMobileMenuToggle }
         </div>
       )}
 
-      {/* Saudação (dashboard) ou nome da seção */}
-      <div className="flex-1 min-w-0 flex flex-col justify-center">
-        {isDashboard ? (
-          <>
-            <span className="pm-topbar-greeting">
-              {getGreeting()}{', '}
-              <span className="pm-topbar-greeting-name">{firstName}</span>
-            </span>
-            <span className="pm-topbar-greeting-sub">
-              {FRANCHISE_ROLES.includes(profile?.role as never)
-                ? 'Acompanhe os resultados da sua unidade'
-                : 'Acompanhe sua rotina'}
-            </span>
-          </>
-        ) : (
-          <>
-            <h1 className="pm-page-title">{displayTitle}</h1>
-            {displaySubtitle && (
-              <span className="pm-topbar-greeting-sub">{displaySubtitle}</span>
-            )}
-          </>
-        )}
-      </div>
+      {/* Desktop: Saudação ou título de página */}
+      {!isMobile && (
+        <div className="flex-1 min-w-0 flex flex-col justify-center">
+          {isDashboard ? (
+            <>
+              <span className="pm-topbar-greeting">
+                {getGreeting()}{', '}
+                <span className="pm-topbar-greeting-name">{firstName}</span>
+              </span>
+              <span className="pm-topbar-greeting-sub">
+                {FRANCHISE_ROLES.includes(profile?.role as never)
+                  ? 'Acompanhe os resultados da sua unidade'
+                  : 'Acompanhe sua rotina'}
+              </span>
+            </>
+          ) : (
+            <>
+              <h1 className="pm-page-title">{displayTitle}</h1>
+              {displaySubtitle && (
+                <span className="pm-topbar-greeting-sub">{displaySubtitle}</span>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       {/* Slot para ações da página (preenchido via portal em PageHeader) */}
-      <div id="topbar-actions" className="flex items-center gap-2" />
+      {!isMobile && <div id="topbar-actions" className="flex items-center gap-2" />}
 
       {/* Ações fixas */}
       <div className="flex items-center gap-2">
-        {isFranchiseShell && (
+        {!isMobile && isFranchiseShell && (
           <>
             <Button
               size="sm"
@@ -261,6 +267,36 @@ export function TopBar({ sidebarExpanded, isMobile = false, onMobileMenuToggle }
 
       <ProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
     </header>
+
+    {/* Mobile: título/saudação abaixo da barra fixa — rola com a página */}
+    {isMobile && (
+      <div style={{
+        padding: '12px 16px 8px',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        background: 'hsl(230 17% 7% / 0.6)',
+      }}>
+        {isDashboard ? (
+          <>
+            <span className="pm-topbar-greeting" style={{ fontSize: '1rem' }}>
+              {getGreeting()}{', '}
+              <span className="pm-topbar-greeting-name">{firstName}</span>
+            </span>
+            <p className="pm-topbar-greeting-sub" style={{ marginTop: '2px' }}>
+              {FRANCHISE_ROLES.includes(profile?.role as never)
+                ? 'Acompanhe os resultados da sua unidade'
+                : 'Acompanhe sua rotina'}
+            </p>
+          </>
+        ) : (
+          <>
+            <h1 className="pm-page-title" style={{ fontSize: '1.1rem', margin: 0 }}>{displayTitle}</h1>
+            {displaySubtitle && (
+              <p className="pm-topbar-greeting-sub" style={{ marginTop: '2px' }}>{displaySubtitle}</p>
+            )}
+          </>
+        )}
+      </div>
+    )}
 
       {lancamentoOpen && (
         <NovoLancamentoModal

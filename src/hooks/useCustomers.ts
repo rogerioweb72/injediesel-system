@@ -16,6 +16,7 @@ export interface Customer {
   email: string | null
   phone: string | null
   document: string | null
+  document_type?: string
   address: CustomerAddress | null
   active: boolean
   price_tier: PriceTier

@@ -160,7 +160,7 @@ export default function Login() {
       <div className="relative z-10 h-full w-full grid place-items-center px-4">
 
         {/* ── RECOVERY: definir nova senha ── */}
-        {isRecoveryFlow && session && !recoveryDone && (
+        {isRecoveryFlow && !recoveryDone && (
           <Card className="lm-animate w-full max-w-md border-white/5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]" style={{ background: 'rgba(20,21,28,0.85)' }}>
             <CardHeader className="items-center text-center space-y-3 pb-5 pt-7">
               <div className="login-logo mb-1"><TunerLogo style={{ width: 156, height: 'auto' }} /></div>

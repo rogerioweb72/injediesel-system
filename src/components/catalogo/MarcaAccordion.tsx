@@ -20,29 +20,40 @@ export function MarcaAccordion({ marca, readOnly = false, isMobile = false }: Pr
     setOpenCardId(prev => (prev === id ? null : id))
   }, [])
 
-  // Mobile: no outer frame, brand label as flat divider
+  // Mobile: accordion mantido, flush lateral, cards com margem mínima interna
   if (isMobile) {
     return (
-      <div className="w-full mb-1">
-        <div className="flex items-center gap-3 px-3 py-2 border-b border-[#E60000]/15">
-          <h2 className="text-xs font-black tracking-[0.1em] uppercase leading-none" style={{ color: '#E60000' }}>
+      <div className={cn('w-full border-b border-white/[0.05]', isOpen && 'bg-black/10')}>
+        {/* Brand header — accordion toggle */}
+        <button
+          onClick={() => setIsOpen(v => !v)}
+          className="flex w-full items-center gap-3 px-3 py-2.5 text-left"
+        >
+          <h2 className="text-xs font-black tracking-[0.1em] uppercase leading-none flex-1" style={{ color: '#E60000' }}>
             {marca.marca}
           </h2>
-          <span className="text-[9px] text-gray-600 uppercase tracking-widest font-mono ml-auto">
+          <span className="text-[9px] text-gray-600 uppercase tracking-widest font-mono">
             {allItems.length} reg.
           </span>
-        </div>
-        <div className="flex flex-col gap-0">
-          {allItems.map(item => (
-            <MotorizacaoCard
-              key={item.id}
-              row={item as EcuCatalogRow}
-              isOpen={openCardId === item.id}
-              onToggle={handleToggle}
-              readOnly={readOnly}
-            />
-          ))}
-        </div>
+          <div className={cn('w-5 h-5 rounded-full flex items-center justify-center border transition-all duration-200', isOpen ? 'rotate-180 bg-[#E60000]/15 border-[#E60000]/40' : 'bg-white/5 border-white/10')}>
+            <ChevronDown size={10} className={cn(isOpen ? 'text-[#E60000]' : 'text-gray-500')} />
+          </div>
+        </button>
+
+        {/* Cards com margem mínima */}
+        {isOpen && (
+          <div className="px-2 pb-2 border-t border-white/[0.04]">
+            {allItems.map(item => (
+              <MotorizacaoCard
+                key={item.id}
+                row={item as EcuCatalogRow}
+                isOpen={openCardId === item.id}
+                onToggle={handleToggle}
+                readOnly={readOnly}
+              />
+            ))}
+          </div>
+        )}
       </div>
     )
   }

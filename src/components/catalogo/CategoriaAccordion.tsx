@@ -24,28 +24,39 @@ export function CategoriaAccordion({ category, rows, isOpen, onToggle, readOnly 
     return () => window.removeEventListener('resize', check)
   }, [])
   const grupos = useMemo(() => groupByMarcaModelo(rows), [rows])
-  const expanded = isMobile || isOpen
 
-  // On mobile: no outer border/frame, flush with screen edges
+  // Mobile: accordion mantido, sem bordas arredondadas, sem padding lateral externo
   if (isMobile) {
     return (
-      <div className="w-full">
-        {/* Mobile category label — compact */}
-        <div className="flex items-center gap-3 px-3 py-3 border-b border-white/[0.08]">
-          <span className="text-sm font-mono font-bold tracking-[0.12em] text-white uppercase flex-1">
+      <div className={cn('w-full border-b border-white/[0.08]', isOpen && 'bg-[hsl(var(--pm-gray-900)/0.4)]')}>
+        {/* Header — clicável como sempre */}
+        <button
+          onClick={onToggle}
+          className="flex w-full items-center gap-3 px-3 py-3 text-left"
+        >
+          <span className="text-base font-mono font-bold tracking-[0.12em] text-white uppercase flex-1">
             {category.label}
           </span>
-          <span className={cn('text-[11px] font-mono uppercase tracking-widest', rows.length > 0 ? 'text-gray-500' : 'text-gray-700')}>
+          <span className={cn('text-[11px] font-mono uppercase tracking-widest mr-2', rows.length > 0 ? 'text-gray-500' : 'text-gray-700')}>
             {rows.length} ECU
           </span>
-        </div>
-        {rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">Nenhum ECU nesta categoria.</p>
-        ) : (
-          <div className="w-full">
-            {grupos.map(m => (
-              <MarcaAccordion key={m.marca} marca={m} readOnly={readOnly} isMobile />
-            ))}
+          <div className={cn('w-6 h-6 rounded-full flex items-center justify-center border transition-all duration-300', isOpen ? 'rotate-180 bg-red-500/15 border-red-500/40' : 'bg-green-500/10 border-green-500/30')}>
+            <ChevronDown size={12} className={cn(isOpen ? 'text-red-400' : 'text-green-400')} />
+          </div>
+        </button>
+
+        {/* Conteúdo expandido — sem padding lateral */}
+        {isOpen && (
+          <div className="border-t border-white/[0.06]">
+            {rows.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Nenhum ECU nesta categoria.</p>
+            ) : (
+              <div className="w-full">
+                {grupos.map(m => (
+                  <MarcaAccordion key={m.marca} marca={m} readOnly={readOnly} isMobile />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -56,7 +67,7 @@ export function CategoriaAccordion({ category, rows, isOpen, onToggle, readOnly 
     <div
       className={cn(
         'w-full rounded-xl border transition-all duration-300 overflow-hidden',
-        expanded
+        isOpen
           ? 'border-white/[0.12] bg-[hsl(var(--pm-gray-900)/0.6)]'
           : 'border-white/[0.06] bg-[hsl(var(--pm-gray-900))] hover:border-white/[0.12] hover:bg-[hsl(var(--pm-gray-900))]',
       )}

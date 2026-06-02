@@ -37,7 +37,9 @@ export default function Login() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const isRecoveryFlow = useRef(window.location.hash.includes('type=recovery')).current
+  const [isRecoveryFlow, setIsRecoveryFlow] = useState(
+    window.location.hash.includes('type=recovery')
+  )
 
   const [showPassword, setShowPassword] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
@@ -89,11 +91,20 @@ export default function Login() {
     }
   }
 
+  // Detecta PASSWORD_RECOVERY via evento Supabase (hash pode ser limpo antes do render)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') setIsRecoveryFlow(true)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
   const explicitFrom = (location.state as { from?: { pathname: string } })?.from?.pathname
 
   useEffect(() => {
     if (!session || !profile) return
     if (rejectingRef.current) return
+    if (isRecoveryFlow && !recoveryDone) return
 
     if (FRANCHISE_ROLES.includes(profile.role)) {
       rejectingRef.current = true

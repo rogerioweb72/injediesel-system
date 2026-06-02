@@ -44,8 +44,10 @@ export default function LoginParceiro() {
   const navigate = useNavigate()
 
   // Capture hash before supabase-js clears it
-  const isInviteFlow   = useRef(window.location.hash.includes('type=invite')).current
-  const isRecoveryFlow = useRef(window.location.hash.includes('type=recovery')).current
+  const isInviteFlow = useRef(window.location.hash.includes('type=invite')).current
+  const [isRecoveryFlow, setIsRecoveryFlow] = useState(
+    window.location.hash.includes('type=recovery')
+  )
 
   const [showPassword, setShowPassword] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
@@ -58,6 +60,13 @@ export default function LoginParceiro() {
   const pwForm = useForm<{ password: string; password2: string }>({
     resolver: zodResolver(passwordSchema),
   })
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') setIsRecoveryFlow(true)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
 
   useEffect(() => {
     if (!session || !profile) return

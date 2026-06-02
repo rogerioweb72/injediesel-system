@@ -1,4 +1,6 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { ChevronRight, Menu, X } from 'lucide-react'
+import logoUrl from '@/assets/tuner-logo.svg'
 
 function useBreakpoint(bp: number) {
   const [match, setMatch] = useState(false)
@@ -10,7 +12,7 @@ function useBreakpoint(bp: number) {
   }, [bp])
   return match
 }
-import { Link } from 'react-router-dom'
+import { useRef as _useRef } from 'react'
 import { useEcuCatalogPublic } from '@/hooks/useEcuCatalog'
 import type { EcuCatalogRow } from '@/types/ecu-catalog'
 import { lookupCarImage } from '@/data/car-image-map'
@@ -100,6 +102,14 @@ export default function LojaPage() {
   const isMobile = useBreakpoint(768)
   const [filterOpen, setFilterOpen]  = useState(false)
   const [section, setSection]       = useState<'remap'|'acessorios'>('remap')
+  const [scrolled, setScrolled]     = useState(false)
+  const [menuOpen, setMenuOpen]     = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
   const [category, setCategory]     = useState('carros')
   const [brandFilter, setBrandFilter] = useState('')
   const [search, setSearch]         = useState('')
@@ -258,45 +268,91 @@ export default function LojaPage() {
   return (
     <div className="loja-pg" style={{ background:DARK, color:'#fff', minHeight:'100vh', display:'flex', flexDirection:'column', fontFamily:'"DM Sans",sans-serif', overflowX:'hidden', maxWidth:'100vw' }}>
 
-      {/* ── HEADER ── */}
-      <header style={{ position:'sticky', top:0, zIndex:50, background:'rgba(8,8,9,0.97)', backdropFilter:'blur(12px)', borderBottom:`1px solid ${BORDER}` }}>
-        <div style={{ padding: isMobile ? '0 1rem' : '0 2rem', height:'64px', display:'flex', alignItems:'center', justifyContent: isMobile ? 'center' : 'space-between', position:'relative' }}>
-          {isMobile ? (
-            <div style={{ position:'absolute', left:'50%', transform:'translateX(-50%)', lineHeight:0 }}>
-              <Link to="/" style={{ lineHeight:0 }}>
-                <img src="/tuner-logo.svg" alt="Promax Tuner" style={{ height:'22px', width:'auto' }} />
-              </Link>
-            </div>
-          ) : (
-            <Link to="/" style={{ lineHeight:0 }}>
-              <img src="/tuner-logo.svg" alt="Promax Tuner" style={{ height:'22px', width:'auto' }} />
-            </Link>
-          )}
-          <nav style={{ display: isMobile ? 'none' : 'flex', alignItems:'center', gap:'2.25rem', fontWeight:700, fontSize:'11px', letterSpacing:'0.15em', textTransform:'uppercase' }}>
-            {[
-              { label:'Serviços',      href:'/#serviços' },
-              { label:'Veículos',      href:'/#veículos' },
-              { label:'Como Funciona', href:'/#como-funciona' },
-              { label:'Resultados',    href:'/#resultados' },
-              { label:'Sobre',         href:'/#sobre' },
-            ].map(l => (
-              <a key={l.label} href={l.href} style={{ color:'rgba(255,255,255,.5)', textDecoration:'none', transition:'color .2s' }}
-                onMouseEnter={e => (e.currentTarget.style.color='#fff')}
-                onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,.5)')}
-              >{l.label}</a>
-            ))}
-            <div style={{ width:'1px', height:'14px', background:'rgba(255,255,255,.16)' }} />
-            <Link to="/loja" style={{ color:'#fff', textDecoration:'none', borderBottom:`2px solid ${RED}`, paddingBottom:'3px' }}>Loja</Link>
-          </nav>
-          {!isMobile && (
-            <div className="btn-skew" style={{ background:RED }}>
-              <a href="/#veículos" className="btn-skew-text" style={{ padding:'0 1.4rem', height:'40px', ...DISP, fontWeight:700, textTransform:'uppercase', fontSize:'1.1rem', letterSpacing:'0.1em', color:'#fff', textDecoration:'none', display:'flex', alignItems:'center', gap:'4px' }}>
-                Analisar Veículo <span className="arrow-slide" style={{ marginLeft:'4px' }}>→</span>
+      {/* ── HEADER — idêntico à home ── */}
+      <header style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
+        background: (scrolled || menuOpen) ? 'rgba(8,8,9,0.97)' : 'rgba(8,8,9,0.97)',
+        backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+        borderBottom: `1px solid ${BORDER}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: isMobile ? '0 1.25rem' : '0 3rem', height: '64px',
+        boxShadow: scrolled ? '0 4px 32px rgba(0,0,0,0.5)' : 'none',
+        transition: 'box-shadow 0.4s ease',
+      }}>
+        <img src={logoUrl} alt="Promax Tuner" style={{ height: '22px', width: 'auto', display: 'block' }} />
+
+        {/* Desktop nav */}
+        {!isMobile && (
+          <>
+            <nav style={{ display: 'flex', alignItems: 'center', gap: '2.25rem' }}>
+              {['Serviços', 'Veículos', 'Como Funciona', 'Resultados', 'Sobre'].map(l => (
+                <a key={l} href={`/#${l.toLowerCase().replace(' ', '-')}`}
+                  style={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', textDecoration: 'none', transition: 'color 0.2s' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}
+                >{l}</a>
+              ))}
+              <div style={{ width: '1px', height: '14px', background: 'rgba(255,255,255,0.16)', flexShrink: 0 }} />
+              <a href="/loja" style={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#fff', textDecoration: 'none', borderBottom: `2px solid ${RED}`, paddingBottom: '2px' }}>Loja</a>
+            </nav>
+            <div style={{ transform: 'skewX(-12deg)', display: 'inline-flex' }}>
+              <a href="/#veículos" style={{
+                background: RED, border: 'none', cursor: 'pointer', textDecoration: 'none',
+                display: 'flex', alignItems: 'center',
+              }}>
+                <span style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  transform: 'skewX(12deg)', padding: '0 1.35rem', height: '38px',
+                  fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.12em',
+                  textTransform: 'uppercase', color: '#fff',
+                }}>
+                  Analisar Veículo <ChevronRight size={11} />
+                </span>
               </a>
             </div>
-          )}
-        </div>
+          </>
+        )}
+
+        {/* Mobile hamburger */}
+        {isMobile && (
+          <button
+            onClick={() => setMenuOpen(v => !v)}
+            aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '44px', minHeight: '44px' }}
+          >
+            {menuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        )}
       </header>
+
+      {/* Mobile drawer */}
+      {isMobile && menuOpen && (
+        <div style={{
+          position: 'fixed', top: '64px', left: 0, right: 0, bottom: 0,
+          background: 'rgba(8,8,9,0.98)', zIndex: 49,
+          padding: '2rem 1.5rem', overflowY: 'auto',
+          display: 'flex', flexDirection: 'column',
+        }}>
+          {['Serviços', 'Veículos', 'Como Funciona', 'Resultados', 'Sobre', 'Loja'].map(l => (
+            <a key={l}
+              href={l === 'Loja' ? '/loja' : `/#${l.toLowerCase().replace(' ', '-')}`}
+              style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.75)', textDecoration: 'none', padding: '0.75rem 0', borderBottom: `1px solid ${BORDER}`, display: 'block' }}
+              onClick={() => setMenuOpen(false)}
+            >{l}</a>
+          ))}
+          <a href="/#veículos" onClick={() => setMenuOpen(false)} style={{
+            marginTop: '2rem', background: RED, textDecoration: 'none',
+            padding: '1rem', color: '#fff', fontSize: '0.85rem', fontWeight: 700,
+            letterSpacing: '0.1em', textTransform: 'uppercase', borderRadius: '6px',
+            minHeight: '52px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            Analisar Veículo →
+          </a>
+        </div>
+      )}
+
+      {/* Spacer para compensar header fixed */}
+      <div style={{ height: '64px' }} />
 
       {/* ── BANNER ── */}
       <section style={{ overflow:'hidden', position:'relative', background:'#0a0a0b', borderBottom:`1px solid ${BORDER}` }}>

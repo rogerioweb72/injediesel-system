@@ -260,7 +260,7 @@ export default function LojaPage() {
 
       {/* ── HEADER ── */}
       <header style={{ position:'sticky', top:0, zIndex:50, background:'rgba(8,8,9,0.97)', backdropFilter:'blur(12px)', borderBottom:`1px solid ${BORDER}` }}>
-        <div style={{ padding: isMobile ? '0 1rem' : '0 3rem', height:'64px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div style={{ padding: isMobile ? '0 1rem' : '0 2rem', height:'64px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <Link to="/" style={{ lineHeight:0 }}>
             <img src="/tuner-logo.svg" alt="Promax Tuner" style={{ height:'22px', width:'auto' }} />
           </Link>
@@ -382,7 +382,7 @@ export default function LojaPage() {
         <>
           {/* Category tabs */}
           <div style={{ background:BORDER, marginTop:'50px' }}>
-            <div style={{ padding:'.75rem 3rem', display:'flex', gap:'.5rem', overflowX:'auto', maxWidth:'1920px', margin:'0 auto' }}>
+            <div style={{ padding:'.75rem 2rem', display:'flex', gap:'.5rem', overflowX:'auto', maxWidth:'1920px', margin:'0 auto' }}>
               {CATEGORIES.map(c => {
                 const active = category === c.key
                 return (

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
 import { ArrowLeft, Edit, Trash2, AlertTriangle, Clock, ArrowUpCircle, RefreshCw, ShieldOff, ShieldCheck, Mail } from 'lucide-react'
 import { toast } from 'sonner'
+import { translateError } from '@/lib/errors'
 import { PermissionGuard } from '@/components/auth/PermissionGuard'
 import { RoleGuard } from '@/components/auth/RoleGuard'
 import { Button } from '@/components/ui/button'
@@ -457,7 +458,7 @@ export default function FranchiseeDetail() {
                   setInviteOpen(false)
                   setInviteEmail('')
                 } catch (err: unknown) {
-                  toast.error(err instanceof Error ? err.message : 'Erro ao enviar convite')
+                  toast.error(translateError(err))
                 }
               }}
               style={{ background: 'rgba(96,165,250,0.15)', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.25)' }}

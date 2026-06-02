@@ -125,10 +125,10 @@ export function TabFinanceiro({ unitId, period, months }: { unitId: string; peri
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
               <Pie data={totals.breakdown} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80}
-                label={({ percent }) => `${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                label={({ percent }) => `${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={false}>
                 {totals.breakdown.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
               </Pie>
-              <Tooltip formatter={(v: number) => fmt(v)} />
+              <Tooltip formatter={(v) => fmt(Number(v))} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
             </PieChart>
           </ResponsiveContainer>

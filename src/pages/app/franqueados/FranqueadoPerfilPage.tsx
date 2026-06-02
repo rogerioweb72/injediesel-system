@@ -4,6 +4,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
+import { translateError } from '@/lib/errors'
 import {
   Lock, Eye, EyeOff, Upload, RefreshCw, ArrowLeft, UserPlus, Plus,
 } from 'lucide-react'
@@ -560,13 +561,13 @@ function PerfilFormPanel({
 
     if (data.email) {
       const { error } = await supabase.auth.updateUser({ email: data.email })
-      if (error) { toast.error('Erro ao trocar e-mail: ' + error.message); return }
+      if (error) { toast.error('Erro ao trocar e-mail: ' + translateError(error.message)); return }
       toast.info('Verifique seu novo e-mail para confirmar a troca.')
     }
 
     if (data.newPassword) {
       const { error } = await supabase.auth.updateUser({ password: data.newPassword })
-      if (error) { toast.error('Erro ao trocar senha: ' + error.message); return }
+      if (error) { toast.error('Erro ao trocar senha: ' + translateError(error.message)); return }
     }
 
     try {

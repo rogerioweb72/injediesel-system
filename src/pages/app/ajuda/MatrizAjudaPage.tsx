@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Edit2, Trash2, Building2, LayoutDashboard, Search, X, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { translateError } from '@/lib/errors'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
@@ -212,7 +213,7 @@ export default function MatrizAjudaPage() {
       toast.success('Artigo excluído.')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
-      toast.error(e.message ?? 'Erro ao excluir')
+      toast.error(translateError(e))
     } finally {
       setDeleteId(null)
     }

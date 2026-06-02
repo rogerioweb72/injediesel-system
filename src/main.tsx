@@ -50,8 +50,8 @@ const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError(error, query) {
       if (isAuthError(error)) {
-        if ((error as Record<string, unknown>).code === '42501') {
-          logSecurityEvent('rls_violation', { error: String((error as Record<string, unknown>).message) })
+        if ((error as unknown as Record<string, unknown>).code === '42501') {
+          logSecurityEvent('rls_violation', { error: String((error as unknown as Record<string, unknown>).message) })
         }
         handleAuthError()
       } else {
@@ -62,8 +62,8 @@ const queryClient = new QueryClient({
   mutationCache: new MutationCache({
     onError(error, _vars, _ctx, mutation) {
       if (isAuthError(error)) {
-        if ((error as Record<string, unknown>).code === '42501') {
-          logSecurityEvent('rls_violation', { error: String((error as Record<string, unknown>).message) })
+        if ((error as unknown as Record<string, unknown>).code === '42501') {
+          logSecurityEvent('rls_violation', { error: String((error as unknown as Record<string, unknown>).message) })
         }
         handleAuthError()
       } else {

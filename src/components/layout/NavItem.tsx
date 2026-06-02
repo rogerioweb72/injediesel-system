@@ -1,10 +1,9 @@
 import { NavLink } from 'react-router-dom'
 import { cn } from '@/lib/utils'
-import type { LucideIcon } from 'lucide-react'
 
 interface NavItemProps {
   to: string
-  icon: LucideIcon
+  icon: React.ElementType
   label: string
   collapsed?: boolean
   end?: boolean

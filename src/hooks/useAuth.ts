@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useCart } from '@/stores/cart'
 import { setSentryUser, clearSentryUser } from '@/lib/sentry'
+import { translateAuthError } from '@/lib/errors'
 import type { AppUser } from '@/types/app'
 
 export function useAuth() {
@@ -79,7 +80,7 @@ export function useAuth() {
       body: JSON.stringify({ email, password }),
     })
     const data = await res.json()
-    if (!res.ok) throw new Error(data.error_description || data.msg || 'E-mail ou senha incorretos.')
+    if (!res.ok) throw new Error(translateAuthError(data.error_description || data.msg || ''))
     // supabase-js onAuthStateChange picks up the session stored by signInWithPassword via realtime;
     // bypass by manually setting session so the store updates immediately
     await supabase.auth.setSession({ access_token: data.access_token, refresh_token: data.refresh_token })

@@ -44,6 +44,7 @@ export interface DashboardMetrics {
   totalRevenue: number
   todayJobs: number
   weekJobs: number
+  pendingJobs: number
   activeUnits: number
   stateRanking: StateMetric[]
   topUnits: UnitMetric[]

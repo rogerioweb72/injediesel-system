@@ -21,6 +21,7 @@ import { FRANCHISE_ROLES } from '@/types/app'
 import { toSlug } from '@/lib/slug'
 import { useSignIn } from '@/hooks/useSignIn'
 import { useLoginThrottle } from '@/hooks/useLoginThrottle'
+import { translateError } from '@/lib/errors'
 
 const schema = z.object({
   email:    z.string().email('E-mail inválido'),
@@ -87,7 +88,7 @@ export default function LoginParceiro() {
       if (error) throw error
       setInviteDone(true)
     } catch (err) {
-      setSetPassError(err instanceof Error ? err.message : 'Erro ao definir senha')
+      setSetPassError(translateError(err))
     } finally {
       setSettingPass(false)
     }
@@ -133,11 +134,7 @@ export default function LoginParceiro() {
       const unitSlug = toSlug(unitName)
       navigate(`/${unitSlug}/${agentSlug}/dashboard`, { replace: true })
     } catch (err) {
-      setServerError(
-        err instanceof Error ? err.message
-          : typeof err === 'string' ? err
-          : 'E-mail ou senha incorretos.',
-      )
+      setServerError(translateError(err))
     }
   }
 

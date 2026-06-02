@@ -81,6 +81,7 @@ export default function FranqueadoDashboard() {
   const { data: myUnit, isLoading: unitLoading } = useMyUnit()
   const { data: jobsData, isLoading: jobsLoading } = useEcuJobs({ pageSize: 200 })
   const prefix = useRoutePrefix()
+  const navigate = useNavigate()
   const isLoading = unitLoading || jobsLoading
 
   const myJobs = useMemo(

@@ -97,7 +97,7 @@ export function TabVisaoGeral({ unitId, period, months }: { unitId: string; peri
             <BarChart data={chartData} barSize={14}>
               <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#71717a' }} />
               <YAxis tick={{ fontSize: 10, fill: '#71717a' }} tickFormatter={(v) => `${(v/1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v: number) => fmt(v)} />
+              <Tooltip formatter={(v) => fmt(Number(v))} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Bar dataKey="receita" fill="#e72b2b" name="Receita" radius={[3,3,0,0]} />
               <Bar dataKey="custo"   fill="#52525b" name="Custo"   radius={[3,3,0,0]} />

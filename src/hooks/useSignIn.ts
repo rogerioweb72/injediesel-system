@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import type { AppUser } from '@/types/app'
+import { translateAuthError } from '@/lib/errors'
 
 const BASE = import.meta.env.VITE_SUPABASE_URL as string
 const KEY  = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string
@@ -23,7 +24,7 @@ export async function rawSignIn(email: string, password: string): Promise<SignIn
   })
   const authJson = await authRes.json()
   if (!authRes.ok) {
-    throw new Error(authJson.error_description || authJson.msg || 'E-mail ou senha incorretos.')
+    throw new Error(translateAuthError(authJson.error_description || authJson.msg || ''))
   }
 
   const profRes = await fetch(

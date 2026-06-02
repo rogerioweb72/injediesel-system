@@ -8,6 +8,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/tests/setup.ts'],
     globals: true,
+    exclude: ['.worktrees/**', 'node_modules/**', 'tests/e2e/**', '**/._*'],
   },
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },

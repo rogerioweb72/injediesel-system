@@ -59,7 +59,7 @@ const schema = z.object({
   seller_id:                z.string().optional().transform(v => v === '' ? null : v),
   amount_charged_to_customer: z.preprocess(
     (v) => (v === '' || v == null ? null : Number(v)),
-    z.number({ invalid_type_error: 'Informe o valor' }).min(0.01, 'Valor deve ser maior que zero')
+    z.number({ message: 'Informe o valor' }).min(0.01, 'Valor deve ser maior que zero')
   ),
   vehicle_categoria:  z.string().min(1, 'Categoria obrigatória'),
   vehicle_placa:      z.string().optional(),

@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { ArrowLeft } from 'lucide-react'
+import { validarCPF, validarCNPJ, maskCPF, maskCNPJ } from '@/lib/validators'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,7 +20,9 @@ const schema = z.object({
   name:      z.string().min(2, 'Nome é obrigatório'),
   email:     z.string().email('E-mail inválido').or(z.literal('')).nullable(),
   phone:     z.string().min(1, 'Celular é obrigatório'),
-  document:  z.string().min(1, 'CPF / CNPJ é obrigatório'),
+  document:  z.string()
+    .min(1, 'CPF / CNPJ é obrigatório')
+    .refine(v => validarCPF(v) || validarCNPJ(v), 'CPF ou CNPJ inválido'),
   price_tier: z.enum(['cliente_final', 'franqueado_linha_leve', 'franqueado_full']),
   active:    z.boolean(),
   // address (all optional)
@@ -151,7 +154,16 @@ export default function CustomerForm() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label htmlFor="document">CPF / CNPJ *</Label>
-                <Input id="document" {...register('document')} placeholder="000.000.000-00" />
+                <Input
+                  id="document"
+                  {...register('document')}
+                  placeholder="000.000.000-00 ou 00.000.000/0001-00"
+                  onChange={e => {
+                    const digits = e.target.value.replace(/\D/g, '')
+                    const masked = digits.length <= 11 ? maskCPF(digits) : maskCNPJ(digits)
+                    setValue('document', masked, { shouldValidate: true })
+                  }}
+                />
                 {errors.document && <p className="text-xs text-red-400">{errors.document.message}</p>}
               </div>
               <div className="space-y-1">

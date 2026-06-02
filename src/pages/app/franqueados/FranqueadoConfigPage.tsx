@@ -9,6 +9,7 @@ import { useMyUnit } from '@/hooks/useMyUnit'
 import { useUnitUsers } from '@/hooks/useFranchiseUnits'
 import { useInviteFranchisee } from '@/hooks/useInviteFranchisee'
 import { toast } from 'sonner'
+import { translateError } from '@/lib/errors'
 import { UserPlus } from 'lucide-react'
 import { ROLE_LABELS } from '@/types/app'
 
@@ -44,7 +45,7 @@ function ColaboradoresTab({ unitId }: { unitId: string }) {
       handleClose()
       refetch()
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao enviar convite')
+      toast.error(translateError(err))
     }
   }
 

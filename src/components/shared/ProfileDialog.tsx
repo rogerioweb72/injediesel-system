@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { supabase } from '@/lib/supabase'
 import { useProfile } from '@/hooks/useProfile'
 import { toast } from 'sonner'
+import { translateError } from '@/lib/errors'
 import { useQueryClient } from '@tanstack/react-query'
 
 interface ProfileDialogProps {
@@ -58,7 +59,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
       toast.success('Perfil atualizado com sucesso')
       handleOpenChange(false)
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao salvar')
+      toast.error(translateError(err))
     } finally {
       setSaving(false)
     }

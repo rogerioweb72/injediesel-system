@@ -28,7 +28,17 @@ interface FranchiseOrder {
   status: string
   total: number
   created_at: string
-  franchise_units: { name: string; city: string | null; state: string | null } | null
+  payment_method?: string | null
+  franchise_units: {
+    name: string
+    city: string | null
+    state: string | null
+    logradouro?: string | null
+    numero?: string | null
+    complemento?: string | null
+    bairro?: string | null
+    cep?: string | null
+  } | null
   order_items: FranchiseOrderItem[]
   comprovante_uploaded_at?: string | null
   comprovante_url?: string | null
@@ -193,7 +203,7 @@ export default function PedidosB2BPage() {
                     <div className="flex items-center gap-0">
                       {STATUS_FLOW.map((s, idx) => {
                         const stepMeta = STATUS_META[s]
-                        const flowIdx = STATUS_FLOW.indexOf(order.status)
+                        const flowIdx = STATUS_FLOW.indexOf(order.status as typeof STATUS_FLOW[number])
                         const done = idx < flowIdx
                         const active = s === order.status
                         const cancelled = order.status === 'cancelado'

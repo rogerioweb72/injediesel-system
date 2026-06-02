@@ -4,6 +4,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
+import { translateError } from '@/lib/errors'
 import { ArrowLeft, Eye, Save, Loader2, PlayCircle, Image as ImageIcon, Upload, Building2, LayoutDashboard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -157,7 +158,7 @@ export default function HelpArticleForm() {
       navigate(`${prefix}/ajuda`)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
-      toast.error(e.message ?? 'Erro ao salvar')
+      toast.error(translateError(e))
     } finally {
       setSaving(null)
     }

@@ -1,11 +1,13 @@
 type TunerLogoProps = {
   className?: string
+  style?: React.CSSProperties
 }
 
-export function TunerLogo({ className }: TunerLogoProps) {
+export function TunerLogo({ className, style }: TunerLogoProps) {
   return (
     <svg
       className={className}
+      style={style}
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 349.6 47.7"
       aria-hidden="true"

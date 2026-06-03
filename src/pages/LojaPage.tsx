@@ -392,7 +392,7 @@ export default function LojaPage() {
       <div style={{ height: '64px' }} />
 
       {/* ── HERO + BANNER CAROUSEL (imagens como fundo, texto em overlay) ── */}
-      <section style={{ overflow:'hidden', position:'relative', borderBottom:`1px solid ${BORDER}`, minHeight: isMobile ? '240px' : '340px' }}>
+      <section style={{ overflow:'hidden', position:'relative', borderBottom:`1px solid ${BORDER}`, height: isMobile ? '240px' : '340px', flexShrink:0 }}>
 
         {/* Camada 0 — imagens do carousel */}
         {BANNERS.map((b, i) => (
@@ -414,7 +414,7 @@ export default function LojaPage() {
         {/* Camada 2 — texto dinâmico por slide (key reinicia animação) */}
         <div
           key={bannerIdx}
-          style={{ position:'relative', zIndex:2, display:'flex', alignItems:'center', padding: isMobile ? '1.75rem 1rem 3rem' : '2.5rem 2.5rem 3rem', minHeight: isMobile ? '240px' : '340px' }}
+          style={{ position:'absolute', inset:0, zIndex:2, display:'flex', alignItems:'center', padding: isMobile ? '1.75rem 1rem 3rem' : '2.5rem 2.5rem 3rem', overflow:'hidden' }}
         >
           <div className="banner-text-enter" style={{ maxWidth: isMobile ? '100%' : '560px' }}>
             {/* Label */}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { ChevronRight, Menu, X } from 'lucide-react'
 import logoUrl from '@/assets/tuner-logo.svg'
 

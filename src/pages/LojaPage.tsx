@@ -361,14 +361,28 @@ export default function LojaPage() {
       {/* Spacer para compensar header fixed */}
       <div style={{ height: '64px' }} />
 
-      {/* ── BANNER ── */}
-      <section style={{ overflow:'hidden', position:'relative', background:'#0a0a0b', borderBottom:`1px solid ${BORDER}` }}>
-        <div style={{ position:'absolute', inset:0 }}>
-          <div style={{ position:'absolute', inset:0, background:'linear-gradient(135deg,#0a0a0b 0%,#0f0303 100%)' }} />
-          <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 70% 50%,rgba(231,43,43,.07) 0%,transparent 65%)', zIndex:1 }} />
-          <div style={{ position:'absolute', inset:0, backgroundImage:'linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px)', backgroundSize:'48px 48px', zIndex:1 }} />
-        </div>
-        <div style={{ position:'relative', zIndex:2, display:'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent:'space-between', flexDirection: isMobile ? 'column' : 'row', gap:'1.5rem', padding: isMobile ? '1.25rem 1rem 1.5rem' : '1.5rem 2rem', minHeight: isMobile ? 'auto' : '165px' }}>
+      {/* ── HERO + BANNER CAROUSEL (imagens como fundo, texto em overlay) ── */}
+      <section style={{ overflow:'hidden', position:'relative', borderBottom:`1px solid ${BORDER}`, minHeight: isMobile ? '220px' : '320px' }}>
+
+        {/* Camada 0 — imagens do carousel */}
+        {['/banner-1.jpg', '/banner-2.jpg', '/banner-3.jpg'].map((src, i) => (
+          <div key={src} style={{ position:'absolute', inset:0, opacity: i === bannerIdx ? 1 : 0, transition:'opacity 1.2s ease', overflow:'hidden' }}>
+            <img
+              key={`${src}-${String(i === bannerIdx)}`}
+              src={src}
+              alt=""
+              className={i === bannerIdx ? 'banner-slide' : ''}
+              style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
+            />
+          </div>
+        ))}
+
+        {/* Camada 1 — gradiente escuro para legibilidade do texto */}
+        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to right, rgba(0,0,0,.82) 0%, rgba(0,0,0,.55) 55%, rgba(0,0,0,.25) 100%)', zIndex:1 }} />
+        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, transparent 50%, rgba(0,0,0,.5) 100%)', zIndex:1 }} />
+
+        {/* Camada 2 — conteúdo de texto */}
+        <div style={{ position:'relative', zIndex:2, display:'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent:'space-between', flexDirection: isMobile ? 'column' : 'row', gap:'1.5rem', padding: isMobile ? '1.5rem 1rem 2.5rem' : '2rem 2rem 2.5rem', minHeight: isMobile ? '220px' : '320px' }}>
           <div style={{ flex:1 }}>
             <div style={{ display:'flex', alignItems:'center', gap:'.6rem', marginBottom:'.5rem' }}>
               <span style={{ width:'28px', height:'2px', background:RED, display:'inline-block' }} />
@@ -377,7 +391,7 @@ export default function LojaPage() {
             <h1 style={{ ...DISP, fontWeight:900, textTransform:'uppercase', lineHeight:.88, color:'#fff', margin:'0 0 .75rem', fontSize:'clamp(2.6rem,6vw,5.2rem)', letterSpacing:'-.02em' }}>
               MÁXIMA<br/>
               <span style={{ color:RED }}>PERFORMANCE</span>
-              <span style={{ color:MUTED, fontSize:'.65em', display:'block', marginTop:'.05em' }}>PARA SEU VEÍCULO</span>
+              <span style={{ color:'rgba(255,255,255,.7)', fontSize:'.65em', display:'block', marginTop:'.05em' }}>PARA SEU VEÍCULO</span>
             </h1>
             <div style={{ display:'flex', alignItems:'stretch', gap:0, flexWrap:'wrap' }}>
               {[
@@ -385,64 +399,38 @@ export default function LojaPage() {
                 { val:String(brands.length || '—'),   label:'Marcas no Catálogo', red:false },
                 { val:'100%',                          label:'Licença Definitiva', red:true  },
               ].map((s,i) => (
-                <div key={s.label} style={{ padding:'.6rem 1.4rem .6rem 0', borderRight:i<2?`1px solid ${BORDER}`:'none', marginRight:i<2?'1.4rem':0 }}>
+                <div key={s.label} style={{ padding:'.6rem 1.4rem .6rem 0', borderRight:i<2?`1px solid rgba(255,255,255,.15)`:'none', marginRight:i<2?'1.4rem':0 }}>
                   <span style={{ ...DISP, fontWeight:900, fontSize:'2rem', color:s.red?RED:'#fff', lineHeight:1, display:'block' }}>{s.val}</span>
-                  <span style={{ ...MONO, fontSize:'.55rem', letterSpacing:'.18em', textTransform:'uppercase', color:MUTED, display:'block', marginTop:'2px' }}>{s.label}</span>
+                  <span style={{ ...MONO, fontSize:'.55rem', letterSpacing:'.18em', textTransform:'uppercase', color:'rgba(255,255,255,.55)', display:'block', marginTop:'2px' }}>{s.label}</span>
                 </div>
               ))}
             </div>
           </div>
           <div style={{ flexShrink:0, display: isMobile ? 'none' : 'flex', flexDirection:'column', alignItems:'flex-end', gap:'1rem', minWidth:'240px' }}>
-            <div style={{ background:'rgba(231,43,43,.1)', border:'1px solid rgba(231,43,43,.3)', padding:'1.25rem 1.75rem', textAlign:'center', position:'relative' }}>
+            <div style={{ background:'rgba(0,0,0,.5)', border:'1px solid rgba(231,43,43,.4)', backdropFilter:'blur(8px)', padding:'1.25rem 1.75rem', textAlign:'center', position:'relative' }}>
               <div style={{ position:'absolute', top:'-1px', left:'-1px', width:'16px', height:'16px', borderTop:`2px solid ${RED}`, borderLeft:`2px solid ${RED}` }} />
               <div style={{ position:'absolute', bottom:'-1px', right:'-1px', width:'16px', height:'16px', borderBottom:`2px solid ${RED}`, borderRight:`2px solid ${RED}` }} />
               <span style={{ ...MONO, fontSize:'.55rem', letterSpacing:'.28em', textTransform:'uppercase', color:RED, display:'block', marginBottom:'.4rem' }}>Catálogo ECU</span>
               <span style={{ ...DISP, fontWeight:900, fontSize:'1.5rem', color:'#fff', textTransform:'uppercase', display:'block', lineHeight:1.1 }}>Carros · Trucks</span>
-              <span style={{ ...MONO, fontSize:'.6rem', color:MUTED, display:'block', marginTop:'.3rem' }}>Pickups · Agrícola · Máquinas</span>
-              <div style={{ marginTop:'.9rem', paddingTop:'.75rem', borderTop:'1px solid rgba(255,255,255,.06)' }}>
+              <span style={{ ...MONO, fontSize:'.6rem', color:'rgba(255,255,255,.5)', display:'block', marginTop:'.3rem' }}>Pickups · Agrícola · Máquinas</span>
+              <div style={{ marginTop:'.9rem', paddingTop:'.75rem', borderTop:'1px solid rgba(255,255,255,.1)' }}>
                 <span style={{ ...DISP, fontWeight:700, fontSize:'1.75rem', color:'#fff' }}>+1.900 veículos</span>
               </div>
             </div>
             <div style={{ display:'flex', alignItems:'center', gap:'.5rem' }}>
               <span style={{ width:'6px', height:'6px', background:RED, transform:'rotate(45deg)', flexShrink:0, display:'inline-block' }} />
-              <span style={{ ...MONO, fontSize:'.58rem', letterSpacing:'.14em', textTransform:'uppercase', color:MUTED }}>Remapeamento com garantia técnica</span>
+              <span style={{ ...MONO, fontSize:'.58rem', letterSpacing:'.14em', textTransform:'uppercase', color:'rgba(255,255,255,.5)' }}>Remapeamento com garantia técnica</span>
             </div>
           </div>
         </div>
-      </section>
 
-      {/* ── BANNER CAROUSEL ── */}
-      <div style={{ position:'relative', width:'100%', height: isMobile ? '180px' : '320px', overflow:'hidden', background:'#000' }}>
-        {['/banner-1.jpg', '/banner-2.jpg', '/banner-3.jpg'].map((src, i) => (
-          <div
-            key={src}
-            style={{
-              position:'absolute', inset:0,
-              opacity: i === bannerIdx ? 1 : 0,
-              transition:'opacity 1s ease',
-              overflow:'hidden',
-            }}
-          >
-            <img
-              key={`${src}-${i === bannerIdx ? 'active' : 'idle'}`}
-              src={src}
-              alt={`Banner ${i + 1}`}
-              className={i === bannerIdx ? 'banner-slide' : ''}
-              style={{ width:'100%', height:'100%', objectFit:'cover', display:'block', transformOrigin:'center center' }}
-            />
-          </div>
-        ))}
-        {/* dot indicators */}
-        <div style={{ position:'absolute', bottom:'12px', left:'50%', transform:'translateX(-50%)', display:'flex', gap:'6px', zIndex:10 }}>
-          {[0, 1, 2].map(i => (
-            <button
-              key={i}
-              onClick={() => setBannerIdx(i)}
-              style={{ width: i === bannerIdx ? '22px' : '8px', height:'8px', borderRadius:'4px', background: i === bannerIdx ? '#e72b2b' : 'rgba(255,255,255,0.4)', border:'none', cursor:'pointer', padding:0, transition:'all .3s ease' }}
-            />
+        {/* Dots */}
+        <div style={{ position:'absolute', bottom:'12px', left:'50%', transform:'translateX(-50%)', display:'flex', gap:'6px', zIndex:3 }}>
+          {[0,1,2].map(i => (
+            <button key={i} onClick={() => setBannerIdx(i)} style={{ width: i===bannerIdx ? '22px' : '8px', height:'8px', borderRadius:'4px', background: i===bannerIdx ? RED : 'rgba(255,255,255,.4)', border:'none', cursor:'pointer', padding:0, transition:'all .3s ease' }} />
           ))}
         </div>
-      </div>
+      </section>
 
       {/* ── SECTION SWITCHER ── */}
       <div style={{ display:'flex', background:'#0a0a0b', borderBottom:`2px solid ${BORDER}`, position:'relative' }}>

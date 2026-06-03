@@ -78,6 +78,30 @@ export function useUploadEcuFile() {
       }
 
       qc.invalidateQueries({ queryKey: ['ecu-job', jobId] })
+
+      // Trigger antivirus scan — replaces Database Webhook when not configured.
+      // Second invalidate after scan so UI updates scan_status immediately.
+      fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/scan-ecu-file`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            record: {
+              id:         data.id,
+              job_id:     jobId,
+              r2_key:     r2Key,
+              file_name:  file.name,
+              size_bytes: file.size,
+            },
+          }),
+        },
+      )
+        .then(() => qc.invalidateQueries({ queryKey: ['ecu-job', jobId] }))
+        .catch(() => null)
       return data
     },
   })

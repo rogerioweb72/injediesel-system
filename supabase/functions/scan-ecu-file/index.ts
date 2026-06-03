@@ -244,15 +244,20 @@ serve(async (req) => {
     let status: 'clean' | 'infected' | 'pending' = 'pending'
     let analysisId: string | null = null
 
-    const vtResult = await vtCheckByHash(hash)
-
-    if (vtResult === 'clean') {
+    if (!VT_KEY) {
+      // No VT key configured: extension + magic bytes checks above are the only gate.
       status = 'clean'
-    } else if (vtResult === 'infected') {
-      status = 'infected'
     } else {
-      analysisId = await vtSubmitFile(fileBytes, record.file_name)
-      status = 'pending'
+      const vtResult = await vtCheckByHash(hash)
+
+      if (vtResult === 'clean') {
+        status = 'clean'
+      } else if (vtResult === 'infected') {
+        status = 'infected'
+      } else {
+        analysisId = await vtSubmitFile(fileBytes, record.file_name)
+        status = 'pending'
+      }
     }
 
     if (status === 'infected') {

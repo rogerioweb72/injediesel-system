@@ -1007,8 +1007,8 @@ function ProductItemCard({ product, delay, onAddToCart, onBuyNow, compact = fals
     : 'Consultar'
 
   return (
-    <article className="product-card" style={{ background:CARD, border:`1px solid ${BORDER}`, display:'flex', flexDirection:'column', animationDelay:`${delay}ms` }}>
-      <div className="card-img" style={{ height: compact ? '100px' : '180px', background:'#000', position:'relative', overflow:'hidden' }}>
+    <article className="product-card" style={{ background:CARD, border:`1px solid ${BORDER}`, display:'flex', flexDirection:'column', animationDelay:`${delay}ms`, minWidth:0, overflow:'hidden' }}>
+      <div className="card-img" style={{ height: compact ? '130px' : '180px', background:'#000', position:'relative', overflow:'hidden' }}>
         {product.image_url ? (
           <img
             src={product.image_url}
@@ -1034,54 +1034,72 @@ function ProductItemCard({ product, delay, onAddToCart, onBuyNow, compact = fals
         )}
       </div>
 
-      <div style={{ padding: compact ? '.5rem .6rem' : '1rem 1.25rem', display:'flex', flexDirection:'column', flexGrow:1 }}>
-        <h2 style={{ ...DISP, fontWeight:900, color:'#fff', textTransform:'uppercase', lineHeight:1.05, marginBottom: compact ? '.25rem' : '.5rem', fontSize: compact ? '.85rem' : '1.1rem', letterSpacing:'-.01em', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+      <div style={{ padding: compact ? '.5rem .6rem' : '1rem 1.25rem', display:'flex', flexDirection:'column', flexGrow:1, minWidth:0 }}>
+        <h2 style={{ ...DISP, fontWeight:900, color:'#fff', textTransform:'uppercase', lineHeight:1.05, marginBottom: compact ? '.2rem' : '.5rem', fontSize: compact ? '.82rem' : '1.1rem', letterSpacing:'-.01em', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
           {product.name}
         </h2>
-        {!compact && product.description && (
-          <p style={{ fontSize:'.7rem', color:MUTED, marginBottom:'.5rem', lineHeight:1.4, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>
+        {product.description && (
+          <p style={{ fontSize: compact ? '.62rem' : '.7rem', color:MUTED, marginBottom: compact ? '.3rem' : '.5rem', lineHeight:1.4, display:'-webkit-box', WebkitLineClamp: compact ? 2 : 2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>
             {product.description}
           </p>
         )}
 
-        <div style={{ borderTop:`1px solid ${BORDER}`, paddingTop: compact ? '.4rem' : '.7rem', marginTop:'auto', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'.25rem', flexWrap: compact ? 'wrap' : 'nowrap' }}>
-          <span style={{ ...DISP, fontWeight:700, color: clientePrice ? '#fff' : MUTED, fontSize: compact ? '1rem' : '1.35rem' }}>{price}</span>
-          {/* dual-button block */}
-          <div style={{ display:'flex', alignItems:'stretch', transform:'skewX(-12deg)', flexShrink:0, overflow:'hidden', height: compact ? 28 : 36 }}>
-            {/* cart icon half — dark */}
-            <button
-              onClick={() => onAddToCart(product)}
-              title="Adicionar ao carrinho"
-              style={{ background:'linear-gradient(160deg,#2a2a30 0%,#16161a 100%)', border:`1px solid ${BORDER}`, borderRight:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:'0 .65rem', transition:'filter .2s' }}
-              onMouseOver={e => (e.currentTarget.style.filter='brightness(1.25)')}
-              onMouseOut={e => (e.currentTarget.style.filter='brightness(1)')}
-            >
-              <span style={{ transform:'skewX(12deg)', display:'flex', alignItems:'center' }}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div style={{ borderTop:`1px solid ${BORDER}`, paddingTop: compact ? '.35rem' : '.7rem', marginTop:'auto', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'.25rem' }}>
+          <span style={{ ...DISP, fontWeight:700, color: clientePrice ? '#fff' : MUTED, fontSize: compact ? '.92rem' : '1.35rem', flexShrink:0 }}>{price}</span>
+          {compact ? (
+            /* Mobile: botões simples sem skew para evitar overflow */
+            <div style={{ display:'flex', gap:'.2rem', flexShrink:0 }}>
+              <button
+                onClick={() => onAddToCart(product)}
+                title="Adicionar ao carrinho"
+                style={{ background:'#2a2a30', border:`1px solid ${BORDER}`, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:'5px 8px', borderRadius:2 }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M4 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
                   <path d="M12.5 17h-6.5v-14h-2" />
                   <path d="M6 5l14 1l-.86 6.017m-2.64 .983h-10.5" />
-                  <path d="M16 19h6" />
-                  <path d="M19 16v6" />
+                  <path d="M16 19h6" /><path d="M19 16v6" />
                 </svg>
-              </span>
-            </button>
-
-            {/* divider — vertical line, centered, follows skew naturally */}
-            <div style={{ width:'1.5px', background:'rgba(255,255,255,.22)', alignSelf:'center', height:'55%', flexShrink:0 }} />
-
-            {/* COMPRAR half — red */}
-            <button
-              onClick={() => onBuyNow(product)}
-              style={{ background:'linear-gradient(160deg,#f03535 0%,#b81e1e 100%)', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:'0 .85rem', position:'relative', overflow:'hidden', transition:'filter .2s' }}
-              onMouseOver={e => (e.currentTarget.style.filter='brightness(1.18)')}
-              onMouseOut={e => (e.currentTarget.style.filter='brightness(1)')}
-            >
-              <span style={{ transform:'skewX(12deg)', display:'flex', alignItems:'center', gap:'4px', ...DISP, fontWeight:700, textTransform:'uppercase', fontSize:'.88rem', letterSpacing:'.07em', color:'#fff', whiteSpace:'nowrap' }}>
-                COMPRAR <span className="arrow-slide">→</span>
-              </span>
-            </button>
-          </div>
+              </button>
+              <button
+                onClick={() => onBuyNow(product)}
+                style={{ background:'linear-gradient(160deg,#f03535 0%,#b81e1e 100%)', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:'5px 10px', borderRadius:2, gap:3, ...DISP, fontWeight:700, fontSize:'.78rem', color:'#fff', whiteSpace:'nowrap' }}
+              >
+                COMPRAR →
+              </button>
+            </div>
+          ) : (
+            /* Desktop: botão duplo com skew */
+            <div style={{ display:'flex', alignItems:'stretch', transform:'skewX(-12deg)', flexShrink:0, overflow:'hidden', height:36 }}>
+              <button
+                onClick={() => onAddToCart(product)}
+                title="Adicionar ao carrinho"
+                style={{ background:'linear-gradient(160deg,#2a2a30 0%,#16161a 100%)', border:`1px solid ${BORDER}`, borderRight:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:'0 .65rem', transition:'filter .2s' }}
+                onMouseOver={e => (e.currentTarget.style.filter='brightness(1.25)')}
+                onMouseOut={e => (e.currentTarget.style.filter='brightness(1)')}
+              >
+                <span style={{ transform:'skewX(12deg)', display:'flex', alignItems:'center' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+                    <path d="M12.5 17h-6.5v-14h-2" />
+                    <path d="M6 5l14 1l-.86 6.017m-2.64 .983h-10.5" />
+                    <path d="M16 19h6" /><path d="M19 16v6" />
+                  </svg>
+                </span>
+              </button>
+              <div style={{ width:'1.5px', background:'rgba(255,255,255,.22)', alignSelf:'center', height:'55%', flexShrink:0 }} />
+              <button
+                onClick={() => onBuyNow(product)}
+                style={{ background:'linear-gradient(160deg,#f03535 0%,#b81e1e 100%)', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:'0 .85rem', position:'relative', overflow:'hidden', transition:'filter .2s' }}
+                onMouseOver={e => (e.currentTarget.style.filter='brightness(1.18)')}
+                onMouseOut={e => (e.currentTarget.style.filter='brightness(1)')}
+              >
+                <span style={{ transform:'skewX(12deg)', display:'flex', alignItems:'center', gap:'4px', ...DISP, fontWeight:700, textTransform:'uppercase', fontSize:'.88rem', letterSpacing:'.07em', color:'#fff', whiteSpace:'nowrap' }}>
+                  COMPRAR <span className="arrow-slide">→</span>
+                </span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </article>

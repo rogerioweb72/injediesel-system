@@ -12,7 +12,6 @@ function useBreakpoint(bp: number) {
   }, [bp])
   return match
 }
-import { useRef as _useRef } from 'react'
 import { useEcuCatalogPublic } from '@/hooks/useEcuCatalog'
 import type { EcuCatalogRow } from '@/types/ecu-catalog'
 import { lookupCarImage } from '@/data/car-image-map'

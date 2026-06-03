@@ -52,6 +52,8 @@ const LOJA_CSS = `
 .cart-drawer{animation:slideIn .25s cubic-bezier(.16,1,.3,1) both}
 .cart-overlay{animation:fadeUp .2s ease both}
 .cart-item-img{width:56px;height:56px;object-fit:cover;flex-shrink:0}
+@keyframes kenburns{0%{transform:scale(1)}100%{transform:scale(1.08)}}
+.banner-slide{animation:kenburns 5.5s ease-out forwards}
 `
 
 const PAGE_SIZE = 24
@@ -121,6 +123,12 @@ export default function LojaPage() {
   const [cartStep, setCartStep]     = useState<'items'|'checkout'>('items')
   const [delivery, setDelivery]     = useState({ cep:'', address:'', number:'', city:'', state:'', reference:'' })
   const [selectedShipping, setSelectedShipping] = useState<ShippingOption | null>(null)
+  const [bannerIdx, setBannerIdx] = useState(0)
+
+  useEffect(() => {
+    const t = setInterval(() => setBannerIdx(i => (i + 1) % 3), 5000)
+    return () => clearInterval(t)
+  }, [])
 
   const cartSubtotal = cart.reduce((s, i) => s + (i.price ?? 0) * i.qty, 0)
   const shippingCost = selectedShipping ? parseFloat(selectedShipping.price) : 0
@@ -402,6 +410,39 @@ export default function LojaPage() {
           </div>
         </div>
       </section>
+
+      {/* ── BANNER CAROUSEL ── */}
+      <div style={{ position:'relative', width:'100%', height: isMobile ? '180px' : '320px', overflow:'hidden', background:'#000' }}>
+        {['/banner-1.jpg', '/banner-2.jpg', '/banner-3.jpg'].map((src, i) => (
+          <div
+            key={src}
+            style={{
+              position:'absolute', inset:0,
+              opacity: i === bannerIdx ? 1 : 0,
+              transition:'opacity 1s ease',
+              overflow:'hidden',
+            }}
+          >
+            <img
+              key={`${src}-${i === bannerIdx ? 'active' : 'idle'}`}
+              src={src}
+              alt={`Banner ${i + 1}`}
+              className={i === bannerIdx ? 'banner-slide' : ''}
+              style={{ width:'100%', height:'100%', objectFit:'cover', display:'block', transformOrigin:'center center' }}
+            />
+          </div>
+        ))}
+        {/* dot indicators */}
+        <div style={{ position:'absolute', bottom:'12px', left:'50%', transform:'translateX(-50%)', display:'flex', gap:'6px', zIndex:10 }}>
+          {[0, 1, 2].map(i => (
+            <button
+              key={i}
+              onClick={() => setBannerIdx(i)}
+              style={{ width: i === bannerIdx ? '22px' : '8px', height:'8px', borderRadius:'4px', background: i === bannerIdx ? '#e72b2b' : 'rgba(255,255,255,0.4)', border:'none', cursor:'pointer', padding:0, transition:'all .3s ease' }}
+            />
+          ))}
+        </div>
+      </div>
 
       {/* ── SECTION SWITCHER ── */}
       <div style={{ display:'flex', background:'#0a0a0b', borderBottom:`2px solid ${BORDER}`, position:'relative' }}>

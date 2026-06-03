@@ -53,10 +53,40 @@ const LOJA_CSS = `
 .cart-overlay{animation:fadeUp .2s ease both}
 .cart-item-img{width:56px;height:56px;object-fit:cover;flex-shrink:0}
 @keyframes kenburns{0%{transform:scale(1)}100%{transform:scale(1.08)}}
+@keyframes bannerText{0%{opacity:0;transform:translateY(18px)}100%{opacity:1;transform:translateY(0)}}
+.banner-text-enter{animation:bannerText .65s cubic-bezier(.16,1,.3,1) both}
 .banner-slide{animation:kenburns 5.5s ease-out forwards}
 `
 
 const PAGE_SIZE = 24
+
+const BANNERS = [
+  {
+    src: '/banner-1.jpg',
+    label: 'CATÁLOGO ECU',
+    title: ['TECNOLOGIA', 'DE PONTA'],
+    titleAccent: 1,
+    body: 'Mais de 1.900 veículos mapeados com garantia técnica. Remapeamento Stage 2, Stage 3 e ajuste fino.',
+    cta: 'Ver Catálogo ECU',
+  },
+  {
+    src: '/banner-3.jpg',
+    label: 'PRODUTOS PREMIUM',
+    title: ['GAMA', 'PREMIUM'],
+    titleAccent: 1,
+    body: 'Estabilizadores, filtros e acessórios de alta performance. Produtos homologados para gasolina, etanol e flex.',
+    cta: 'Ver Produtos',
+  },
+  {
+    src: '/banner-2.jpg',
+    label: 'SEJA PARCEIRO',
+    title: ['LEVE A PROMAX', 'TUNER PARA'],
+    titleAccent: null,
+    titleSub: 'Sua Cidade',
+    body: 'Franquias disponíveis em todo o Brasil. Una-se à maior rede de performance automotiva do país.',
+    cta: 'Quero ser Franqueado',
+  },
+]
 
 const CATEGORIES = [
   { key:'carros',  label:'CARROS',   slug:'carros-e-suvs' },
@@ -362,14 +392,14 @@ export default function LojaPage() {
       <div style={{ height: '64px' }} />
 
       {/* ── HERO + BANNER CAROUSEL (imagens como fundo, texto em overlay) ── */}
-      <section style={{ overflow:'hidden', position:'relative', borderBottom:`1px solid ${BORDER}`, minHeight: isMobile ? '220px' : '320px' }}>
+      <section style={{ overflow:'hidden', position:'relative', borderBottom:`1px solid ${BORDER}`, minHeight: isMobile ? '240px' : '340px' }}>
 
         {/* Camada 0 — imagens do carousel */}
-        {['/banner-1.jpg', '/banner-2.jpg', '/banner-3.jpg'].map((src, i) => (
-          <div key={src} style={{ position:'absolute', inset:0, opacity: i === bannerIdx ? 1 : 0, transition:'opacity 1.2s ease', overflow:'hidden' }}>
+        {BANNERS.map((b, i) => (
+          <div key={b.src} style={{ position:'absolute', inset:0, opacity: i === bannerIdx ? 1 : 0, transition:'opacity 1.2s ease', overflow:'hidden' }}>
             <img
-              key={`${src}-${String(i === bannerIdx)}`}
-              src={src}
+              key={`${b.src}-${String(i === bannerIdx)}`}
+              src={b.src}
               alt=""
               className={i === bannerIdx ? 'banner-slide' : ''}
               style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
@@ -377,57 +407,54 @@ export default function LojaPage() {
           </div>
         ))}
 
-        {/* Camada 1 — gradiente escuro para legibilidade do texto */}
-        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to right, rgba(0,0,0,.82) 0%, rgba(0,0,0,.55) 55%, rgba(0,0,0,.25) 100%)', zIndex:1 }} />
-        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, transparent 50%, rgba(0,0,0,.5) 100%)', zIndex:1 }} />
+        {/* Camada 1 — gradiente escuro */}
+        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to right, rgba(0,0,0,.88) 0%, rgba(0,0,0,.60) 55%, rgba(0,0,0,.2) 100%)', zIndex:1 }} />
+        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,.55) 100%)', zIndex:1 }} />
 
-        {/* Camada 2 — conteúdo de texto */}
-        <div style={{ position:'relative', zIndex:2, display:'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent:'space-between', flexDirection: isMobile ? 'column' : 'row', gap:'1.5rem', padding: isMobile ? '1.5rem 1rem 2.5rem' : '2rem 2rem 2.5rem', minHeight: isMobile ? '220px' : '320px' }}>
-          <div style={{ flex:1 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:'.6rem', marginBottom:'.5rem' }}>
-              <span style={{ width:'28px', height:'2px', background:RED, display:'inline-block' }} />
-              <span style={{ ...MONO, fontSize:'.58rem', letterSpacing:'.32em', textTransform:'uppercase', color:RED }}>Loja Oficial</span>
+        {/* Camada 2 — texto dinâmico por slide (key reinicia animação) */}
+        <div
+          key={bannerIdx}
+          style={{ position:'relative', zIndex:2, display:'flex', alignItems:'center', padding: isMobile ? '1.75rem 1rem 3rem' : '2.5rem 2.5rem 3rem', minHeight: isMobile ? '240px' : '340px' }}
+        >
+          <div className="banner-text-enter" style={{ maxWidth: isMobile ? '100%' : '560px' }}>
+            {/* Label */}
+            <div style={{ display:'flex', alignItems:'center', gap:'.6rem', marginBottom:'.6rem' }}>
+              <span style={{ width:'28px', height:'2px', background:RED, display:'inline-block', flexShrink:0 }} />
+              <span style={{ ...MONO, fontSize:'.58rem', letterSpacing:'.32em', textTransform:'uppercase', color:RED }}>
+                {BANNERS[bannerIdx].label}
+              </span>
             </div>
-            <h1 style={{ ...DISP, fontWeight:900, textTransform:'uppercase', lineHeight:.88, color:'#fff', margin:'0 0 .75rem', fontSize:'clamp(2.6rem,6vw,5.2rem)', letterSpacing:'-.02em' }}>
-              MÁXIMA<br/>
-              <span style={{ color:RED }}>PERFORMANCE</span>
-              <span style={{ color:'rgba(255,255,255,.7)', fontSize:'.65em', display:'block', marginTop:'.05em' }}>PARA SEU VEÍCULO</span>
-            </h1>
-            <div style={{ display:'flex', alignItems:'stretch', gap:0, flexWrap:'wrap' }}>
-              {[
-                { val:String(rows.length || '1.9k+'), label:'Registros ECU',      red:false },
-                { val:String(brands.length || '—'),   label:'Marcas no Catálogo', red:false },
-                { val:'100%',                          label:'Licença Definitiva', red:true  },
-              ].map((s,i) => (
-                <div key={s.label} style={{ padding:'.6rem 1.4rem .6rem 0', borderRight:i<2?`1px solid rgba(255,255,255,.15)`:'none', marginRight:i<2?'1.4rem':0 }}>
-                  <span style={{ ...DISP, fontWeight:900, fontSize:'2rem', color:s.red?RED:'#fff', lineHeight:1, display:'block' }}>{s.val}</span>
-                  <span style={{ ...MONO, fontSize:'.55rem', letterSpacing:'.18em', textTransform:'uppercase', color:'rgba(255,255,255,.55)', display:'block', marginTop:'2px' }}>{s.label}</span>
-                </div>
+
+            {/* Título */}
+            <h1 style={{ ...DISP, fontWeight:900, textTransform:'uppercase', lineHeight:.88, color:'#fff', margin:'0 0 .6rem', fontSize: isMobile ? 'clamp(2.2rem,10vw,3.5rem)' : 'clamp(2.8rem,5vw,5rem)', letterSpacing:'-.02em' }}>
+              {BANNERS[bannerIdx].title.map((line, li) => (
+                <span key={li} style={{ display:'block', color: li === BANNERS[bannerIdx].titleAccent ? RED : '#fff' }}>{line}</span>
               ))}
-            </div>
-          </div>
-          <div style={{ flexShrink:0, display: isMobile ? 'none' : 'flex', flexDirection:'column', alignItems:'flex-end', gap:'1rem', minWidth:'240px' }}>
-            <div style={{ background:'rgba(0,0,0,.5)', border:'1px solid rgba(231,43,43,.4)', backdropFilter:'blur(8px)', padding:'1.25rem 1.75rem', textAlign:'center', position:'relative' }}>
-              <div style={{ position:'absolute', top:'-1px', left:'-1px', width:'16px', height:'16px', borderTop:`2px solid ${RED}`, borderLeft:`2px solid ${RED}` }} />
-              <div style={{ position:'absolute', bottom:'-1px', right:'-1px', width:'16px', height:'16px', borderBottom:`2px solid ${RED}`, borderRight:`2px solid ${RED}` }} />
-              <span style={{ ...MONO, fontSize:'.55rem', letterSpacing:'.28em', textTransform:'uppercase', color:RED, display:'block', marginBottom:'.4rem' }}>Catálogo ECU</span>
-              <span style={{ ...DISP, fontWeight:900, fontSize:'1.5rem', color:'#fff', textTransform:'uppercase', display:'block', lineHeight:1.1 }}>Carros · Trucks</span>
-              <span style={{ ...MONO, fontSize:'.6rem', color:'rgba(255,255,255,.5)', display:'block', marginTop:'.3rem' }}>Pickups · Agrícola · Máquinas</span>
-              <div style={{ marginTop:'.9rem', paddingTop:'.75rem', borderTop:'1px solid rgba(255,255,255,.1)' }}>
-                <span style={{ ...DISP, fontWeight:700, fontSize:'1.75rem', color:'#fff' }}>+1.900 veículos</span>
+              {BANNERS[bannerIdx].titleSub && (
+                <span style={{ color:RED, display:'block' }}>{BANNERS[bannerIdx].titleSub}</span>
+              )}
+            </h1>
+
+            {/* Corpo */}
+            <p style={{ color:'rgba(255,255,255,.75)', fontSize: isMobile ? '.78rem' : '.88rem', lineHeight:1.55, margin:'0 0 1.2rem', maxWidth:'420px' }}>
+              {BANNERS[bannerIdx].body}
+            </p>
+
+            {/* CTA */}
+            <div style={{ display:'inline-flex', alignItems:'stretch', transform:'skewX(-10deg)', overflow:'hidden' }}>
+              <div style={{ background:RED, padding: isMobile ? '.5rem 1.1rem' : '.6rem 1.4rem', display:'flex', alignItems:'center', gap:'.5rem' }}>
+                <span style={{ transform:'skewX(10deg)', ...DISP, fontWeight:900, textTransform:'uppercase', fontSize: isMobile ? '.82rem' : '.92rem', color:'#fff', letterSpacing:'.08em', whiteSpace:'nowrap' }}>
+                  {BANNERS[bannerIdx].cta} →
+                </span>
               </div>
-            </div>
-            <div style={{ display:'flex', alignItems:'center', gap:'.5rem' }}>
-              <span style={{ width:'6px', height:'6px', background:RED, transform:'rotate(45deg)', flexShrink:0, display:'inline-block' }} />
-              <span style={{ ...MONO, fontSize:'.58rem', letterSpacing:'.14em', textTransform:'uppercase', color:'rgba(255,255,255,.5)' }}>Remapeamento com garantia técnica</span>
             </div>
           </div>
         </div>
 
         {/* Dots */}
-        <div style={{ position:'absolute', bottom:'12px', left:'50%', transform:'translateX(-50%)', display:'flex', gap:'6px', zIndex:3 }}>
-          {[0,1,2].map(i => (
-            <button key={i} onClick={() => setBannerIdx(i)} style={{ width: i===bannerIdx ? '22px' : '8px', height:'8px', borderRadius:'4px', background: i===bannerIdx ? RED : 'rgba(255,255,255,.4)', border:'none', cursor:'pointer', padding:0, transition:'all .3s ease' }} />
+        <div style={{ position:'absolute', bottom:'14px', left: isMobile ? '1rem' : '2.5rem', display:'flex', gap:'6px', zIndex:3 }}>
+          {BANNERS.map((_, i) => (
+            <button key={i} onClick={() => setBannerIdx(i)} style={{ width: i===bannerIdx ? '22px' : '8px', height:'8px', borderRadius:'4px', background: i===bannerIdx ? RED : 'rgba(255,255,255,.35)', border:'none', cursor:'pointer', padding:0, transition:'all .3s ease' }} />
           ))}
         </div>
       </section>

@@ -1,5 +1,5 @@
 import { PageHeader } from '@/components/shared/PageHeader'
-import { useAdminTelemetry, type CriticalEvent } from '@/hooks/useAdminTelemetry'
+import { useAdminTelemetry } from '@/hooks/useAdminTelemetry'
 import {
   ShieldAlert, Activity, Server, Cloud,
   RefreshCw, Loader2, AlertTriangle, CheckCircle,
@@ -160,7 +160,7 @@ function SecuritySection({ data }: { data: ReturnType<typeof useAdminTelemetry>[
           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '0.25rem 0.75rem', ...colHeader }}>
             <span>Evento</span><span>Total</span><span>Último</span>
           </div>
-          {(s.critical_events as CriticalEvent[]).slice(0, 6).map((ev, i) => (
+          {(s.critical_events).slice(0, 6).map((ev, i) => (
             <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '0.25rem 0.75rem', padding: '0.3125rem 0', borderTop: '1px solid hsl(var(--pm-gray-800))' }}>
               <span style={{ color: 'hsl(var(--pm-gray-200))' }}>{ACTION_LABELS[ev.action] ?? ev.action}</span>
               <span style={{ color: '#F87171', fontWeight: 700 }}>{ev.total}</span>

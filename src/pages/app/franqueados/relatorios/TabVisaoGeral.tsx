@@ -3,7 +3,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { useEcuJobsReport, useOrdersReport, useFinancialEntriesReport, fmt, pct, type PeriodFilter, type MonthRef } from '@/hooks/useRelatorios'
 import { useUnitEmployeeCostsForUnit } from '@/hooks/useUnitEmployees'
-import type { EmployeeBenefit } from '@/hooks/useUnitEmployees'
 
 function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
@@ -28,7 +27,7 @@ export function TabVisaoGeral({ unitId, period, months }: { unitId: string; peri
     const finRec  = entries.filter(e => e.type === 'receita').reduce((s, e) => s + e.amount, 0)
     const finExp  = entries.filter(e => e.type === 'despesa').reduce((s, e) => s + e.amount, 0)
     const empCost = empCosts.reduce((s, c) => {
-      const ben = (c.benefits as EmployeeBenefit[]).reduce((b, x) => b + x.amount, 0)
+      const ben = (c.benefits).reduce((b, x) => b + x.amount, 0)
       return s + c.base_salary + ben
     }, 0)
     const fat  = ecuRec + ordRec + finRec

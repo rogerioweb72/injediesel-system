@@ -62,7 +62,7 @@ export default function Dashboard() {
             subtitle="Novo arquivo ECU"
             color="from-red-700 to-red-500"
             shadow="shadow-red-900/30"
-            onClick={() => navigate(`${prefix}/arquivos/novo`)}
+            onClick={() => { navigate(`${prefix}/arquivos/novo`) }}
           />
           <QuickActionButton
             icon={<Users size={22} />}
@@ -70,7 +70,7 @@ export default function Dashboard() {
             subtitle="Cadastrar cliente"
             color="from-blue-700 to-blue-500"
             shadow="shadow-blue-900/30"
-            onClick={() => navigate(`${prefix}/clientes/novo`)}
+            onClick={() => { navigate(`${prefix}/clientes/novo`) }}
           />
           <QuickActionButton
             icon={<ShoppingCart size={22} />}
@@ -78,7 +78,7 @@ export default function Dashboard() {
             subtitle="Abrir PDV"
             color="from-emerald-700 to-emerald-500"
             shadow="shadow-emerald-900/30"
-            onClick={() => navigate(`${prefix}/pdv`)}
+            onClick={() => { navigate(`${prefix}/pdv`) }}
           />
         </div>
 

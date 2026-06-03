@@ -10,7 +10,6 @@ import {
   CATEGORY_LABELS,
   CATEGORY_COLORS,
   type HelpArticle,
-  type HelpArticleCategory,
 } from '@/hooks/useHelpArticles'
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -105,7 +104,7 @@ function WelcomeVideo({ videoId }: { videoId: string }) {
 // ─── ArticleModal ─────────────────────────────────────────────────────────────
 function ArticleModal({ article, onClose }: { article: HelpArticle; onClose: () => void }) {
   const ytId = article.youtube_url ? extractYouTubeId(article.youtube_url) : null
-  const { color, bg } = CATEGORY_COLORS[article.category as HelpArticleCategory] ?? CATEGORY_COLORS.geral
+  const { color, bg } = CATEGORY_COLORS[article.category] ?? CATEGORY_COLORS.geral
 
   return (
     <div
@@ -136,7 +135,7 @@ function ArticleModal({ article, onClose }: { article: HelpArticle; onClose: () 
               className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
               style={{ color, background: bg }}
             >
-              {CATEGORY_LABELS[article.category as HelpArticleCategory]}
+              {CATEGORY_LABELS[article.category]}
             </span>
             <button
               onClick={onClose}
@@ -187,7 +186,7 @@ function ArticleModal({ article, onClose }: { article: HelpArticle; onClose: () 
 
 // ─── ArticleCard ──────────────────────────────────────────────────────────────
 function ArticleCard({ article, onClick }: { article: HelpArticle; onClick: () => void }) {
-  const { color, bg } = CATEGORY_COLORS[article.category as HelpArticleCategory] ?? CATEGORY_COLORS.geral
+  const { color, bg } = CATEGORY_COLORS[article.category] ?? CATEGORY_COLORS.geral
   const ytId = article.youtube_url ? extractYouTubeId(article.youtube_url) : null
   const thumb = article.cover_url ?? (ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : null)
 
@@ -217,7 +216,7 @@ function ArticleCard({ article, onClick }: { article: HelpArticle; onClick: () =
           className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded self-start"
           style={{ color, background: bg }}
         >
-          {CATEGORY_LABELS[article.category as HelpArticleCategory]}
+          {CATEGORY_LABELS[article.category]}
         </span>
         <p className="text-sm font-bold text-white leading-snug line-clamp-2"
           style={{ fontFamily: 'var(--pm-font-display)' }}>

@@ -4,7 +4,6 @@ import {
   Package, ShoppingBag,
   Headphones, Settings,
   ClipboardList, Megaphone, HelpCircle, BookOpen, Shield,
-  type LucideIcon,
 } from 'lucide-react'
 
 function IconTabelaRemap({ className, size = 24 }: { className?: string; size?: number }) {
@@ -116,7 +115,7 @@ export function Sidebar({ mode, onTogglePin, onNavClick }: SidebarProps) {
         {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
         <NavItem to={`${prefix}/dashboard`}    icon={LayoutDashboard} label="Dashboard"    collapsed={collapsed} onNavigate={onNavClick} />
         <NavItem to={`${prefix}/arquivos`}     icon={Files}           label="Arquivos ECU" collapsed={collapsed} onNavigate={onNavClick} badge={unseenJobs} />
-        <NavItem to={`${prefix}/tabela-remap`} icon={IconTabelaRemap as unknown as LucideIcon} label="Tabela Remap" collapsed={collapsed} onNavigate={onNavClick} />
+        <NavItem to={`${prefix}/tabela-remap`} icon={IconTabelaRemap} label="Tabela Remap" collapsed={collapsed} onNavigate={onNavClick} />
         <NavItem to={`${prefix}/clientes`}     icon={Users}           label="Clientes"     collapsed={collapsed} onNavigate={onNavClick} />
         {permFranqueados.canView && (
           <NavItem to={`${prefix}/franqueados`} icon={Building2} label="Franqueados" collapsed={collapsed} onNavigate={onNavClick} />
@@ -125,14 +124,14 @@ export function Sidebar({ mode, onTogglePin, onNavClick }: SidebarProps) {
         {!collapsed && <div className="pm-sidebar-group-title">Loja</div>}
         {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
         <NavItem to={`${prefix}/pdv`}      icon={ShoppingBag}  label="PDV"      collapsed={collapsed} onNavigate={onNavClick} />
-        <NavItem to={`${prefix}/pedidos`}     icon={IconHistoricoPedidos as unknown as LucideIcon} label="Pedidos" collapsed={collapsed} onNavigate={onNavClick} />
+        <NavItem to={`${prefix}/pedidos`}     icon={IconHistoricoPedidos} label="Pedidos" collapsed={collapsed} onNavigate={onNavClick} />
         <NavItem to={`${prefix}/pedidos-b2b`} icon={ClipboardList} label="Pedidos B2B"  collapsed={collapsed} onNavigate={onNavClick} badge={b2bPending} />
         <NavItem to={`${prefix}/produtos`} icon={Package}      label="Produtos" collapsed={collapsed} onNavigate={onNavClick} />
 
         {!collapsed && <div className="pm-sidebar-group-title">Gestão</div>}
         {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
         {permFinanceiro.canView && (
-          <NavItem to={`${prefix}/financeiro`} icon={IconFinanceiro as unknown as LucideIcon} label="Financeiro" collapsed={collapsed} onNavigate={onNavClick} />
+          <NavItem to={`${prefix}/financeiro`} icon={IconFinanceiro} label="Financeiro" collapsed={collapsed} onNavigate={onNavClick} />
         )}
         <NavItem to={`${prefix}/cadastros`} icon={BookOpen} label="Cadastros" collapsed={collapsed} onNavigate={onNavClick} />
         <NavItem to={`${prefix}/suporte`}   icon={Headphones} label="Suporte"       collapsed={collapsed} onNavigate={onNavClick} badge={unreadSupport} />

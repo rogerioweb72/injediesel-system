@@ -3,7 +3,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { useEcuJobsReport, useOrdersReport, useFinancialEntriesReport, useCommissionsReport, useUnitRoyalty, fmt, pct, type PeriodFilter, type MonthRef } from '@/hooks/useRelatorios'
-import { useUnitEmployeeCostsForUnit, type EmployeeBenefit } from '@/hooks/useUnitEmployees'
+import { useUnitEmployeeCostsForUnit } from '@/hooks/useUnitEmployees'
 
 const PIE_COLORS = ['#e72b2b','#f97316','#eab308','#22c55e','#3b82f6','#a855f7']
 
@@ -22,7 +22,7 @@ export function TabFinanceiro({ unitId, period, months }: { unitId: string; peri
     const totalRec = ecuRec + ordRec + finRec
 
     const ecuCost  = ecuJobs.reduce((s, j) => s + j.amount_charged_by_matrix, 0)
-    const empCost  = empCosts.reduce((s, c) => s + c.base_salary + (c.benefits as EmployeeBenefit[]).reduce((b, x) => b + x.amount, 0), 0)
+    const empCost  = empCosts.reduce((s, c) => s + c.base_salary + (c.benefits).reduce((b, x) => b + x.amount, 0), 0)
     const commCost = comms.reduce((s, c) => s + c.amount, 0)
     const despesas = entries.filter(e => e.type === 'despesa').reduce((s, e) => s + e.amount, 0)
     const royaltyVal = royalty?.royalty_enabled ? (totalRec * (royalty.royalty_percentage ?? 0)) / 100 : 0

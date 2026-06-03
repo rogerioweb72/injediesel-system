@@ -132,7 +132,7 @@ export function TabEquipeCustos({ unitId, period, months }: { unitId: string; pe
   const costMonth = months[0]?.month ?? new Date().getMonth() + 1
 
   const summary = useMemo(() => {
-    const salaries  = empCosts.reduce((s, c) => s + c.base_salary + (c.benefits as EmployeeBenefit[]).reduce((b, x) => b + x.amount, 0), 0)
+    const salaries  = empCosts.reduce((s, c) => s + c.base_salary + (c.benefits).reduce((b, x) => b + x.amount, 0), 0)
     const commTotal = commissions.reduce((s, c) => s + c.amount, 0)
     const despesas  = entries.filter(e => e.type === 'despesa').reduce((s, e) => s + e.amount, 0)
     return { salaries, commTotal, despesas, total: salaries + commTotal + despesas }
@@ -156,7 +156,7 @@ export function TabEquipeCustos({ unitId, period, months }: { unitId: string; pe
             <div className="divide-y divide-zinc-800">
               {employees.map(emp => {
                 const cost = empCosts.find(c => c.employee_id === emp.id)
-                const total = cost ? cost.base_salary + (cost.benefits as EmployeeBenefit[]).reduce((s, b) => s + b.amount, 0) : null
+                const total = cost ? cost.base_salary + (cost.benefits).reduce((s, b) => s + b.amount, 0) : null
                 return (
                   <div key={emp.id} className="flex items-center justify-between gap-3 px-4 py-3">
                     <div className="min-w-0">

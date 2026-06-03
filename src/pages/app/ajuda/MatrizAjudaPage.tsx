@@ -14,7 +14,6 @@ import {
   CATEGORY_LABELS,
   CATEGORY_COLORS,
   type HelpArticle,
-  type HelpArticleCategory,
 } from '@/hooks/useHelpArticles'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -32,7 +31,7 @@ function ArticleCard({
   onEdit: () => void
   onDelete: () => void
 }) {
-  const { color, bg } = CATEGORY_COLORS[article.category as HelpArticleCategory] ?? CATEGORY_COLORS.geral
+  const { color, bg } = CATEGORY_COLORS[article.category] ?? CATEGORY_COLORS.geral
   const ytId = article.youtube_url ? extractYouTubeId(article.youtube_url) : null
   const thumb = article.cover_url ?? (ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : null)
   const published = article.status === 'published'
@@ -84,7 +83,7 @@ function ArticleCard({
             className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
             style={{ color, background: bg }}
           >
-            {CATEGORY_LABELS[article.category as HelpArticleCategory]}
+            {CATEGORY_LABELS[article.category]}
           </span>
         </div>
 

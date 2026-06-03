@@ -3,7 +3,6 @@ import {
   LayoutDashboard, Files, ShoppingBag, ShoppingCart,
   Users, BarChart3, Headphones,
   Megaphone, User, HelpCircle, BookOpen,
-  type LucideIcon,
 } from 'lucide-react'
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -159,10 +158,10 @@ export function FranqueadoSidebar({ mode, onTogglePin }: FranqueadoSidebarProps)
         {permEcu.canView && <>
           {!collapsed && <div className="pm-sidebar-group-title">ECU</div>}
           {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
-          <NavItem to={`${prefix}/arquivos/novo`} icon={IconEnviarArquivo as unknown as LucideIcon} label="Enviar Arquivo" collapsed={collapsed} end />
+          <NavItem to={`${prefix}/arquivos/novo`} icon={IconEnviarArquivo} label="Enviar Arquivo" collapsed={collapsed} end />
           <NavItem to={`${prefix}/arquivos`}      icon={Files}  label="Meus Arquivos"  collapsed={collapsed} badge={unseenJobs} end />
           {permRemap.canView && (
-            <NavItem to={`${prefix}/tabela-remap`} icon={IconTabelaRemap as unknown as LucideIcon} label="Tabela de Remap" collapsed={collapsed} />
+            <NavItem to={`${prefix}/tabela-remap`} icon={IconTabelaRemap} label="Tabela de Remap" collapsed={collapsed} />
           )}
         </>}
 
@@ -171,7 +170,7 @@ export function FranqueadoSidebar({ mode, onTogglePin }: FranqueadoSidebarProps)
           {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
           <NavItem to={`${prefix}/loja`}     icon={ShoppingBag}   label="Loja Promax"          collapsed={collapsed} />
           <NavItem to={`${prefix}/carrinho`} icon={ShoppingCart}  label="Meu Carrinho"          collapsed={collapsed} />
-          <NavItem to={`${prefix}/pedidos`}  icon={IconHistoricoPedidos as unknown as LucideIcon} label="Histórico de Compras"  collapsed={collapsed} badge={orderUpdates} />
+          <NavItem to={`${prefix}/pedidos`}  icon={IconHistoricoPedidos} label="Histórico de Compras"  collapsed={collapsed} badge={orderUpdates} />
         </>}
 
         {(permClientes.canView || permRelat.canView || permConfig.canView || permFinanceiro.canView) && <>
@@ -181,7 +180,7 @@ export function FranqueadoSidebar({ mode, onTogglePin }: FranqueadoSidebarProps)
             <NavItem to={`${prefix}/clientes`}   icon={Users}     label="Clientes"   collapsed={collapsed} />
           )}
           {permFinanceiro.canView && (
-            <NavItem to={`${prefix}/caixa`} icon={CaixaIcon as unknown as LucideIcon} label="Caixa" collapsed={collapsed} />
+            <NavItem to={`${prefix}/caixa`} icon={CaixaIcon} label="Caixa" collapsed={collapsed} />
           )}
           {permRelat.canView && (
             <NavItem to={`${prefix}/relatorios`} icon={BarChart3} label="Relatórios" collapsed={collapsed} />

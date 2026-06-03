@@ -144,7 +144,7 @@ export default function HelpArticleForm() {
       category:    data.category    as HelpArticleCategory,
       for_units:   data.for_units,
       for_matrix:  data.for_matrix,
-      status:      (statusOverride ?? data.status) as 'draft' | 'published',
+      status:      (statusOverride ?? data.status),
       position:    data.position,
     }
     try {

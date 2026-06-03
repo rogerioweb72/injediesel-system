@@ -45,7 +45,7 @@ export function RoleGuard(props: RoleGuardProps) {
   }
 
   // ── Mode A: UI guard (backward compatible — sem Navigate)
-  const { roles, children, fallback = null } = props as UiGuardProps
+  const { roles, children, fallback = null } = props
 
   if (!profile) return <>{fallback}</>
   if (!profile.active) return <>{fallback}</>

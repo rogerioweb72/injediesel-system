@@ -110,7 +110,7 @@ export function NovoLancamentoModal({ unitId, onClose, onSuccess }: Props) {
     if (!canSave) return
     const payload: CreateLancamentoPayload = {
       tipo,
-      categoria: categoria as LancamentoCategoria,
+      categoria: categoria,
       subcategoria: subcategoria.trim() || undefined,
       status,
       valor: valorNum,

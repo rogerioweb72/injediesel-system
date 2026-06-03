@@ -84,11 +84,11 @@ export function useImpersonationTargets() {
       const { data, error } = await supabase
         .from('profiles')
         .select('id, name, role, active, unit_id')
-        .neq('role', 'system_ti' as never)
+        .neq('role', 'system_ti')
         .eq('active', true)
         .order('name')
       if (error) throw error
-      return (data ?? []) as unknown as Array<Pick<AppUser, 'id' | 'name' | 'role' | 'active'> & { unit_id: string | null }>
+      return data ?? []
     },
   })
 }

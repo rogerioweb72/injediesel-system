@@ -51,7 +51,7 @@ export function EntryForm({ categories, year, month, onSubmit, isPending, onClos
       type: data.type,
       category_id: data.category_id || null,
       description: data.description,
-      amount: data.amount as number,
+      amount: data.amount,
       period_year: year,
       period_month: month,
     })

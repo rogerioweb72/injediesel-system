@@ -53,7 +53,7 @@ export default function SupportTicketForm() {
     const ticket = await create.mutateAsync({
       title:       data.title,
       customer_id: data.customer_id || null,
-      category:    data.category as TicketCategory,
+      category:    data.category,
       priority:    data.priority,
       body:        data.body,
       unit_id:     isFranchise ? (profile?.unit_id ?? null) : (data.unit_id ?? null),

@@ -102,7 +102,7 @@ export function useEcuJobsReport(unitId?: string, period?: PeriodFilter) {
         franchise_margin_amount:    Number(row.franchise_margin_amount ?? 0),
         franchise_margin_percentage: Number(row.franchise_margin_percentage ?? 0),
         created_at: row.created_at,
-      })) as EcuJobReport[]
+      }))
     },
   })
 }
@@ -164,7 +164,7 @@ export function useFinancialEntriesReport(unitId?: string, period?: PeriodFilter
           category_name: r.financial_categories?.name ?? '—',
           period_year: r.period_year,
           period_month: r.period_month,
-        })) as FinancialEntryReport[]
+        }))
     },
   })
 }
@@ -197,7 +197,7 @@ export function useCommissionsReport(unitId?: string, period?: PeriodFilter) {
         seller_name: r.profiles?.name ?? '—',
         amount: Number(r.amount ?? 0),
         paid: r.paid,
-      })) as CommissionReport[]
+      }))
     },
   })
 }

@@ -211,7 +211,7 @@ export function useEcuCatalogCategoryStats() {
       if (error) throw error
       const counts: Record<string, number> = {}
       for (const r of data ?? []) {
-        const s = r.categoria_slug as string
+        const s = r.categoria_slug
         counts[s] = (counts[s] ?? 0) + 1
       }
       return counts
@@ -240,7 +240,7 @@ export function useEcuCatalogBrands(categoriaSlug: string) {
 
       const { data, error } = await q
       if (error) throw error
-      return [...new Set(data?.map(r => r.marca as string).filter(m => m && m.trim() !== '') ?? [])].sort()
+      return [...new Set(data?.map(r => r.marca).filter(m => m && m.trim() !== '') ?? [])].sort()
     },
     staleTime: 300_000,
   })
@@ -308,7 +308,7 @@ export function useCreateEcuRecord() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (record: Omit<EcuCatalogRow, 'id' | 'created_at' | 'updated_at'>) => {
-      if (IS_MOCK) return { ...record, id: crypto.randomUUID(), created_at: new Date().toISOString(), updated_at: new Date().toISOString() } as EcuCatalogRow
+      if (IS_MOCK) return { ...record, id: crypto.randomUUID(), created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
       const { data, error } = await supabase.from('ecu_catalog').insert(record).select().single()
       if (error) throw error
       return data as EcuCatalogRow

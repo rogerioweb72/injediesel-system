@@ -32,7 +32,7 @@ export default function FranqueadoCatalogPage() {
 
   const filtered = useMemo(() => {
     let rows = allRows
-    if (filtros.ano) rows = rows.filter(r => r.ano?.includes(filtros.ano!))
+    if (filtros.ano) rows = rows.filter(r => r.ano?.includes(filtros.ano))
     const q = busca.trim().toLowerCase()
     if (!q) return rows
     return rows.filter(r =>

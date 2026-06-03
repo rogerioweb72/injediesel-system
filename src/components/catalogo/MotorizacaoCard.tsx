@@ -426,7 +426,7 @@ export function MotorizacaoCard({ row, isOpen: open, onToggle, readOnly = false 
                     <img
                       src={fotoAtual} alt="foto produto"
                       className="w-20 h-14 object-cover rounded border border-white/10"
-                      onError={e => { (e.currentTarget as HTMLImageElement).src = DEFAULT_FOTO }}
+                      onError={e => { (e.currentTarget).src = DEFAULT_FOTO }}
                     />
                     {row.foto_url && (
                       <button onClick={handleRemoveFoto}

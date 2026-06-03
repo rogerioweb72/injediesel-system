@@ -20,7 +20,7 @@ export function MarcaSection({ marca, categoria, whatsappNumber }: Props) {
             alt={marca.marca}
             className="h-5 w-auto object-contain"
             style={{ filter: 'brightness(0) invert(1)', opacity: 0.9 }}
-            onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+            onError={e => { (e.currentTarget).style.display = 'none' }}
           />
         ) : (
           <span className="font-display text-[hsl(var(--pm-red-500))] font-bold text-base uppercase">

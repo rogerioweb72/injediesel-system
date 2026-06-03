@@ -771,7 +771,7 @@ export function setupMocks() {
   // Patch supabase.from to return mock data
   sb.from = (table: string) => {
     const data = MOCK_DB[table] ?? []
-    return createMockChain(data as AnyRecord[], table)
+    return createMockChain(data, table)
   }
 
    

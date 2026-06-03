@@ -162,7 +162,7 @@ function ArticleView({
           {alreadyAccepted ? (
             <div className="flex items-center gap-2 text-sm text-emerald-400">
               <CheckCircle className="h-4 w-4" />
-              Aceito em {format(new Date(myAcceptance!.accepted_at), 'dd/MM/yyyy')}
+              Aceito em {format(new Date(myAcceptance.accepted_at), 'dd/MM/yyyy')}
             </div>
           ) : (
             <label className="flex cursor-pointer items-start gap-3">

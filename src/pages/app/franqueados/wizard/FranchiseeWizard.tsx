@@ -66,7 +66,7 @@ function WizardInner({ isEdit, unit, onOpenChange }: WizardInnerProps) {
 
   async function handleNext() {
     const fields = STEP_FIELDS[currentStep]
-    const valid = await form.trigger(fields as never[])
+    const valid = await form.trigger(fields)
     if (!valid) return
     if (currentStep === TOTAL_STEPS) {
       const allValid = await form.trigger()

@@ -272,8 +272,8 @@ function BenefitCard({ b }: { b: Benefit }) {
       borderRadius: '10px',
       transition: 'border-color 0.2s, background 0.2s',
     }}
-      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(193,13,25,0.3)'; (e.currentTarget as HTMLDivElement).style.background = 'rgba(193,13,25,0.04)' }}
-      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.06)'; (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.02)' }}
+      onMouseEnter={e => { (e.currentTarget).style.borderColor = 'rgba(193,13,25,0.3)'; (e.currentTarget).style.background = 'rgba(193,13,25,0.04)' }}
+      onMouseLeave={e => { (e.currentTarget).style.borderColor = 'rgba(255,255,255,0.06)'; (e.currentTarget).style.background = 'rgba(255,255,255,0.02)' }}
     >
       <span style={{ fontFamily: MONO, fontSize: '0.68rem', fontWeight: 700, color: RED, letterSpacing: '0.12em', display: 'block', marginBottom: '0.5rem' }}>
         {b.num}
@@ -377,8 +377,8 @@ export default function VehicleDetailPage() {
             letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer',
             transition: 'background 0.2s, color 0.2s',
           }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(193,13,25,0.28)'; (e.currentTarget as HTMLButtonElement).style.color = '#fff' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(20,20,22,0.75)'; (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.75)' }}
+            onMouseEnter={e => { (e.currentTarget).style.background = 'rgba(193,13,25,0.28)'; (e.currentTarget).style.color = '#fff' }}
+            onMouseLeave={e => { (e.currentTarget).style.background = 'rgba(20,20,22,0.75)'; (e.currentTarget).style.color = 'rgba(255,255,255,0.75)' }}
           >
             <ArrowLeft size={14} /> Voltar
           </button>
@@ -419,7 +419,7 @@ export default function VehicleDetailPage() {
 
         {/* ── BENEFITS (2×2 grid) ── */}
         <section
-          ref={rBenefits as React.RefObject<HTMLElement>}
+          ref={rBenefits}
           style={{ padding: '3.5rem 2.5rem', borderBottom: `1px solid ${BORDER}`, ...REVEAL, opacity: vBenefits ? 1 : 0, transform: vBenefits ? 'none' : 'translateY(20px)' }}
         >
           <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -444,7 +444,7 @@ export default function VehicleDetailPage() {
 
         {/* ── CAVEATS ── */}
         <section
-          ref={rCaveats as React.RefObject<HTMLElement>}
+          ref={rCaveats}
           style={{ padding: '2.5rem 2.5rem', borderTop: `1px solid ${BORDER}`, ...REVEAL, opacity: vCaveats ? 1 : 0, transform: vCaveats ? 'none' : 'translateY(20px)' }}
         >
           <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -468,7 +468,7 @@ export default function VehicleDetailPage() {
 
         {/* ── CTA ── */}
         <section
-          ref={rCta as React.RefObject<HTMLElement>}
+          ref={rCta}
           style={{ padding: '3.5rem 2.5rem', background: CARD, borderTop: `1px solid ${BORDER}`, ...REVEAL, opacity: vCta ? 1 : 0, transform: vCta ? 'none' : 'translateY(20px)' }}
         >
           <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '2rem', flexWrap: 'wrap' }}>
@@ -489,8 +489,8 @@ export default function VehicleDetailPage() {
                 letterSpacing: '0.06em', textTransform: 'uppercase', color: '#fff',
                 transition: 'filter 0.2s',
               }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.filter = 'brightness(1.15)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.filter = '' }}
+                onMouseEnter={e => { (e.currentTarget).style.filter = 'brightness(1.15)' }}
+                onMouseLeave={e => { (e.currentTarget).style.filter = '' }}
               >
                 Quero Mais Performance <ArrowRight size={14} />
               </button>
@@ -502,8 +502,8 @@ export default function VehicleDetailPage() {
                 transition: 'border-color 0.2s, color 0.2s',
                 display: 'flex', alignItems: 'center', gap: '0.5rem',
               }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.4)'; (e.currentTarget as HTMLButtonElement).style.color = '#fff' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = BORDER; (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.6)' }}
+                onMouseEnter={e => { (e.currentTarget).style.borderColor = 'rgba(255,255,255,0.4)'; (e.currentTarget).style.color = '#fff' }}
+                onMouseLeave={e => { (e.currentTarget).style.borderColor = BORDER; (e.currentTarget).style.color = 'rgba(255,255,255,0.6)' }}
               >
                 <ArrowLeft size={14} /> Outras categorias
               </button>

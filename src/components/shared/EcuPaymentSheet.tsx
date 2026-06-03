@@ -95,7 +95,7 @@ export function EcuPaymentSheet({ payment, maxDiscountPct, onClose }: Props) {
             type="number" min={0} max={100} step={0.5}
             value={discountPct}
             onChange={(e) => setDiscountPct(Number(e.target.value))}
-            style={{ ...inputStyle, border: discountExceeded ? '1px solid #F87171' : inputStyle.border as string }}
+            style={{ ...inputStyle, border: discountExceeded ? '1px solid #F87171' : inputStyle.border }}
           />
           {discountExceeded && (
             <p className="text-xs" style={{ color: '#F87171' }}>

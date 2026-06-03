@@ -39,7 +39,7 @@ export function useModulePermission(module: RbacModule) {
     return { canView: false, canCreate: false, canEdit: false, canDelete: false }
   }
 
-  const perms = getEffectivePermissions(profile.role as UserRole, profile.permissions ?? null)
+  const perms = getEffectivePermissions(profile.role, profile.permissions ?? null)
   return {
     canView:   checkPermission(perms, module, 'can_view'),
     canCreate: checkPermission(perms, module, 'can_create'),

@@ -205,7 +205,7 @@ export default function LojaPage() {
 
   // Acessórios — fetch all active products (large page, filter client-side)
   const { data: accData, isLoading: accLoading } = useProducts({ pageSize: 600, q: '' })
-  const accProducts: ProductWithPrices[] = ((accData?.data ?? []) as ProductWithPrices[]).filter(p => p.active)
+  const accProducts: ProductWithPrices[] = ((accData?.data ?? [])).filter(p => p.active)
 
   const accCategories = useMemo(
     () => [...new Set(accProducts.map(p => p.category).filter(Boolean))].sort(),

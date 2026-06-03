@@ -38,7 +38,7 @@ export function useEcuCategories() {
         console.warn('ecu_categories not available, using static fallback', error.message)
         return STATIC_FALLBACK
       }
-      return (data ?? STATIC_FALLBACK) as EcuCategory[]
+      return (data ?? STATIC_FALLBACK)
     },
     staleTime: 300_000,
     placeholderData: STATIC_FALLBACK,
@@ -65,14 +65,14 @@ export function useCreateEcuCategory() {
         .order('ordem', { ascending: false })
         .limit(1)
         .single()
-      const ordem = ((existing as { ordem: number } | null)?.ordem ?? 0) + 1
+      const ordem = ((existing)?.ordem ?? 0) + 1
       const { data, error } = await supabase
         .from('ecu_categories')
         .insert({ slug, label, ordem })
         .select()
         .single()
       if (error) throw error
-      return data as EcuCategory
+      return data
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: QK.list() }),
   })

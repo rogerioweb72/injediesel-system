@@ -201,7 +201,7 @@ function PermMatrix({
   const toggle = (module: RbacModule, key: keyof PermissionEntry) => {
     onChange(
       permissions.map((e) =>
-        e.module === module ? { ...e, [key]: !e[key as keyof PermissionEntry] } : e,
+        e.module === module ? { ...e, [key]: !e[key] } : e,
       ),
     )
   }
@@ -969,7 +969,7 @@ export function UsersTab() {
 
               {inviteUser.isError && (
                 <p className="text-xs text-red-400">
-                  {(inviteUser.error as Error)?.message ?? 'Erro ao enviar convite'}
+                  {(inviteUser.error)?.message ?? 'Erro ao enviar convite'}
                 </p>
               )}
 

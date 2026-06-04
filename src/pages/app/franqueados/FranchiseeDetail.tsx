@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
-import { ArrowLeft, Edit, Trash2, AlertTriangle, Clock, ArrowUpCircle, RefreshCw, ShieldOff, ShieldCheck, Mail } from 'lucide-react'
+import { ArrowLeft, Edit, Trash2, AlertTriangle, Clock, ArrowUpCircle, RefreshCw, ShieldOff, ShieldCheck, Mail, BarChart3 } from 'lucide-react'
 import { toast } from 'sonner'
 import { translateError } from '@/lib/errors'
 import { PermissionGuard } from '@/components/auth/PermissionGuard'
@@ -20,6 +20,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useFranchiseUnit, useDeleteFranchiseUnit, useUpdateFranchiseUnit } from '@/hooks/useFranchiseUnits'
 import { useInviteFranchisee } from '@/hooks/useInviteFranchisee'
 import CobrancasEcuTab from '@/pages/app/franqueados/CobrancasEcuTab'
+import { RelatorioFranchiseeDrawer } from '@/pages/app/franqueados/RelatorioFranchiseeDrawer'
+import { useRelatorioPerm } from '@/hooks/useRelatorios'
 import type { ContractType } from '@/types/app'
 
 const CONTRACT_LABELS: Record<string, string> = { full: 'Full', linha_leve: 'Linha Leve' }
@@ -57,6 +59,9 @@ export default function FranchiseeDetail() {
 
   // Bloquear state
   const [blockReason, setBlockReason] = useState('')
+
+  const relatorioPerm  = useRelatorioPerm()
+  const [relatorioOpen, setRelatorioOpen] = useState(false)
 
   const { data: unit, isLoading } = useFranchiseUnit(id ?? '')
   const deleteUnit  = useDeleteFranchiseUnit()
@@ -132,6 +137,17 @@ export default function FranchiseeDetail() {
       />
 
       <div className="flex items-center gap-2 flex-wrap justify-end">
+        {relatorioPerm.hasAny && unit && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setRelatorioOpen(true)}
+            className="gap-1.5"
+          >
+            <BarChart3 size={14} />
+            Relatórios
+          </Button>
+        )}
         <Button variant="ghost" size="sm" onClick={() => navigate(`${prefix}/franqueados`)}>
           <ArrowLeft size={16} className="mr-2" />Voltar
         </Button>
@@ -483,6 +499,14 @@ export default function FranchiseeDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {unit && (
+        <RelatorioFranchiseeDrawer
+          open={relatorioOpen}
+          onClose={() => setRelatorioOpen(false)}
+          unit={{ id: unit.id, name: unit.name, city: unit.city ?? '—', state: unit.state ?? '—' }}
+        />
+      )}
     </div>
   )
 }

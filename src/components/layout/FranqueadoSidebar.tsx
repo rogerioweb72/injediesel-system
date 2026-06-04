@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  LayoutDashboard, Files, ShoppingBag, ShoppingCart,
+  LayoutDashboard, Files, FileText, ShoppingBag, ShoppingCart,
   Users, BarChart3, Headphones,
   Megaphone, User, HelpCircle, BookOpen,
 } from 'lucide-react'
@@ -181,6 +181,9 @@ export function FranqueadoSidebar({ mode, onTogglePin }: FranqueadoSidebarProps)
           )}
           {permFinanceiro.canView && (
             <NavItem to={`${prefix}/caixa`} icon={CaixaIcon} label="Caixa" collapsed={collapsed} />
+          )}
+          {permFinanceiro.canView && (
+            <NavItem to={`${prefix}/faturas`} icon={FileText} label="Faturas" collapsed={collapsed} />
           )}
           {permRelat.canView && (
             <NavItem to={`${prefix}/relatorios`} icon={BarChart3} label="Relatórios" collapsed={collapsed} />

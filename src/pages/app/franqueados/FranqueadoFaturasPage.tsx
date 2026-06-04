@@ -103,7 +103,7 @@ function TabelaFaturas({
 const PAGE_SIZE = 20
 
 export default function FranqueadoFaturasPage() {
-  const { emAberto, todosPageos, pagosMesAtual, resumo, isLoading } = useFaturasMyUnit()
+  const { emAberto, todosPageos, resumo, isLoading } = useFaturasMyUnit()
   const [mesFiltro, setMesFiltro] = useState('')
   const [pagHistorico, setPagHistorico] = useState(0)
 

@@ -39,106 +39,48 @@ jobs:
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
         run: npm run build
 
-      - name: FTP attempt 1
-        id: ftp1
-        continue-on-error: true
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: 21
-          security: loose
-          timeout: 120000
-          local-dir: ./dist/
-          server-dir: /public_html/
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
+      - name: Install lftp
+        run: sudo apt-get install -y lftp
 
-      - name: FTP attempt 2
-        id: ftp2
-        if: steps.ftp1.outcome == 'failure'
-        continue-on-error: true
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: 21
-          security: loose
-          timeout: 120000
-          local-dir: ./dist/
-          server-dir: /public_html/
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
+      - name: Deploy via FTP
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USERNAME }}
+          FTP_PASS: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          printf '%s\n' \
+            'set net:timeout 90' \
+            'set net:max-retries 4' \
+            'set net:reconnect-interval-base 10' \
+            'set net:reconnect-interval-multiplier 2' \
+            'set ftp:passive-mode yes' \
+            'set ftp:ssl-allow yes' \
+            'set ftp:ssl-force no' \
+            'set ssl:verify-certificate no' \
+            'set ssl:check-hostname no' \
+            > /tmp/deploy.lftp
 
-      - name: Wait 30s before attempt 3
-        if: steps.ftp1.outcome == 'failure' && steps.ftp2.outcome == 'failure'
-        run: sleep 30
+          printf 'open -u %s,%s %s\n' "$FTP_USER" "$FTP_PASS" "$FTP_HOST" >> /tmp/deploy.lftp
 
-      - name: FTP attempt 3
-        id: ftp3
-        if: steps.ftp1.outcome == 'failure' && steps.ftp2.outcome == 'failure'
-        continue-on-error: true
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: 21
-          security: loose
-          timeout: 120000
-          local-dir: ./dist/
-          server-dir: /public_html/
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
+          printf '%s\n' \
+            'mirror --reverse --verbose --parallel=5 --exclude-glob .git* --exclude-glob node_modules ./dist/ /public_html/' \
+            'bye' \
+            >> /tmp/deploy.lftp
 
-      - name: Wait 60s before attempt 4
-        if: steps.ftp1.outcome == 'failure' && steps.ftp2.outcome == 'failure' && steps.ftp3.outcome == 'failure'
-        run: sleep 60
+          MAX_RETRIES=5
+          DELAY=15
+          for i in $(seq 1 $MAX_RETRIES); do
+            echo "=== Tentativa $i/$MAX_RETRIES ==="
+            if lftp -f /tmp/deploy.lftp; then
+              echo "Deploy concluído na tentativa $i."
+              exit 0
+            fi
+            if [ "$i" -lt "$MAX_RETRIES" ]; then
+              echo "Falhou. Aguardando ${DELAY}s..."
+              sleep $DELAY
+              DELAY=$((DELAY * 2))
+            fi
+          done
 
-      - name: FTP attempt 4
-        id: ftp4
-        if: steps.ftp1.outcome == 'failure' && steps.ftp2.outcome == 'failure' && steps.ftp3.outcome == 'failure'
-        continue-on-error: true
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: 21
-          security: loose
-          timeout: 120000
-          local-dir: ./dist/
-          server-dir: /public_html/
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
-
-      - name: Wait 120s before attempt 5
-        if: steps.ftp1.outcome == 'failure' && steps.ftp2.outcome == 'failure' && steps.ftp3.outcome == 'failure' && steps.ftp4.outcome == 'failure'
-        run: sleep 120
-
-      - name: FTP attempt 5
-        if: steps.ftp1.outcome == 'failure' && steps.ftp2.outcome == 'failure' && steps.ftp3.outcome == 'failure' && steps.ftp4.outcome == 'failure'
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: 21
-          security: loose
-          timeout: 120000
-          local-dir: ./dist/
-          server-dir: /public_html/
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
+          echo "Todas as $MAX_RETRIES tentativas falharam."
+          exit 1

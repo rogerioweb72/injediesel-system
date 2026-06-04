@@ -2,7 +2,7 @@ import { useRef, useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
 import {
-  ArrowLeft, Upload, FileText, Clock,
+  ArrowLeft, Upload, FileText, Clock, Pencil,
   ChevronRight, AlertCircle, AlertTriangle, MessageSquarePlus, X, CheckCircle,
   CreditCard, CheckCircle2, Loader2, ShieldAlert, ShieldCheck,
 } from 'lucide-react'
@@ -19,6 +19,8 @@ import { useCreateSupportTicket } from '@/hooks/useSupportTickets'
 import { useMyUnit } from '@/hooks/useMyUnit'
 import { useProfile } from '@/hooks/useProfile'
 import { useMarkJobAsSeen } from '@/hooks/useUnseenJobs'
+import { EcuValueEditModal } from '@/pages/app/arquivos/EcuValueEditModal'
+import { useJobValueEditHistory } from '@/hooks/useEcuValueEdit'
 import { toast } from 'sonner'
 import type { FileStatus } from '@/types/app'
 
@@ -258,6 +260,7 @@ export default function EcuJobDetail() {
   const [pendingDeliveryFile, setPendingDeliveryFile] = useState<File | null>(null)
   const [deliveryConfirmOpen, setDeliveryConfirmOpen] = useState(false)
   const [sentVisible, setSentVisible] = useState<'in' | 'out' | null>(null)
+  const [valueEditOpen, setValueEditOpen] = useState(false)
 
   const { data: job, isLoading } = useEcuJob(id ?? '')
   const updateStatus = useUpdateEcuJobStatus()
@@ -265,6 +268,7 @@ export default function EcuJobDetail() {
   const uploadFile   = useUploadEcuFile()
   const downloadFile = useDownloadEcuFile()
   const { isMatrixUser, isFranchiseUser } = useProfile()
+  const { data: editHistory = [] } = useJobValueEditHistory(isMatrixUser() ? (id ?? '') : '')
   const markAsSeen   = useMarkJobAsSeen(id)
   const { data: financialEntry } = useEcuJobFinancialEntry(job?.id ?? '')
   const sendToFinance = useSendToFinance()
@@ -474,9 +478,32 @@ export default function EcuJobDetail() {
                     >Informar valor</button>
                   )
                 ) : (
-                  <p className="text-sm font-medium text-red-400">
-                    {formatCurrency(job.amount_charged_by_matrix)}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-red-400">
+                      {formatCurrency(job.amount_charged_by_matrix)}
+                    </p>
+                    {isMatrixUser() && job.matrix_payment_status === 'em_aberto' && (
+                      job.edicao_valor_pendente ? (
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                          style={{ background: 'rgba(251,146,60,0.15)', color: '#FB923C', border: '1px solid rgba(251,146,60,0.3)' }}
+                          title="Já existe uma alteração pendente de aprovação"
+                        >
+                          <Clock size={10} />
+                          Edição pendente
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => setValueEditOpen(true)}
+                          title="Solicitar edição de valor"
+                          className="p-1 rounded hover:bg-white/10 transition-colors"
+                          style={{ color: 'hsl(var(--pm-gray-500))' }}
+                        >
+                          <Pencil size={12} />
+                        </button>
+                      )
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -588,6 +615,54 @@ export default function EcuJobDetail() {
                 <Upload size={16} />
                 {uploadFile.isPending || updateStatus.isPending ? 'Enviando...' : 'Enviar Arquivo Pronto'}
               </button>
+            )}
+
+            {/* Histórico de edições de valor — apenas matriz */}
+            {isMatrixUser() && editHistory.length > 0 && (
+              <div className="space-y-2 mt-6">
+                <div className="pm-accent-line">Histórico de alterações de valor</div>
+                <div className="pm-card p-0 divide-y divide-[hsl(var(--pm-gray-700))]">
+                  {editHistory.map((h) => {
+                    const statusColor = h.status === 'APROVADO' ? '#4ADE80' : h.status === 'RECUSADO' ? '#F87171' : '#FBBF24'
+                    const statusLabel = h.status === 'APROVADO' ? 'Aprovado' : h.status === 'RECUSADO' ? 'Recusado' : h.status === 'CANCELADO_PAGAMENTO' ? 'Cancelado' : 'Aguardando'
+                    const diff = h.valor_novo - h.valor_anterior
+                    const sign = diff >= 0 ? '+' : ''
+                    return (
+                      <div key={h.id} className="p-3 space-y-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono text-white">
+                              {h.valor_anterior.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                              {' → '}
+                              {h.valor_novo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                            </span>
+                            <span className="text-[11px] font-semibold" style={{ color: diff >= 0 ? '#4ADE80' : '#F87171' }}>
+                              ({sign}{diff.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                            style={{ background: `${statusColor}22`, color: statusColor }}>
+                            {statusLabel}
+                          </span>
+                        </div>
+                        <p className="text-xs" style={{ color: 'hsl(var(--pm-gray-500))' }}>
+                          {h.motivo}
+                        </p>
+                        <p className="text-[11px]" style={{ color: 'hsl(var(--pm-gray-600))' }}>
+                          Solicitado por {(h.solicitado_profile as any)?.name ?? '—'} em{' '}
+                          {new Date(h.solicitado_em).toLocaleString('pt-BR')}
+                          {h.aprovado_em && (
+                            <> · {h.status === 'APROVADO' ? 'Aprovado' : 'Recusado'} por {(h.aprovado_profile as any)?.name ?? '—'}</>
+                          )}
+                          {h.motivo_recusa && (
+                            <span style={{ color: '#F87171' }}> · Motivo: {h.motivo_recusa}</span>
+                          )}
+                        </p>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -769,6 +844,17 @@ export default function EcuJobDetail() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Value edit modal */}
+      {valueEditOpen && job.amount_charged_by_matrix != null && (
+        <EcuValueEditModal
+          open={valueEditOpen}
+          onClose={() => setValueEditOpen(false)}
+          jobId={job.id}
+          jobCode={`#${job.id.slice(0, 8).toUpperCase()}`}
+          valorAtual={job.amount_charged_by_matrix}
+        />
+      )}
 
       {/* Floating sent checkmark */}
       {sentVisible && (

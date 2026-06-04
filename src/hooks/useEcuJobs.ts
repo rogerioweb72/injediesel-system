@@ -52,6 +52,8 @@ export interface EcuJob {
   franchise_margin_percentage: number | null
   matrix_payment_status: 'em_aberto' | 'pago' | null
   matrix_paid_at: string | null
+  edicao_valor_pendente: boolean
+  edicao_valor_historico_id: string | null
   service_tags: string[]
   vehicle_info: {
     categoria?: string

@@ -19,6 +19,10 @@ import type { FileStatus } from '@/types/app'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import FranquiasTab from '@/pages/app/financeiro/FranquiasTab'
 import { useUnseenFranchiseCount } from '@/hooks/useFranquiasFinanceiro'
+import { usePendingValueEdits, useApproveValueEdit, useRejectValueEdit, fmtDiff } from '@/hooks/useEcuValueEdit'
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 function fmtBRL(value: number) {
   return Math.abs(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -127,6 +131,14 @@ export default function FinanceiroPage() {
   const [selected, setSelected]   = useState<PendingPayment | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
 
+  const { data: pendingEdits = [] } = usePendingValueEdits()
+  const approveEdit = useApproveValueEdit()
+  const rejectEdit  = useRejectValueEdit()
+
+  const [approveTarget, setApproveTarget] = useState<{ historicoId: string; jobId: string; valorNovo: number } | null>(null)
+  const [rejectTarget, setRejectTarget]   = useState<{ historicoId: string; jobId: string } | null>(null)
+  const [rejectMotivo, setRejectMotivo]   = useState('')
+
   const [filterTipo, setFilterTipo]           = useState<string>('todos')
   const [filterStatus, setFilterStatus]       = useState<string>('todos')
   const [filterCategoria, setFilterCategoria] = useState<string>('todas')
@@ -204,6 +216,82 @@ export default function FinanceiroPage() {
         </div>
 
         <TabsContent value="em-aberto" className="space-y-6 mt-0">
+          {/* Edições de Valor Pendentes */}
+          {pendingEdits.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <p className="text-xs font-bold uppercase tracking-widest" style={{ color: '#FB923C' }}>
+                  Edições de Valor Pendentes
+                </p>
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+                  style={{ background: 'rgba(251,146,60,0.15)', color: '#FB923C' }}>
+                  {pendingEdits.length}
+                </span>
+              </div>
+              <div className="space-y-3">
+                {pendingEdits.map((edit) => {
+                  const unit = edit.ecu_jobs?.franchise_units
+                  const diff = edit.valor_novo - edit.valor_anterior
+                  return (
+                    <div key={edit.id} className="rounded-xl p-4 space-y-3"
+                      style={{ background: 'hsl(var(--pm-gray-900))', border: '1px solid rgba(251,146,60,0.2)' }}>
+                      <div className="flex items-start justify-between gap-3 flex-wrap">
+                        <div>
+                          <p className="text-sm font-semibold text-white">
+                            #{edit.arquivo_id.slice(0, 8).toUpperCase()}
+                            {edit.ecu_jobs?.service_type && (
+                              <span className="font-normal text-muted-foreground"> · {edit.ecu_jobs.service_type}</span>
+                            )}
+                          </p>
+                          {unit && (
+                            <p className="text-xs" style={{ color: 'hsl(var(--pm-gray-500))' }}>
+                              {unit.name}{unit.city ? ` — ${unit.city}/${unit.state}` : ''}
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-xs" style={{ color: 'hsl(var(--pm-gray-500))' }}>
+                            {fmtBRL(edit.valor_anterior)} → <span className="text-white font-semibold">{fmtBRL(edit.valor_novo)}</span>
+                          </p>
+                          <p className="text-xs font-semibold" style={{ color: diff >= 0 ? '#4ADE80' : '#F87171' }}>
+                            {fmtDiff(edit.valor_anterior, edit.valor_novo)}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-xs px-3 py-2 rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', color: 'hsl(var(--pm-gray-400))' }}>
+                        {edit.motivo}
+                      </p>
+                      <p className="text-[11px]" style={{ color: 'hsl(var(--pm-gray-600))' }}>
+                        Solicitado em {new Date(edit.solicitado_em).toLocaleString('pt-BR')}
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => setApproveTarget({ historicoId: edit.id, jobId: edit.arquivo_id, valorNovo: edit.valor_novo })}
+                          disabled={approveEdit.isPending || rejectEdit.isPending}
+                          className="flex-1 text-white border-0 text-xs"
+                          style={{ background: '#166534' }}
+                        >
+                          Estou ciente — Aprovar alteração
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => { setRejectTarget({ historicoId: edit.id, jobId: edit.arquivo_id }); setRejectMotivo('') }}
+                          disabled={approveEdit.isPending || rejectEdit.isPending}
+                          className="text-xs"
+                          style={{ color: '#F87171' }}
+                        >
+                          Recusar
+                        </Button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </section>
+          )}
+
           {/* Em Aberto — ECU diretos + pedidos franquias */}
           {(openJobs.length > 0 || openOrders.length > 0) && (
             <section>
@@ -508,6 +596,57 @@ export default function FinanceiroPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Modal: aprovar edição */}
+      <ConfirmDialog
+        open={!!approveTarget}
+        onOpenChange={(v) => !v && setApproveTarget(null)}
+        title="Confirmar aprovação de alteração de valor?"
+        description="Esta ação registrará seu aceite para fins de auditoria e aplicará o novo valor imediatamente."
+        confirmLabel="Confirmar e aprovar"
+        onConfirm={async () => {
+          if (!approveTarget) return
+          await approveEdit.mutateAsync(approveTarget)
+          setApproveTarget(null)
+        }}
+        isLoading={approveEdit.isPending}
+      />
+
+      {/* Modal: recusar edição */}
+      <Dialog open={!!rejectTarget} onOpenChange={(v) => !v && setRejectTarget(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Recusar alteração de valor</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-sm text-muted-foreground">Informe o motivo da recusa (obrigatório):</p>
+            <textarea
+              rows={3}
+              value={rejectMotivo}
+              onChange={(e) => setRejectMotivo(e.target.value)}
+              placeholder="Ex: Comprovante insuficiente, valor não autorizado..."
+              className="w-full rounded-lg px-3 py-2 text-sm resize-none focus:outline-none"
+              style={{ background: 'hsl(var(--pm-gray-800))', border: '1px solid rgba(255,255,255,0.08)', color: 'hsl(var(--pm-gray-200))' } as React.CSSProperties}
+            />
+            <div className="flex justify-end gap-3">
+              <Button variant="ghost" onClick={() => setRejectTarget(null)} disabled={rejectEdit.isPending}>
+                Cancelar
+              </Button>
+              <Button
+                disabled={rejectMotivo.trim().length < 5 || rejectEdit.isPending}
+                onClick={async () => {
+                  if (!rejectTarget) return
+                  await rejectEdit.mutateAsync({ ...rejectTarget, motivoRecusa: rejectMotivo.trim() })
+                  setRejectTarget(null)
+                }}
+                className="bg-red-700 hover:bg-red-600 text-white border-0"
+              >
+                {rejectEdit.isPending ? <Loader2 size={14} className="animate-spin" /> : 'Confirmar recusa'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {selected && (
         <EcuPaymentSheet payment={selected} maxDiscountPct={maxDiscountPct} onClose={() => setSelected(null)} />

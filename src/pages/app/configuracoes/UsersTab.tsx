@@ -369,6 +369,11 @@ export function UsersTab() {
   // edit sheet state — RH
   const [editHireDate, setEditHireDate]       = useState('')
   const [editSalary, setEditSalary]           = useState('')
+  // edit sheet state — relatórios
+  const [editRelatorioFinanceiro, setEditRelatorioFinanceiro] = useState(false)
+  const [editRelatorioEcu, setEditRelatorioEcu]               = useState(false)
+  const [editRelatorioVendas, setEditRelatorioVendas]         = useState(false)
+  const [editRelatorioFranquias, setEditRelatorioFranquias]   = useState(false)
   // edit sheet sections
   const [sectionOpen, setSectionOpen]         = useState<'acesso' | 'pessoal' | 'endereco' | 'rh'>('acesso')
 
@@ -396,6 +401,10 @@ export function UsersTab() {
     setEditState(user.state ?? '')
     setEditHireDate(user.hire_date ?? '')
     setEditSalary(user.salary != null ? String(user.salary) : '')
+    setEditRelatorioFinanceiro(user.relatorio_financeiro ?? false)
+    setEditRelatorioEcu(user.relatorio_ecu ?? false)
+    setEditRelatorioVendas(user.relatorio_vendas ?? false)
+    setEditRelatorioFranquias(user.relatorio_franquias ?? false)
     setSectionOpen('acesso')
   }
 
@@ -449,6 +458,10 @@ export function UsersTab() {
       state: editState.trim() || null,
       hire_date: editHireDate || null,
       salary: editSalary ? (parseFloat(editSalary) || null) : null,
+      relatorio_financeiro: editRelatorioFinanceiro,
+      relatorio_ecu:        editRelatorioEcu,
+      relatorio_vendas:     editRelatorioVendas,
+      relatorio_franquias:  editRelatorioFranquias,
     }
 
     if (editAuthPin) {
@@ -774,6 +787,30 @@ export function UsersTab() {
                   </div>
                 </div>
               )}
+
+              {/* ── Acesso a Relatórios ─────────────────────────────────── */}
+              <div className="space-y-3 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'hsl(var(--pm-gray-500))' }}>
+                  Acesso a Relatórios
+                </p>
+                {[
+                  { key: 'relatorio_ecu'        as const, label: 'ECU',        desc: 'Histórico de arquivos por unidade e período', checked: editRelatorioEcu,        set: setEditRelatorioEcu },
+                  { key: 'relatorio_financeiro' as const, label: 'Financeiro', desc: 'Extratos, cobranças ECU, faturas por unidade', checked: editRelatorioFinanceiro, set: setEditRelatorioFinanceiro },
+                  { key: 'relatorio_franquias'  as const, label: 'Franquias',  desc: 'Ficha, dados cadastrais e contratos',          checked: editRelatorioFranquias,  set: setEditRelatorioFranquias },
+                  { key: 'relatorio_vendas'     as const, label: 'Vendas',     desc: 'Pedidos B2B, produtos, faturamento (em breve)', checked: editRelatorioVendas,    set: setEditRelatorioVendas },
+                ].map(({ key, label, desc, checked, set }) => (
+                  <div key={key} className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-medium text-white">{label}</p>
+                      <p className="text-xs" style={{ color: 'hsl(var(--pm-gray-500))' }}>{desc}</p>
+                    </div>
+                    <Switch
+                      checked={checked}
+                      onCheckedChange={set}
+                    />
+                  </div>
+                ))}
+              </div>
 
               <Button className="w-full mt-4" onClick={saveEdit} disabled={updateUser.isPending}
                 style={{ background: 'var(--pm-accent-gradient)' }}>

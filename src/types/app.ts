@@ -107,6 +107,10 @@ export interface AppUser {
   permissions?: PermissionEntry[] | null
   permission_profile_id?: string | null
   unit_id?: string | null
+  relatorio_financeiro?: boolean
+  relatorio_ecu?: boolean
+  relatorio_vendas?: boolean
+  relatorio_franquias?: boolean
 }
 
 export const SYSTEM_ROLES: UserRole[] = ['system_ti']

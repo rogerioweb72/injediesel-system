@@ -16,8 +16,10 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { ContractProgressBar, contractDaysRemaining } from '@/components/shared/ContractProgressBar'
 import { FranchiseeWizard } from './wizard/FranchiseeWizard'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useFranchiseUnit, useDeleteFranchiseUnit, useUpdateFranchiseUnit } from '@/hooks/useFranchiseUnits'
 import { useInviteFranchisee } from '@/hooks/useInviteFranchisee'
+import CobrancasEcuTab from '@/pages/app/franqueados/CobrancasEcuTab'
 import type { ContractType } from '@/types/app'
 
 const CONTRACT_LABELS: Record<string, string> = { full: 'Full', linha_leve: 'Linha Leve' }
@@ -173,122 +175,135 @@ export default function FranchiseeDetail() {
         </RoleGuard>
       </div>
 
-      {/* ── Alerta de bloqueio ── */}
-      {unit.contract_blocked && (
-        <div style={{ background: '#F59E0B', border: '2px solid #000', padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-          <AlertTriangle size={16} color="#000" style={{ flexShrink: 0, marginTop: '2px' }} />
-          <div>
-            <p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 800, fontSize: '14px', color: '#000', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Unidade Bloqueada pela Matriz
-            </p>
-            {unit.contract_blocked_reason && (
-              <p style={{ fontFamily: '"DM Sans",sans-serif', fontSize: '12px', color: '#1a1a1a', marginTop: '2px' }}>
-                Motivo: {unit.contract_blocked_reason}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
+      <Tabs defaultValue="dados" className="w-full mt-6">
+        <TabsList style={{ background: 'hsl(var(--pm-gray-900))' }}>
+          <TabsTrigger value="dados" className="text-xs px-4">Dados da Unidade</TabsTrigger>
+          <TabsTrigger value="cobrancas" className="text-xs px-4">Cobranças ECU</TabsTrigger>
+        </TabsList>
 
-      {/* ── Alertas de vencimento ── */}
-      {daysLeft !== null && daysLeft <= 30 && daysLeft > 0 && (
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 16px', borderRadius: 12, background: 'rgba(248,113,113,0.08)', borderTop: '1px solid rgba(248,113,113,0.15)' }}>
-          <AlertTriangle size={15} style={{ color: '#F87171', flexShrink: 0, marginTop: 2 }} />
-          <div>
-            <p style={{ fontSize: 13, fontWeight: 600, color: '#F87171' }}>Contrato vencendo em {daysLeft} dia{daysLeft !== 1 ? 's' : ''}</p>
-            <p style={{ fontSize: 12, color: 'rgba(248,113,113,0.7)', marginTop: 2 }}>Acione o processo de renovação imediatamente.</p>
-          </div>
-        </div>
-      )}
-      {daysLeft !== null && daysLeft > 30 && daysLeft <= 90 && (
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 16px', borderRadius: 12, background: 'rgba(251,191,36,0.08)', borderTop: '1px solid rgba(251,191,36,0.15)' }}>
-          <Clock size={15} style={{ color: '#FBBF24', flexShrink: 0, marginTop: 2 }} />
-          <div>
-            <p style={{ fontSize: 13, fontWeight: 600, color: '#FBBF24' }}>Contrato vence em {daysLeft} dias</p>
-            <p style={{ fontSize: 12, color: 'rgba(251,191,36,0.7)', marginTop: 2 }}>Inicie o processo de renovação para garantir a continuidade operacional.</p>
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        {/* Identificação */}
-        <div className="pm-card space-y-4">
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Identificação</p>
-          <InfoRow label="Nome Fantasia"     value={unit.name} />
-          <InfoRow label="Razão Social"      value={unit.razao_social} />
-          <InfoRow label="CNPJ"              value={unit.cnpj} />
-          <InfoRow label="Inscrição Estadual" value={unit.inscricao_estadual} />
-          <div>
-            <p className="text-xs text-muted-foreground mb-0.5">Status</p>
-            {(() => {
-              const statusMap: Record<string, { color: string; label: string }> = {
-                em_implantacao: { color: '#60A5FA', label: 'Em Implantação' },
-                ativa: { color: '#34D399', label: 'Ativa' },
-                suspensa: { color: '#FBBF24', label: 'Suspensa' },
-                encerrada: { color: '#64748B', label: 'Encerrada' },
-              }
-              const cur = statusMap[unit.status ?? 'em_implantacao'] ?? statusMap['em_implantacao']
-              return <span style={{ fontSize: 13, fontWeight: 600, color: cur.color }}>{cur.label}</span>
-            })()}
-          </div>
-        </div>
-
-        {/* Contato */}
-        <div className="pm-card space-y-4">
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Contato e Localização</p>
-          <InfoRow label="Telefone"      value={unit.phone} />
-          <InfoRow label="E-mail"        value={unit.email} />
-          <InfoRow label="Endereço"      value={unit.address} />
-          <InfoRow label="Cidade / UF"   value={unit.city && unit.state ? `${unit.city} — ${unit.state}` : (unit.city ?? unit.state)} />
-          <InfoRow label="Cidade Fiscal" value={unit.cidade_fiscal} />
-        </div>
-
-        {/* Território */}
-        <div className="pm-card space-y-4">
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Delimitação Territorial</p>
-          <InfoRow label="Raio de Atendimento" value={unit.raio_atendimento_km != null ? `${unit.raio_atendimento_km} km` : null} />
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">Cidades Atendidas</p>
-            {unit.cidades_atendidas?.length ? (
-              <div className="flex flex-wrap gap-1.5">
-                {unit.cidades_atendidas.map((c) => (
-                  <span key={c} className="text-xs px-2 py-0.5 rounded border border-white/[0.08] bg-white/[0.03]">{c}</span>
-                ))}
+        <TabsContent value="dados" className="mt-4">
+          {/* ── Alerta de bloqueio ── */}
+          {unit.contract_blocked && (
+            <div style={{ background: '#F59E0B', border: '2px solid #000', padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+              <AlertTriangle size={16} color="#000" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 800, fontSize: '14px', color: '#000', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Unidade Bloqueada pela Matriz
+                </p>
+                {unit.contract_blocked_reason && (
+                  <p style={{ fontFamily: '"DM Sans",sans-serif', fontSize: '12px', color: '#1a1a1a', marginTop: '2px' }}>
+                    Motivo: {unit.contract_blocked_reason}
+                  </p>
+                )}
               </div>
-            ) : <p className="text-sm text-muted-foreground">—</p>}
+            </div>
+          )}
+
+          {/* ── Alertas de vencimento ── */}
+          {daysLeft !== null && daysLeft <= 30 && daysLeft > 0 && (
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 16px', borderRadius: 12, background: 'rgba(248,113,113,0.08)', borderTop: '1px solid rgba(248,113,113,0.15)' }}>
+              <AlertTriangle size={15} style={{ color: '#F87171', flexShrink: 0, marginTop: 2 }} />
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#F87171' }}>Contrato vencendo em {daysLeft} dia{daysLeft !== 1 ? 's' : ''}</p>
+                <p style={{ fontSize: 12, color: 'rgba(248,113,113,0.7)', marginTop: 2 }}>Acione o processo de renovação imediatamente.</p>
+              </div>
+            </div>
+          )}
+          {daysLeft !== null && daysLeft > 30 && daysLeft <= 90 && (
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 16px', borderRadius: 12, background: 'rgba(251,191,36,0.08)', borderTop: '1px solid rgba(251,191,36,0.15)' }}>
+              <Clock size={15} style={{ color: '#FBBF24', flexShrink: 0, marginTop: 2 }} />
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#FBBF24' }}>Contrato vence em {daysLeft} dias</p>
+                <p style={{ fontSize: 12, color: 'rgba(251,191,36,0.7)', marginTop: 2 }}>Inicie o processo de renovação para garantir a continuidade operacional.</p>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+
+            {/* Identificação */}
+            <div className="pm-card space-y-4">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Identificação</p>
+              <InfoRow label="Nome Fantasia"     value={unit.name} />
+              <InfoRow label="Razão Social"      value={unit.razao_social} />
+              <InfoRow label="CNPJ"              value={unit.cnpj} />
+              <InfoRow label="Inscrição Estadual" value={unit.inscricao_estadual} />
+              <div>
+                <p className="text-xs text-muted-foreground mb-0.5">Status</p>
+                {(() => {
+                  const statusMap: Record<string, { color: string; label: string }> = {
+                    em_implantacao: { color: '#60A5FA', label: 'Em Implantação' },
+                    ativa: { color: '#34D399', label: 'Ativa' },
+                    suspensa: { color: '#FBBF24', label: 'Suspensa' },
+                    encerrada: { color: '#64748B', label: 'Encerrada' },
+                  }
+                  const cur = statusMap[unit.status ?? 'em_implantacao'] ?? statusMap['em_implantacao']
+                  return <span style={{ fontSize: 13, fontWeight: 600, color: cur.color }}>{cur.label}</span>
+                })()}
+              </div>
+            </div>
+
+            {/* Contato */}
+            <div className="pm-card space-y-4">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Contato e Localização</p>
+              <InfoRow label="Telefone"      value={unit.phone} />
+              <InfoRow label="E-mail"        value={unit.email} />
+              <InfoRow label="Endereço"      value={unit.address} />
+              <InfoRow label="Cidade / UF"   value={unit.city && unit.state ? `${unit.city} — ${unit.state}` : (unit.city ?? unit.state)} />
+              <InfoRow label="Cidade Fiscal" value={unit.cidade_fiscal} />
+            </div>
+
+            {/* Território */}
+            <div className="pm-card space-y-4">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Delimitação Territorial</p>
+              <InfoRow label="Raio de Atendimento" value={unit.raio_atendimento_km != null ? `${unit.raio_atendimento_km} km` : null} />
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Cidades Atendidas</p>
+                {unit.cidades_atendidas?.length ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {unit.cidades_atendidas.map((c) => (
+                      <span key={c} className="text-xs px-2 py-0.5 rounded border border-white/[0.08] bg-white/[0.03]">{c}</span>
+                    ))}
+                  </div>
+                ) : <p className="text-sm text-muted-foreground">—</p>}
+              </div>
+            </div>
+
+            {/* Contrato */}
+            <div className="pm-card space-y-4">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Contrato</p>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Tipo</p>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 999, background: unit.contract_type === 'full' ? 'rgba(177,40,37,0.1)' : 'rgba(96,165,250,0.1)', color: unit.contract_type === 'full' ? '#B12825' : '#60A5FA', fontSize: 11, fontWeight: 600 }}>
+                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: unit.contract_type === 'full' ? '#B12825' : '#60A5FA', flexShrink: 0 }} />
+                  {CONTRACT_LABELS[unit.contract_type]}
+                </span>
+              </div>
+              <InfoRow label="Início"   value={unit.contract_start_date ? new Date(unit.contract_start_date).toLocaleDateString('pt-BR') : null} />
+              <InfoRow label="Término"  value={unit.contract_end_date   ? new Date(unit.contract_end_date).toLocaleDateString('pt-BR')   : null} />
+            </div>
           </div>
-        </div>
 
-        {/* Contrato */}
-        <div className="pm-card space-y-4">
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Contrato</p>
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">Tipo</p>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 999, background: unit.contract_type === 'full' ? 'rgba(177,40,37,0.1)' : 'rgba(96,165,250,0.1)', color: unit.contract_type === 'full' ? '#B12825' : '#60A5FA', fontSize: 11, fontWeight: 600 }}>
-              <span style={{ width: 5, height: 5, borderRadius: '50%', background: unit.contract_type === 'full' ? '#B12825' : '#60A5FA', flexShrink: 0 }} />
-              {CONTRACT_LABELS[unit.contract_type]}
-            </span>
-          </div>
-          <InfoRow label="Início"   value={unit.contract_start_date ? new Date(unit.contract_start_date).toLocaleDateString('pt-BR') : null} />
-          <InfoRow label="Término"  value={unit.contract_end_date   ? new Date(unit.contract_end_date).toLocaleDateString('pt-BR')   : null} />
-        </div>
-      </div>
+          {/* Vigência */}
+          {hasContract && (
+            <div className="pm-card space-y-3 mt-6">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Vigência do Contrato</p>
+              <ContractProgressBar startDate={unit.contract_start_date!} endDate={unit.contract_end_date!} />
+            </div>
+          )}
 
-      {/* Vigência */}
-      {hasContract && (
-        <div className="pm-card space-y-3">
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Vigência do Contrato</p>
-          <ContractProgressBar startDate={unit.contract_start_date!} endDate={unit.contract_end_date!} />
-        </div>
-      )}
+          {!hasContract && (
+            <div className="pm-card mt-6">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">Vigência do Contrato</p>
+              <p className="text-sm text-muted-foreground">Datas não definidas. Edite a unidade para configurar.</p>
+            </div>
+          )}
+        </TabsContent>
 
-      {!hasContract && (
-        <div className="pm-card">
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">Vigência do Contrato</p>
-          <p className="text-sm text-muted-foreground">Datas não definidas. Edite a unidade para configurar.</p>
-        </div>
-      )}
+        <TabsContent value="cobrancas" className="mt-4">
+          <CobrancasEcuTab unitId={id ?? ''} unitName={unit?.name ?? ''} />
+        </TabsContent>
+      </Tabs>
 
       {/* ─── Dialogs ─────────────────────────────────────────────────────────── */}
 

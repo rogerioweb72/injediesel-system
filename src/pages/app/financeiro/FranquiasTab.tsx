@@ -7,6 +7,7 @@ import {
   useSaldoFranquias, useFranchiseOpenJobs, usePayFranchiseJobs, markFranchiseTabSeen,
   fmtBRL, diasEmAberto, type SaldoFranquia, type FranchiseEcuJob,
 } from '@/hooks/useFranquiasFinanceiro'
+import { BadgeStatusFinanceiro } from '@/components/shared/BadgeStatusFinanceiro'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -128,7 +129,7 @@ function FranchiseCard({ saldo, searchQ }: { saldo: SaldoFranquia; searchQ: stri
                 <table className="w-full text-sm">
                   <thead>
                     <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      {['', 'Arquivo', 'Tipo', 'Veículo', 'Data', 'Valor', 'Dias'].map((h) => (
+                      {['', 'Arquivo', 'Tipo', 'Veículo', 'Data', 'Valor', 'Dias', 'Status'].map((h) => (
                         <th key={h} className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider"
                           style={{ color: 'hsl(var(--pm-gray-600))' }}>{h}</th>
                       ))}
@@ -158,6 +159,9 @@ function FranchiseCard({ saldo, searchQ }: { saldo: SaldoFranquia; searchQ: stri
                           <td className="px-3 py-2.5 text-xs" style={{ color: 'hsl(var(--pm-gray-500))' }}>{fmtDate(job.created_at)}</td>
                           <td className="px-3 py-2.5 text-xs font-semibold text-white">{fmtBRL(job.amount_charged_by_matrix)}</td>
                           <td className="px-3 py-2.5 text-xs font-semibold" style={{ color: diasColor(dias) }}>{dias}d</td>
+                          <td className="px-3 py-2.5">
+                            <BadgeStatusFinanceiro status="em_aberto" />
+                          </td>
                         </tr>
                       )
                     })}

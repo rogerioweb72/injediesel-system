@@ -6,6 +6,7 @@ import {
   useFranchiseJobHistory, fmtBRL,
   type CobrancaEcuItem,
 } from '@/hooks/useFranquiasFinanceiro'
+import { BadgeStatusFinanceiro } from '@/components/shared/BadgeStatusFinanceiro'
 
 type StatusFilter = 'todos' | 'em_aberto' | 'pago'
 
@@ -13,15 +14,6 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
-function StatusBadge({ status }: { status: 'em_aberto' | 'pago' }) {
-  return status === 'pago' ? (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold"
-      style={{ background: 'rgba(74,222,128,0.12)', color: '#4ADE80' }}>Pago</span>
-  ) : (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold"
-      style={{ background: 'rgba(251,191,36,0.12)', color: '#FBBF24' }}>Em Aberto</span>
-  )
-}
 
 function exportCSV(items: CobrancaEcuItem[], unitName: string) {
   const header = 'Arquivo,Tipo,Cliente,Veículo,Data Envio,Valor,Status,Pago em'
@@ -83,6 +75,19 @@ export default function CobrancasEcuTab({ unitId, unitName }: Props) {
 
   return (
     <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-2">
+        {[
+          { label: 'Em Aberto', value: totais.emAberto, color: '#ef4444', bg: 'rgba(239,68,68,0.06)', border: 'rgba(239,68,68,0.2)' },
+          { label: 'Pago (período)', value: totais.pago, color: '#22c55e', bg: 'rgba(34,197,94,0.06)', border: 'rgba(34,197,94,0.2)' },
+          { label: 'Total período', value: totais.total, color: 'hsl(var(--pm-gray-300))', bg: 'hsl(var(--pm-gray-900))', border: 'rgba(255,255,255,0.06)' },
+        ].map(({ label, value, color, bg, border }) => (
+          <div key={label} className="rounded-xl p-4 flex flex-col gap-1"
+            style={{ background: bg, border: `1px solid ${border}` }}>
+            <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--pm-gray-500))' }}>{label}</p>
+            <p className="text-lg font-bold" style={{ color }}>{value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+          </div>
+        ))}
+      </div>
       <div className="flex flex-wrap items-center gap-3 justify-between">
         <div className="flex items-center gap-2 flex-wrap">
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)} style={selectStyle}>
@@ -141,7 +146,7 @@ export default function CobrancasEcuTab({ unitId, unitName }: Props) {
                       <td className="px-4 py-3 text-xs" style={{ color: 'hsl(var(--pm-gray-400))' }}>{veiculo}</td>
                       <td className="px-4 py-3 text-xs" style={{ color: 'hsl(var(--pm-gray-500))' }}>{fmtDate(item.created_at)}</td>
                       <td className="px-4 py-3 text-xs font-semibold text-white">{fmtBRL(item.amount_charged_by_matrix ?? 0)}</td>
-                      <td className="px-4 py-3"><StatusBadge status={item.matrix_payment_status} /></td>
+                      <td className="px-4 py-3"><BadgeStatusFinanceiro status={item.matrix_payment_status} /></td>
                       <td className="px-4 py-3 text-xs" style={{ color: 'hsl(var(--pm-gray-500))' }}>
                         {item.matrix_paid_at ? fmtDate(item.matrix_paid_at) : '—'}
                       </td>

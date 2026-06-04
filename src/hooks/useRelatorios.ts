@@ -1,5 +1,7 @@
+import * as XLSX from 'xlsx'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { useProfile } from '@/hooks/useProfile'
 
 // ─── Period helpers ───────────────────────────────────────────────────────────
 
@@ -217,4 +219,127 @@ export function useUnitRoyalty(unitId?: string) {
       return data as { royalty_enabled: boolean; royalty_percentage: number }
     },
   })
+}
+
+// ─── Permission hook ──────────────────────────────────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const sb = () => supabase as any
+
+const ADMIN_ROLES = ['company_admin', 'operations_admin', 'system_ti'] as const
+
+export interface RelatorioPerm {
+  ecu: boolean
+  financeiro: boolean
+  franquias: boolean
+  vendas: boolean
+  hasAny: boolean
+}
+
+export function useRelatorioPerm(): RelatorioPerm {
+  const { profile } = useProfile()
+  if (!profile) return { ecu: false, financeiro: false, franquias: false, vendas: false, hasAny: false }
+
+  const isAdmin = ADMIN_ROLES.includes(profile.role as typeof ADMIN_ROLES[number])
+  const ecu        = isAdmin || !!profile.relatorio_ecu
+  const financeiro = isAdmin || !!profile.relatorio_financeiro
+  const franquias  = isAdmin || !!profile.relatorio_franquias
+  const vendas     = isAdmin || !!profile.relatorio_vendas
+
+  return { ecu, financeiro, franquias, vendas, hasAny: ecu || financeiro || franquias || vendas }
+}
+
+// ─── Export row types ─────────────────────────────────────────────────────────
+
+export interface EcuExportRow {
+  unidade_nome: string; cidade: string; uf: string
+  data_solicitacao: string; veiculo: string; placa: string
+  tipo_remapeamento: string; status_financeiro: string; pago_em: string | null
+}
+
+export interface FinanceiroExportRow {
+  unidade_nome: string; cidade: string; uf: string; cnpj: string
+  data_cobranca: string; descricao: string; valor_cobrado: number
+  status_pagamento: string; pago_em: string | null
+}
+
+export interface FranquiaExportRow {
+  nome_fantasia: string; razao_social: string; cnpj: string
+  cidade: string; uf: string; telefone: string; email: string
+  raio_km: number; cidades_atendidas: string; tipo_contrato: string
+  contrato_inicio: string | null; contrato_fim: string | null; status_unidade: string
+}
+
+// ─── Fetch helpers ────────────────────────────────────────────────────────────
+
+export async function fetchEcuRelatorio(
+  unitId: string, dataInicio: string, dataFim: string
+): Promise<EcuExportRow[]> {
+  const { data, error } = await sb().rpc('exportar_relatorio_ecu', {
+    p_unidade_id: unitId,
+    p_data_inicio: dataInicio,
+    p_data_fim: dataFim,
+  })
+  if (error) throw new Error(error.message)
+  return (data ?? []) as EcuExportRow[]
+}
+
+export async function fetchFinanceiroRelatorio(
+  unitId: string, dataInicio: string, dataFim: string
+): Promise<FinanceiroExportRow[]> {
+  const { data, error } = await sb().rpc('exportar_relatorio_financeiro', {
+    p_unidade_id: unitId,
+    p_data_inicio: dataInicio,
+    p_data_fim: dataFim,
+  })
+  if (error) throw new Error(error.message)
+  return (data ?? []) as FinanceiroExportRow[]
+}
+
+export async function fetchFranquiaRelatorio(unitId: string): Promise<FranquiaExportRow[]> {
+  const { data, error } = await sb().rpc('exportar_relatorio_franquia', {
+    p_unidade_id: unitId,
+  })
+  if (error) throw new Error(error.message)
+  return (data ?? []) as FranquiaExportRow[]
+}
+
+// ─── Export utilities ─────────────────────────────────────────────────────────
+
+export function exportToCSV(rows: Record<string, unknown>[], filename: string) {
+  if (!rows.length) return
+  const headers = Object.keys(rows[0])
+  const lines = rows.map((r) =>
+    headers.map((h) => {
+      const v = r[h] ?? ''
+      const s = String(v)
+      return s.includes(',') || s.includes('"') || s.includes('\n')
+        ? `"${s.replace(/"/g, '""')}"`
+        : s
+    }).join(',')
+  )
+  const BOM = '﻿'
+  const csv = BOM + [headers.join(','), ...lines].join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = filename; a.click()
+  URL.revokeObjectURL(url)
+}
+
+export function exportToXLSX(rows: Record<string, unknown>[], filename: string) {
+  if (!rows.length) return
+  const ws = XLSX.utils.json_to_sheet(rows)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Relatório')
+  XLSX.writeFile(wb, filename)
+}
+
+export function formatDateBR(iso: string | null): string {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString('pt-BR')
+}
+
+export function fmtBRL(v: number): string {
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }

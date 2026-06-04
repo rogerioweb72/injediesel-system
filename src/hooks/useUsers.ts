@@ -30,6 +30,11 @@ export interface Profile {
   // hr
   hire_date: string | null
   salary: number | null
+  // report permissions
+  relatorio_financeiro: boolean
+  relatorio_ecu: boolean
+  relatorio_vendas: boolean
+  relatorio_franquias: boolean
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -87,6 +92,10 @@ interface UpdateUserPayload {
   // hr
   hire_date?: string | null
   salary?: number | null
+  relatorio_financeiro?: boolean
+  relatorio_ecu?: boolean
+  relatorio_vendas?: boolean
+  relatorio_franquias?: boolean
 }
 
 interface InviteUserPayload {

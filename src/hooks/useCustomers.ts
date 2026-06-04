@@ -28,11 +28,13 @@ interface ListFilter {
   q?: string
   page?: number
   pageSize?: number
+  scope?: 'all' | 'matrix'
+  unitId?: string
 }
 
-export function useCustomers({ q = '', page = 0, pageSize = 20 }: ListFilter = {}) {
+export function useCustomers({ q = '', page = 0, pageSize = 20, scope, unitId }: ListFilter = {}) {
   return useQuery({
-    queryKey: ['customers', q, page, pageSize],
+    queryKey: ['customers', q, page, pageSize, scope, unitId],
     queryFn: async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let query = (supabase as any)
@@ -41,7 +43,17 @@ export function useCustomers({ q = '', page = 0, pageSize = 20 }: ListFilter = {
         .is('deleted_at', null)
         .order('name')
         .range(page * pageSize, (page + 1) * pageSize - 1)
-      if (q) query = query.ilike('name', `%${q}%`)
+
+      if (unitId) {
+        query = query.eq('unit_id', unitId)
+      } else if (scope === 'matrix') {
+        query = query.is('unit_id', null)
+      }
+
+      if (q) {
+        query = query.or(`name.ilike.%${q}%,phone.ilike.%${q}%,document.ilike.%${q}%`)
+      }
+
       const { data, error, count } = await query
       if (error) throw error
       return { data: data as Customer[], total: (count as number) ?? 0 }

@@ -12,6 +12,7 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { DataTable, type Column } from '@/components/shared/DataTable'
 import { EcuStatusBadge, STATUS_LABELS } from '@/components/shared/EcuStatusBadge'
 import { useEcuJobs, useUpdateEcuJobStatus, type EcuJob } from '@/hooks/useEcuJobs'
+import { BadgeStatusFinanceiro } from '@/components/shared/BadgeStatusFinanceiro'
 import { useProfile } from '@/hooks/useProfile'
 import { useUnseenJobs } from '@/hooks/useUnseenJobs'
 import type { FileStatus, PriorityLevel } from '@/types/app'
@@ -235,6 +236,12 @@ function buildColumns(
     {
       key: 'elapsed', header: 'Tempo',
       cell: (r) => <ElapsedCell createdAt={r.created_at} status={r.status} />,
+    },
+    {
+      key: 'financeiro', header: 'Financeiro',
+      cell: (r) => r.amount_charged_by_matrix != null
+        ? <BadgeStatusFinanceiro status={r.matrix_payment_status} />
+        : null,
     },
   )
 

@@ -50,6 +50,8 @@ export interface EcuJob {
   amount_charged_by_matrix: number | null
   franchise_margin_amount: number | null
   franchise_margin_percentage: number | null
+  matrix_payment_status: 'em_aberto' | 'pago' | null
+  matrix_paid_at: string | null
   service_tags: string[]
   vehicle_info: {
     categoria?: string

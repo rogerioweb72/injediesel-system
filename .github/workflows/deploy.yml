@@ -48,27 +48,30 @@ jobs:
           FTP_USER: ${{ secrets.FTP_USERNAME }}
           FTP_PASS: ${{ secrets.FTP_PASSWORD }}
         run: |
-          # Write lftp script to file — Python handles credential escaping safely
-          python3 - << 'PYEOF'
-          import os, shlex
-          host = os.environ['FTP_HOST']
-          user = os.environ['FTP_USER']
-          pwd  = os.environ['FTP_PASS']
-          script = f"""set net:timeout 90
-          set net:max-retries 4
-          set net:reconnect-interval-base 10
-          set net:reconnect-interval-multiplier 2
-          set ftp:passive-mode yes
-          set ftp:ssl-allow yes
-          set ftp:ssl-force no
-          set ftp:ssl-protect-data yes
-          open -u {shlex.quote(user)},{shlex.quote(pwd)} {shlex.quote(host)}
-          mirror --reverse --verbose --parallel=5 --exclude-glob .git* --exclude-glob node_modules ./dist/ /public_html/
-          bye
-          """
-          with open('/tmp/deploy.lftp', 'w') as f:
-              f.write(script)
-          PYEOF
+          # Build lftp script — printf %s never interprets special chars in variables
+          printf '%s\n' \
+            'set net:timeout 90' \
+            'set net:max-retries 4' \
+            'set net:reconnect-interval-base 10' \
+            'set net:reconnect-interval-multiplier 2' \
+            'set ftp:passive-mode yes' \
+            'set ftp:ssl-allow yes' \
+            'set ftp:ssl-force no' \
+            'set ftp:ssl-protect-data yes' \
+            > /tmp/deploy.lftp
+
+          # Append credential line separately — $vars expand here, values are NOT quoted in lftp
+          printf 'open -u %s,%s %s\n' "$FTP_USER" "$FTP_PASS" "$FTP_HOST" >> /tmp/deploy.lftp
+
+          printf '%s\n' \
+            'mirror --reverse --verbose --parallel=5 --exclude-glob .git* --exclude-glob node_modules ./dist/ /public_html/' \
+            'bye' \
+            >> /tmp/deploy.lftp
+
+          echo "--- lftp script (credentials redacted) ---"
+          head -9 /tmp/deploy.lftp
+          echo "open -u [REDACTED] [REDACTED]"
+          tail -2 /tmp/deploy.lftp
 
           MAX_RETRIES=5
           DELAY=15

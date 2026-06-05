@@ -649,10 +649,10 @@ export default function EcuJobDetail() {
                           {h.motivo}
                         </p>
                         <p className="text-[11px]" style={{ color: 'hsl(var(--pm-gray-600))' }}>
-                          Solicitado por {(h.solicitado_profile as any)?.name ?? '—'} em{' '}
+                          Solicitado por {h.solicitado_profile?.name ?? '—'} em{' '}
                           {new Date(h.solicitado_em).toLocaleString('pt-BR')}
                           {h.aprovado_em && (
-                            <> · {h.status === 'APROVADO' ? 'Aprovado' : 'Recusado'} por {(h.aprovado_profile as any)?.name ?? '—'}</>
+                            <> · {h.status === 'APROVADO' ? 'Aprovado' : 'Recusado'} por {h.aprovado_profile?.name ?? '—'}</>
                           )}
                           {h.motivo_recusa && (
                             <span style={{ color: '#F87171' }}> · Motivo: {h.motivo_recusa}</span>

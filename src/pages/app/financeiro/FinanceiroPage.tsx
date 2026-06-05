@@ -626,7 +626,7 @@ export default function FinanceiroPage() {
               onChange={(e) => setRejectMotivo(e.target.value)}
               placeholder="Ex: Comprovante insuficiente, valor não autorizado..."
               className="w-full rounded-lg px-3 py-2 text-sm resize-none focus:outline-none"
-              style={{ background: 'hsl(var(--pm-gray-800))', border: '1px solid rgba(255,255,255,0.08)', color: 'hsl(var(--pm-gray-200))' } as React.CSSProperties}
+              style={{ background: 'hsl(var(--pm-gray-800))', border: '1px solid rgba(255,255,255,0.08)', color: 'hsl(var(--pm-gray-200))' }}
             />
             <div className="flex justify-end gap-3">
               <Button variant="ghost" onClick={() => setRejectTarget(null)} disabled={rejectEdit.isPending}>

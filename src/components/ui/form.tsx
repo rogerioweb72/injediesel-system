@@ -127,7 +127,6 @@ const FormMessage = React.forwardRef<
 FormMessage.displayName = "FormMessage"
 
 export {
-  useFormField,
   Form,
   FormItem,
   FormLabel,
@@ -136,3 +135,5 @@ export {
   FormMessage,
   FormField,
 }
+
+export { useFormField } from "./form.utils"

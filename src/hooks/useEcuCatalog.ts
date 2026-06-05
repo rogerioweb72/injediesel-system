@@ -414,14 +414,7 @@ export function useEcuBulkReplace() {
         return { inserted: records.length }
       }
 
-      // 1. Apaga TODOS os registros existentes
-      const { error: delErr } = await supabase
-        .from('ecu_catalog')
-        .delete()
-        .not('id', 'is', null)
-      if (delErr) throw delErr
-
-      // 2. Insere todos os novos com IDs frescos
+      // RPC transaction: atomic delete + insert (no data loss on failure)
       const now = new Date().toISOString()
       const rows = records.map(r => ({
         ...r,
@@ -430,11 +423,11 @@ export function useEcuBulkReplace() {
         updated_at: now,
       }))
 
-      for (let i = 0; i < rows.length; i += 200) {
-        const { error } = await supabase.from('ecu_catalog').insert(rows.slice(i, i + 200))
-        if (error) throw error
-      }
+      const { error } = await supabase.rpc('bulk_replace_ecu_catalog' as any, {
+        p_records: rows,
+      })
 
+      if (error) throw error
       return { inserted: rows.length }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['ecu-catalog'] }),

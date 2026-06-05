@@ -201,7 +201,8 @@ export function RelatorioFranchiseeDrawer({ open, onClose, unit }: Props) {
   function toggleCampo(key: string) {
     setCamposAtivos((prev) => {
       const next = new Set(prev)
-      next.has(key) ? next.delete(key) : next.add(key)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
       return next
     })
   }

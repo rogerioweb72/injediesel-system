@@ -70,7 +70,8 @@ function FranchiseCard({ saldo, searchQ }: { saldo: SaldoFranquia; searchQ: stri
   function toggleJob(id: string) {
     setSelected((prev) => {
       const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
       return next
     })
   }
@@ -226,7 +227,7 @@ function FranchiseCard({ saldo, searchQ }: { saldo: SaldoFranquia; searchQ: stri
               <textarea value={obs} onChange={(e) => setObs(e.target.value)} rows={2}
                 placeholder="Ex: Pix ref. maio/2026"
                 className="w-full rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1"
-                style={{ background: 'hsl(var(--pm-gray-800))', border: '1px solid rgba(255,255,255,0.08)', color: 'hsl(var(--pm-gray-200))' } as React.CSSProperties}
+                style={{ background: 'hsl(var(--pm-gray-800))', border: '1px solid rgba(255,255,255,0.08)', color: 'hsl(var(--pm-gray-200))' }}
               />
             </div>
             <div className="flex justify-end gap-3 pt-1">

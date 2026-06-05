@@ -56,7 +56,7 @@ export function Step6Address() {
           <Label>Logradouro</Label>
           <div className="relative">
             <Input {...register('logradouro')} placeholder="Av. Paulista" onChange={() => clearAutofilled('logradouro')} />
-            <AutoIcon field="\1" autofilled={autofilled} />
+            <AutoIcon field="logradouro" autofilled={autofilled} />
           </div>
         </div>
 
@@ -76,7 +76,7 @@ export function Step6Address() {
           <Label>Bairro</Label>
           <div className="relative">
             <Input {...register('bairro')} placeholder="Bela Vista" onChange={() => clearAutofilled('bairro')} />
-            <AutoIcon field="\1" autofilled={autofilled} />
+            <AutoIcon field="bairro" autofilled={autofilled} />
           </div>
         </div>
 
@@ -85,14 +85,14 @@ export function Step6Address() {
             <Label>Cidade</Label>
             <div className="relative">
               <Input {...register('city')} placeholder="São Paulo" onChange={() => clearAutofilled('city')} />
-              <AutoIcon field="\1" autofilled={autofilled} />
+              <AutoIcon field="city" autofilled={autofilled} />
             </div>
           </div>
           <div className="space-y-1">
             <Label>UF</Label>
             <div className="relative">
               <Input {...register('state')} maxLength={2} placeholder="SP" className="uppercase" onChange={() => clearAutofilled('state')} />
-              <AutoIcon field="\1" autofilled={autofilled} />
+              <AutoIcon field="state" autofilled={autofilled} />
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useCart } from '@/stores/cart'
@@ -10,10 +10,10 @@ export function useAuth() {
   const { session, user, profile, loading, setSession, setProfile, setLoading, reset } =
     useAuthStore()
 
-  useEffect(() => {
-    let cancelled = false
+  const cancelledRef = useRef(false)
 
-    async function fetchProfile(userId: string, accessToken: string) {
+  const fetchProfile = useCallback(
+    async (userId: string, accessToken: string) => {
       setLoading(true)
       try {
         const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=*&limit=1`
@@ -22,7 +22,7 @@ export function useAuth() {
           headers: { apikey: key, Authorization: `Bearer ${accessToken}` },
         })
         const rows = await res.json()
-        if (cancelled) return
+        if (cancelledRef.current) return
         if (Array.isArray(rows) && rows[0]) {
           const p = rows[0] as unknown as AppUser
           setProfile(p)
@@ -31,13 +31,18 @@ export function useAuth() {
       } catch {
         // ignore — safety timeout will unblock loading
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelledRef.current) setLoading(false)
       }
-    }
+    },
+    [setLoading, setProfile]
+  )
+
+  useEffect(() => {
+    cancelledRef.current = false
 
     // Safety net: if loading stays true after 6s (e.g. StrictMode race or network blip), unblock.
     const safetyTimer = setTimeout(() => {
-      if (!cancelled && useAuthStore.getState().loading) setLoading(false)
+      if (!cancelledRef.current && useAuthStore.getState().loading) setLoading(false)
     }, 6000)
 
     // onAuthStateChange fires INITIAL_SESSION immediately — no need for a separate getSession() call.
@@ -45,7 +50,7 @@ export function useAuth() {
     // and makes AuthGuard redirect to /login mid-navigation.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        if (cancelled) return
+        if (cancelledRef.current) return
         setSession(session)
         if (session) {
           // Skip if profile is already loaded (mock mode pre-populates, or token refresh events)
@@ -64,12 +69,11 @@ export function useAuth() {
     )
 
     return () => {
-      cancelled = true
+      cancelledRef.current = true
       clearTimeout(safetyTimer)
       subscription.unsubscribe()
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [fetchProfile, setSession, reset, setLoading])
 
   async function login(email: string, password: string) {
     const url = `${import.meta.env.VITE_SUPABASE_URL}/auth/v1/token?grant_type=password`

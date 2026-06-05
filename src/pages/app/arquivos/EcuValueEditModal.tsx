@@ -126,7 +126,7 @@ export function EcuValueEditModal({ open, onClose, jobId, jobCode, valorAtual }:
                 background: 'hsl(var(--pm-gray-800))',
                 border: '1px solid rgba(255,255,255,0.08)',
                 color: 'hsl(var(--pm-gray-200))',
-              } as React.CSSProperties}
+              }}
             />
             {/* Chips de sugestão */}
             <div className="flex flex-wrap gap-1.5 mt-2">

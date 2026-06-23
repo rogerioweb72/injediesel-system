@@ -33,7 +33,7 @@ const passwordSchema = z.object({
 type FormData = z.infer<typeof schema>
 
 export default function Login() {
-  const { session, profile } = useAuthStore()
+  const { session, profile, loading } = useAuthStore()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -100,6 +100,15 @@ export default function Login() {
   }, [])
 
   const explicitFrom = (location.state as { from?: { pathname: string } })?.from?.pathname
+
+  // Session exists but profile didn't load → show error
+  useEffect(() => {
+    if (!session || loading) return
+    if (!profile && !rejectingRef.current) {
+      setServerError('Perfil não encontrado. Contate o administrador do sistema.')
+      supabase.auth.signOut()
+    }
+  }, [session, profile, loading])
 
   useEffect(() => {
     if (!session || !profile) return

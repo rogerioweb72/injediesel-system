@@ -6,7 +6,7 @@ interface AuthGuardProps {
   loginPath?: string
 }
 
-export function AuthGuard({ children, loginPath = '/appmax' }: AuthGuardProps) {
+export function AuthGuard({ children, loginPath = '/appinjediesel' }: AuthGuardProps) {
   const { session, loading } = useAuthStore()
   const location = useLocation()
 

@@ -9,7 +9,7 @@ export default function AcessoNegado() {
   const profile = useAuthStore((s) => s.profile)
   const navigate = useNavigate()
 
-  const targetLogin = profile && getAccountTier(profile.role) === 'franchise' ? '/login' : '/appmax'
+  const targetLogin = profile && getAccountTier(profile.role) === 'franchise' ? '/login' : '/appinjediesel'
 
   async function handleGoToMyArea() {
     await supabase.auth.signOut()

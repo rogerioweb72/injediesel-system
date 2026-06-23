@@ -66,7 +66,7 @@ export default function Login() {
     setForgotLoading(true)
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-        redirectTo: `${window.location.origin}/appmax`,
+        redirectTo: `${window.location.origin}/appinjediesel`,
       })
       if (error) throw error
       setForgotSent(true)
@@ -208,7 +208,7 @@ export default function Login() {
               <div className="login-logo flex justify-center mb-4"><TunerLogo style={{ width: 280, height: 'auto' }} /></div>
               <p className="text-green-400 font-bold text-lg">Senha redefinida com sucesso!</p>
               <Button className="w-full h-11 rounded-xl text-white font-bold border-0" style={{ background: 'var(--pm-accent-gradient)' }}
-                onClick={() => { window.location.href = '/appmax' }}>
+                onClick={() => { window.location.href = '/appinjediesel' }}>
                 Fazer login <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </CardContent>

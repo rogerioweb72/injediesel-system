@@ -351,7 +351,7 @@ export default function LoginParceiro() {
                     className="w-full h-11 rounded-xl font-bold text-white border-0"
                     style={{ background: 'var(--pm-accent-gradient)' }}
                   >
-                    <Link to="/appmax">
+                    <Link to="/appinjediesel">
                       Ir para Acesso Interno
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>

@@ -101,7 +101,7 @@ function RootLayout() {
 function ProtectedLayout() {
   const { agentSlug = '' } = useParams()
   return (
-    <AuthGuard loginPath="/appmax">
+    <AuthGuard loginPath="/appinjediesel">
       <RoleGuard allowedRoles={[...SYSTEM_ROLES, ...MATRIX_ROLES]} redirectTo="/acesso-negado">
         <RoutePrefixProvider prefix={`/${agentSlug}`}>
           <AppShell>
@@ -137,7 +137,7 @@ const router = createBrowserRouter([
       { path: '/',      element: <S><Home /></S> },
       { path: '/loja',  element: <S><LojaPage /></S> },
       { path: '/veiculos/:slug', element: <S><VehicleDetailPage /></S> },
-      { path: '/appmax',          element: <S><Login /></S> },
+      { path: '/appinjediesel',          element: <S><Login /></S> },
       { path: '/login',           element: <S><LoginParceiro /></S> },
       { path: '/parceiro/login',  element: <Navigate to="/login" replace /> },
       { path: '/parceiro',        element: <Navigate to="/login" replace /> },

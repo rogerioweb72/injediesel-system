@@ -113,7 +113,7 @@ export default function LandingV2() {
             }}>
               Entrar como Revenda <ChevronRight size={16} />
             </Link>
-            <Link to="/appmax" style={{
+            <Link to="/appinjediesel" style={{
               background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
               color: '#c8dff5', borderRadius: 8, padding: '13px 32px',
               fontWeight: 700, fontSize: '0.9375rem', textDecoration: 'none',

@@ -785,7 +785,7 @@ function LojaSection() {
             </BigHeadline>
           </div>
           <a
-            href="/appmax"
+            href="/appinjediesel"
             style={{
               display: 'flex', alignItems: 'center', gap: '0.5rem',
               color: RED, fontSize: '0.75rem', fontWeight: 700,

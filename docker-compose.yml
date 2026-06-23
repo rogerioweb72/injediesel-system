@@ -1,0 +1,15 @@
+services:
+  injediesel-system:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
+        VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID}
+        VITE_R2_PRESIGN_URL: ${VITE_R2_PRESIGN_URL:-}
+    image: injediesel-system:local
+    container_name: injediesel-system
+    ports:
+      - "8082:80"
+    restart: unless-stopped

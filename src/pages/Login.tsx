@@ -142,7 +142,7 @@ export default function Login() {
   }
 
   return (
-    <section className="fixed inset-0 text-slate-100 overflow-hidden" style={{ background: '#0B0C10' }}>
+    <section className="fixed inset-0 text-slate-100 overflow-hidden" style={{ background: '#070B14' }}>
       <style>{`
         .lm-animate {
           opacity: 0;
@@ -151,7 +151,7 @@ export default function Login() {
         }
         @keyframes lm-fadeUp { to { opacity: 1; transform: translateY(0); } }
         .login-logo .st3 { fill: #ffffff; }
-        .login-logo .st1 { fill: hsl(1 65% 42%); }
+        .login-logo .st1 { fill: #2563EB; }
         .login-logo .st2 { fill: rgba(255,255,255,0.7); }
       `}</style>
 
@@ -163,7 +163,7 @@ export default function Login() {
         {isRecoveryFlow && !recoveryDone && (
           <Card className="lm-animate w-full max-w-md border-white/5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]" style={{ background: 'rgba(20,21,28,0.85)' }}>
             <CardHeader className="items-center text-center space-y-3 pb-5 pt-7">
-              <div className="login-logo mb-1"><TunerLogo style={{ width: 156, height: 'auto' }} /></div>
+              <div className="login-logo mb-1"><TunerLogo style={{ width: 280, height: 'auto' }} /></div>
               <div>
                 <CardTitle className="text-xl font-bold text-white tracking-tight">Redefinir Senha</CardTitle>
                 <CardDescription className="text-slate-400 text-sm mt-1">Crie uma nova senha para sua conta.</CardDescription>
@@ -192,7 +192,7 @@ export default function Login() {
                   </div>
                   {pwForm.formState.errors.password2 && <p className="text-xs text-red-400">{pwForm.formState.errors.password2.message}</p>}
                 </div>
-                {setPassError && <div className="rounded-xl px-4 py-3 text-sm text-red-400" style={{ background: 'rgba(177,40,37,0.08)', border: '1px solid rgba(177,40,37,0.2)' }}>{setPassError}</div>}
+                {setPassError && <div className="rounded-xl px-4 py-3 text-sm text-red-400" style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)' }}>{setPassError}</div>}
                 <Button type="submit" disabled={settingPass} className="w-full h-11 rounded-xl text-white font-bold border-0" style={{ background: 'var(--pm-accent-gradient)' }}>
                   {settingPass ? 'Salvando...' : 'Salvar nova senha'}
                 </Button>
@@ -205,7 +205,7 @@ export default function Login() {
         {isRecoveryFlow && recoveryDone && (
           <Card className="lm-animate w-full max-w-md border-white/5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]" style={{ background: 'rgba(20,21,28,0.85)' }}>
             <CardContent className="pt-10 pb-8 text-center space-y-4">
-              <div className="login-logo flex justify-center mb-4"><TunerLogo style={{ width: 140, height: 'auto' }} /></div>
+              <div className="login-logo flex justify-center mb-4"><TunerLogo style={{ width: 280, height: 'auto' }} /></div>
               <p className="text-green-400 font-bold text-lg">Senha redefinida com sucesso!</p>
               <Button className="w-full h-11 rounded-xl text-white font-bold border-0" style={{ background: 'var(--pm-accent-gradient)' }}
                 onClick={() => { window.location.href = '/appmax' }}>
@@ -219,7 +219,7 @@ export default function Login() {
         {!isRecoveryFlow && forgotMode && (
           <Card className="lm-animate w-full max-w-md border-white/5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]" style={{ background: 'rgba(20,21,28,0.85)' }}>
             <CardHeader className="items-center text-center space-y-3 pb-5 pt-7">
-              <div className="login-logo mb-1"><TunerLogo style={{ width: 156, height: 'auto' }} /></div>
+              <div className="login-logo mb-1"><TunerLogo style={{ width: 280, height: 'auto' }} /></div>
               <CardTitle className="text-xl font-bold text-white tracking-tight">Recuperar Senha</CardTitle>
               <CardDescription className="text-slate-400 text-sm">Digite seu e-mail para receber o link de redefinição.</CardDescription>
             </CardHeader>
@@ -236,12 +236,12 @@ export default function Login() {
                     <Label className="text-slate-300 text-xs font-medium uppercase tracking-wider">E-mail</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
-                      <Input type="email" placeholder="usuario@promaxtuner.com" value={forgotEmail}
+                      <Input type="email" placeholder="usuario@injediesel.com" value={forgotEmail}
                         onChange={e => setForgotEmail(e.target.value)}
                         className="pl-10 h-11 border-white/5 text-white placeholder:text-slate-600 rounded-xl" style={{ background: '#0B0C10' }} />
                     </div>
                   </div>
-                  {serverError && <div className="rounded-xl px-4 py-3 text-sm text-red-400" style={{ background: 'rgba(177,40,37,0.08)', border: '1px solid rgba(177,40,37,0.2)' }}>{serverError}</div>}
+                  {serverError && <div className="rounded-xl px-4 py-3 text-sm text-red-400" style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)' }}>{serverError}</div>}
                   <Button disabled={forgotLoading || !forgotEmail} onClick={handleForgotPassword}
                     className="w-full h-11 rounded-xl text-white font-bold border-0" style={{ background: 'var(--pm-accent-gradient)' }}>
                     {forgotLoading ? 'Enviando...' : 'Enviar link de recuperação'}
@@ -257,18 +257,18 @@ export default function Login() {
           /* ── ACESSO NEGADO ── */
           <div className="lm-animate w-full max-w-md">
             <Card
-              className="border-red-900/40 backdrop-blur-xl shadow-[0_8px_40px_rgba(0,0,0,0.6)]"
+              className="border-blue-900/40 backdrop-blur-xl shadow-[0_8px_40px_rgba(0,0,0,0.6)]"
               style={{ background: 'rgba(20,21,28,0.92)' }}
             >
               <CardHeader className="space-y-4 pb-5 text-center pt-8">
                 {/* Logo */}
                 <div className="flex justify-center pb-2 login-logo">
-                  <TunerLogo style={{ width: 148, height: 'auto' }} />
+                  <TunerLogo style={{ width: 280, height: 'auto' }} />
                 </div>
 
                 <div
                   className="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center"
-                  style={{ background: 'rgba(177,40,37,0.12)', border: '1px solid rgba(177,40,37,0.3)' }}
+                  style={{ background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.3)' }}
                 >
                   <ShieldAlert size={24} style={{ color: 'hsl(var(--pm-red-500))' }} />
                 </div>
@@ -280,7 +280,7 @@ export default function Login() {
                     Acesso Negado
                   </CardTitle>
                   <CardDescription className="text-slate-400 text-sm mt-1">
-                    Área Restrita — Matriz PROMAX Tuner
+                    Área Restrita — Matriz INJEDIESEL Tuner
                   </CardDescription>
                 </div>
               </CardHeader>
@@ -288,7 +288,7 @@ export default function Login() {
               <CardContent className="space-y-5 text-center pb-2">
                 <div
                   className="rounded-xl p-4 text-sm leading-relaxed text-slate-300"
-                  style={{ background: 'rgba(177,40,37,0.06)', border: '1px solid rgba(177,40,37,0.15)' }}
+                  style={{ background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.15)' }}
                 >
                   Sua conta de <strong className="text-white">franqueado</strong> não possui
                   autorização para acessar esta área restrita.
@@ -335,14 +335,14 @@ export default function Login() {
             <CardHeader className="items-center text-center space-y-3 pb-5 pt-7">
               {/* Logo */}
               <div className="login-logo mb-1">
-                <TunerLogo style={{ width: 156, height: 'auto' }} />
+                <TunerLogo style={{ width: 280, height: 'auto' }} />
               </div>
               <div>
                 <CardTitle className="text-xl font-bold text-white tracking-tight">
                   Acesso Interno
                 </CardTitle>
                 <CardDescription className="text-slate-400 text-sm mt-1">
-                  Área restrita para equipe interna PROMAX Tuner.
+                  Área restrita para equipe interna INJEDIESEL Tuner.
                 </CardDescription>
               </div>
             </CardHeader>
@@ -358,7 +358,7 @@ export default function Login() {
                     <Input
                       id="email"
                       type="email"
-                      placeholder="usuario@promaxtuner.com"
+                      placeholder="usuario@injediesel.com"
                       {...register('email')}
                       className="pl-10 h-11 border-white/5 focus-visible:border-white/20 focus-visible:ring-1 focus-visible:ring-offset-0 text-white placeholder:text-slate-600 transition-all rounded-xl"
                       style={{ background: '#0B0C10' }}
@@ -410,7 +410,7 @@ export default function Login() {
                 {serverError && (
                   <div
                     className="rounded-xl px-4 py-3 text-sm text-red-400"
-                    style={{ background: 'rgba(177,40,37,0.08)', border: '1px solid rgba(177,40,37,0.2)' }}
+                    style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)' }}
                   >
                     {serverError}
                   </div>
@@ -420,7 +420,7 @@ export default function Login() {
                   type="submit"
                   disabled={isSubmitting || isThrottled}
                   className="w-full h-11 rounded-xl text-white font-bold hover:opacity-95 transition-all mt-1 border-0"
-                  style={{ background: 'var(--pm-accent-gradient)', boxShadow: '0 0 20px rgba(177,40,37,0.2)' }}
+                  style={{ background: 'var(--pm-accent-gradient)', boxShadow: '0 0 20px rgba(37,99,235,0.2)' }}
                 >
                   {isThrottled ? (
                     <span className="flex items-center gap-2">

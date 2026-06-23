@@ -47,7 +47,7 @@ function getRouteTitle(pathname: string): string {
   if (/^\/matriz\/franqueados\/[^/]+$/.test(pathname)) return 'Detalhe da Unidade'
   if (/^\/matriz\/arquivos\/[^/]+$/.test(pathname)) return 'Detalhe do Arquivo'
   if (/^\/matriz\/suporte\/[^/]+$/.test(pathname)) return 'Ticket de Suporte'
-  return 'Promax Tuner'
+  return 'Injediesel System'
 }
 
 function getGreeting(): string {

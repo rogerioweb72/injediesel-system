@@ -47,7 +47,7 @@ export function LoginBackground() {
         }
         ctx.fillStyle = p.colorType === 0
           ? `rgba(248,250,252,${p.o.toFixed(2)})`
-          : `rgba(177,40,37,${(p.o * 0.9).toFixed(2)})`
+          : `rgba(37,99,235,${(p.o * 0.9).toFixed(2)})`
         ctx.fillRect(p.x, p.y, 1.2, 2.5)
       }
       raf = requestAnimationFrame(draw)
@@ -91,7 +91,7 @@ export function LoginBackground() {
       {/* Ambient glow */}
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(60% 50% at 50% 35%, rgba(177,40,37,0.07), transparent 60%)' }}
+        style={{ background: 'radial-gradient(60% 50% at 50% 35%, rgba(37,99,235,0.09), transparent 60%)' }}
       />
 
       {/* Cockpit grid */}

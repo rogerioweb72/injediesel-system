@@ -13,7 +13,7 @@ import {
 } from '@/hooks/useHelpArticles'
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-// Substitua pelo ID do vídeo YouTube de boas-vindas da Promax
+// Substitua pelo ID do vídeo YouTube de boas-vindas da Injediesel
 const WELCOME_VIDEO_ID = 'dQw4w9WgXcQ'
 
 // ─── VideoModal ───────────────────────────────────────────────────────────────
@@ -88,7 +88,7 @@ function WelcomeVideo({ videoId }: { videoId: string }) {
               className="text-base md:text-xl font-black uppercase tracking-wide text-white"
               style={{ fontFamily: 'var(--pm-font-display)' }}
             >
-              Boas-vindas à Promax Tuner
+              Boas-vindas à Injediesel System
             </p>
             <p className="text-xs md:text-sm mt-1" style={{ color: 'hsl(var(--pm-gray-400))' }}>
               Conheça a plataforma em uma apresentação rápida · ~3 min

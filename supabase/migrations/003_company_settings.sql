@@ -1,6 +1,6 @@
 create table public.company_settings (
   id         uuid primary key default gen_random_uuid(),
-  name       text not null default 'Promax Tuner',
+  name       text not null default 'Injediesel System',
   cnpj       text,
   email      text,
   phone      text,
@@ -8,4 +8,4 @@ create table public.company_settings (
   updated_at timestamptz not null default now()
 );
 
-insert into public.company_settings (name) values ('Promax Tuner');
+insert into public.company_settings (name) values ('Injediesel System');

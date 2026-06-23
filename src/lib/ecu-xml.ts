@@ -38,7 +38,7 @@ function rowToXml(row: EcuCatalogRow): string {
 export function buildEcuXml(rows: EcuCatalogRow[], categories: EcuCategory[]): string {
   const lines: string[] = [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    `<!-- Promax Tuner — Catálogo ECU — Exportado em ${new Date().toISOString()} -->`,
+    `<!-- Injediesel System — Catálogo ECU — Exportado em ${new Date().toISOString()} -->`,
     '<catalogo-ecu>',
   ]
   for (const cat of categories) {
@@ -71,7 +71,7 @@ export function downloadEcuXml(rows: EcuCatalogRow[], categories: EcuCategory[])
 export function downloadEcuXmlTemplate() {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <!-- ============================================================
-     MODELO DE IMPORTAÇÃO — Promax Tuner ECU Catalog
+     MODELO DE IMPORTAÇÃO — Injediesel System ECU Catalog
      ============================================================
      Instruções:
        - Não modifique os nomes das tags.

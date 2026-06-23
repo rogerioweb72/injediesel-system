@@ -3,8 +3,8 @@
 
 -- Unidades de franquia de exemplo
 insert into public.franchise_units (id, name, document, contract_type) values
-  ('11111111-0000-0000-0000-000000000001', 'Promax SP Centro', '00.000.000/0001-01', 'full'),
-  ('11111111-0000-0000-0000-000000000002', 'Promax RJ Norte',  '00.000.000/0002-02', 'linha_leve');
+  ('11111111-0000-0000-0000-000000000001', 'Injediesel SP Centro', '00.000.000/0001-01', 'full'),
+  ('11111111-0000-0000-0000-000000000002', 'Injediesel RJ Norte',  '00.000.000/0002-02', 'linha_leve');
 
 -- Categorias financeiras
 insert into public.financial_categories (name, type) values

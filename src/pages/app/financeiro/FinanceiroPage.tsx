@@ -380,7 +380,7 @@ export default function FinanceiroPage() {
               </p>
               {payments.length > 0 && (
                 <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
-                  style={{ background: 'hsl(var(--pm-red-500)/0.15)', color: 'hsl(var(--pm-red-500))' }}>
+                  style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>
                   {payments.length}
                 </span>
               )}
@@ -414,7 +414,7 @@ export default function FinanceiroPage() {
                       <span className="font-semibold text-white">{fmtBRL(p.ecu_jobs?.amount_charged_to_customer ?? p.amount)}</span>
                       <button onClick={() => setSelected(p)}
                         className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium"
-                        style={{ background: 'hsl(var(--pm-red-500))', color: '#fff' }}>
+                        style={{ background: '#2563EB', color: '#fff' }}>
                         <CreditCard size={12} /> Cobrar
                       </button>
                     </div>

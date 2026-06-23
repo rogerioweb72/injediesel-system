@@ -520,7 +520,7 @@ export function UsersTab() {
           <button
             onClick={() => openCreate()}
             className="flex items-center gap-2 text-sm font-medium text-white rounded-lg px-4 py-2.5 transition-colors shrink-0"
-            style={{ background: 'hsl(var(--pm-red-500))', boxShadow: '0 4px 14px rgba(231,43,43,0.25)' }}
+            style={{ background: 'hsl(var(--pm-red-500))', boxShadow: '0 4px 14px rgba(37,99,235,0.35)' }}
             onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.88')}
             onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
           >

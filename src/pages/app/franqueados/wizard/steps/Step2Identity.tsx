@@ -57,7 +57,7 @@ export function Step2Identity() {
 
         <div className="space-y-1">
           <Label>Nome Fantasia *</Label>
-          <Input {...register('name')} placeholder="Promax Tuner São Paulo" onChange={() => clearAutofilled('name')} />
+          <Input {...register('name')} placeholder="Injediesel System São Paulo" onChange={() => clearAutofilled('name')} />
           {errors.name && <p className="text-xs text-red-400">{errors.name.message}</p>}
         </div>
 
@@ -97,7 +97,7 @@ export function Step2Identity() {
 
         <div className="space-y-1">
           <Label>Website</Label>
-          <Input {...register('website')} placeholder="https://unidade.promaxtuner.com.br" />
+          <Input {...register('website')} placeholder="https://unidade.injediesel.com.br" />
         </div>
       </div>
     </div>

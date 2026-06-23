@@ -5,9 +5,9 @@
 
 -- ─────────────────────────────────────────────────────────────
 -- AUTH USERS (local dev only)
--- Login: ti@promax.com / promax123     → role system_ti
--- Login: admin@promax.com / promax123  → role company_admin
--- Login: teste@promax.com / max123     → role franchise_manager (unidade Japão → /japao/teste/dashboard)
+-- Login: ti@injediesel.com / injediesel123     → role system_ti
+-- Login: admin@injediesel.com / injediesel123  → role company_admin
+-- Login: teste@injediesel.com / max123     → role franchise_manager (unidade Japão → /japao/teste/dashboard)
 -- ─────────────────────────────────────────────────────────────
 INSERT INTO auth.users (
   id, instance_id, aud, role, email, encrypted_password,
@@ -21,8 +21,8 @@ INSERT INTO auth.users (
     'aaaaaaaa-0000-0000-0000-000000000001',
     '00000000-0000-0000-0000-000000000000',
     'authenticated', 'authenticated',
-    'ti@promax.com',
-    crypt('promax123', gen_salt('bf')),
+    'ti@injediesel.com',
+    crypt('injediesel123', gen_salt('bf')),
     now(),
     '{"provider":"email","providers":["email"]}',
     '{"name":"TI Master","role":"system_ti"}',
@@ -33,11 +33,11 @@ INSERT INTO auth.users (
     'aaaaaaaa-0000-0000-0000-000000000002',
     '00000000-0000-0000-0000-000000000000',
     'authenticated', 'authenticated',
-    'admin@promax.com',
-    crypt('promax123', gen_salt('bf')),
+    'admin@injediesel.com',
+    crypt('injediesel123', gen_salt('bf')),
     now(),
     '{"provider":"email","providers":["email"]}',
-    '{"name":"Admin Promax","role":"company_admin"}',
+    '{"name":"Admin Injediesel","role":"company_admin"}',
     '', '', '', '', '', '', '', '',
     now(), now()
   ),
@@ -45,7 +45,7 @@ INSERT INTO auth.users (
     'aaaaaaaa-0000-0000-0000-000000000003',
     '00000000-0000-0000-0000-000000000000',
     'authenticated', 'authenticated',
-    'teste@promax.com',
+    'teste@injediesel.com',
     crypt('max123', gen_salt('bf')),
     now(),
     '{"provider":"email","providers":["email"]}',
@@ -63,25 +63,25 @@ INSERT INTO auth.identities (
   (
     'aaaaaaaa-0000-0000-0000-000000000001',
     'aaaaaaaa-0000-0000-0000-000000000001',
-    'ti@promax.com',
+    'ti@injediesel.com',
     'email',
-    '{"sub":"aaaaaaaa-0000-0000-0000-000000000001","email":"ti@promax.com","email_verified":true}',
+    '{"sub":"aaaaaaaa-0000-0000-0000-000000000001","email":"ti@injediesel.com","email_verified":true}',
     now(), now(), now()
   ),
   (
     'aaaaaaaa-0000-0000-0000-000000000002',
     'aaaaaaaa-0000-0000-0000-000000000002',
-    'admin@promax.com',
+    'admin@injediesel.com',
     'email',
-    '{"sub":"aaaaaaaa-0000-0000-0000-000000000002","email":"admin@promax.com","email_verified":true}',
+    '{"sub":"aaaaaaaa-0000-0000-0000-000000000002","email":"admin@injediesel.com","email_verified":true}',
     now(), now(), now()
   ),
   (
     'aaaaaaaa-0000-0000-0000-000000000003',
     'aaaaaaaa-0000-0000-0000-000000000003',
-    'teste@promax.com',
+    'teste@injediesel.com',
     'email',
-    '{"sub":"aaaaaaaa-0000-0000-0000-000000000003","email":"teste@promax.com","email_verified":true}',
+    '{"sub":"aaaaaaaa-0000-0000-0000-000000000003","email":"teste@injediesel.com","email_verified":true}',
     now(), now(), now()
   )
 ON CONFLICT (id) DO NOTHING;

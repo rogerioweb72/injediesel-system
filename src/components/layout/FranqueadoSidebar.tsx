@@ -117,7 +117,7 @@ export function FranqueadoSidebar({ mode, onTogglePin }: FranqueadoSidebarProps)
             flexShrink: 0,
           }}
         >
-          <a href={`${prefix}/dashboard`} aria-label="Promax Tuner — Painel Franqueado" tabIndex={isExpanded ? 0 : -1}>
+          <a href={`${prefix}/dashboard`} aria-label="Injediesel System — Painel Franqueado" tabIndex={isExpanded ? 0 : -1}>
             <TunerLogo className="pm-sidebar-logo" />
           </a>
         </div>
@@ -168,7 +168,7 @@ export function FranqueadoSidebar({ mode, onTogglePin }: FranqueadoSidebarProps)
         {permPdv.canView && <>
           {!collapsed && <div className="pm-sidebar-group-title">Loja</div>}
           {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
-          <NavItem to={`${prefix}/loja`}     icon={ShoppingBag}   label="Loja Promax"          collapsed={collapsed} />
+          <NavItem to={`${prefix}/loja`}     icon={ShoppingBag}   label="Loja Injediesel"          collapsed={collapsed} />
           <NavItem to={`${prefix}/carrinho`} icon={ShoppingCart}  label="Meu Carrinho"          collapsed={collapsed} />
           <NavItem to={`${prefix}/pedidos`}  icon={IconHistoricoPedidos} label="Histórico de Compras"  collapsed={collapsed} badge={orderUpdates} />
         </>}

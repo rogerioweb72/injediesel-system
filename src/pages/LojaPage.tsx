@@ -80,7 +80,7 @@ const BANNERS = [
   {
     src: '/banner-2.jpg',
     label: 'SEJA PARCEIRO',
-    title: ['LEVE A PROMAX', 'TUNER PARA'],
+    title: ['LEVE A INJEDIESEL', 'TUNER PARA'],
     titleAccent: null,
     titleSub: 'Sua Cidade',
     body: 'Franquias disponíveis em todo o Brasil. Una-se à maior rede de performance automotiva do país.',
@@ -229,7 +229,7 @@ export default function LojaPage() {
       `*CEP:* ${d.cep}`,
       d.reference ? `*Referência:* ${d.reference}` : '',
     ].filter(Boolean).join('\n')
-    const msg = `Olá! Finalizei meu pedido na loja Promax.\n\n🛒 *PRODUTOS:*\n${lines}${subtotalLine}${freteLines}${deliveryBlock}`
+    const msg = `Olá! Finalizei meu pedido na loja Injediesel.\n\n🛒 *PRODUTOS:*\n${lines}${subtotalLine}${freteLines}${deliveryBlock}`
     window.open(`https://wa.me/${WA_NUM}?text=${encodeURIComponent(msg)}`, '_blank')
   }
 
@@ -316,7 +316,7 @@ export default function LojaPage() {
         boxShadow: scrolled ? '0 4px 32px rgba(0,0,0,0.5)' : 'none',
         transition: 'box-shadow 0.4s ease',
       }}>
-        <img src={logoUrl} alt="Promax Tuner" style={{ height: '22px', width: 'auto', display: 'block' }} />
+        <img src={logoUrl} alt="Injediesel System" style={{ height: '22px', width: 'auto', display: 'block' }} />
 
         {/* Desktop nav */}
         {!isMobile && (
@@ -1022,7 +1022,7 @@ export default function LojaPage() {
         <div style={{ maxWidth:'1200px', margin:'0 auto' }}>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'3rem', marginBottom:'3rem' }}>
             <div>
-              <img src="/tuner-logo.svg" alt="Promax Tuner" style={{ height:'36px', opacity:.92, display:'block', marginBottom:'1rem' }} />
+              <img src="/tuner-logo.svg" alt="Injediesel System" style={{ height:'36px', opacity:.92, display:'block', marginBottom:'1rem' }} />
               <p style={{ fontSize:'.75rem', color:'#71717a', lineHeight:1.8, maxWidth:'280px' }}>
                 Desempenho real. Resultados reais.<br/>Excelência técnica em remapeamento e performance automotiva.
               </p>
@@ -1047,8 +1047,8 @@ export default function LojaPage() {
             </div>
           </div>
           <div style={{ borderTop:'1px solid #1a1a1a', paddingTop:'1.5rem', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-            <p style={{ ...MONO, textTransform:'uppercase', fontSize:'.55rem', color:'#404040', letterSpacing:'.1em' }}>© 2026 PROMAX TUNER. TODOS OS DIREITOS RESERVADOS.</p>
-            <p style={{ ...MONO, textTransform:'uppercase', fontSize:'.55rem', color:'#404040', letterSpacing:'.1em' }}>POWERED BY <strong style={{ color:'#606060' }}>PROMAX GROUP</strong></p>
+            <p style={{ ...MONO, textTransform:'uppercase', fontSize:'.55rem', color:'#404040', letterSpacing:'.1em' }}>© 2026 INJEDIESEL SYSTEM. TODOS OS DIREITOS RESERVADOS.</p>
+            <p style={{ ...MONO, textTransform:'uppercase', fontSize:'.55rem', color:'#404040', letterSpacing:'.1em' }}>POWERED BY <strong style={{ color:'#606060' }}>INJEDIESEL GROUP</strong></p>
           </div>
         </div>
       </footer>

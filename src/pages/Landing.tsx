@@ -273,7 +273,7 @@ function Navbar({ onLogin, scrolled }: { onLogin: () => void; scrolled: boolean 
       {/* Logo */}
       <img
         src={logoUrl}
-        alt="Promax Tuner"
+        alt="Injediesel System"
         style={{ height: '22px', width: 'auto', display: 'block' }}
       />
 
@@ -768,7 +768,7 @@ function LojaSection() {
     {
       icon: Settings2,
       title: 'Man. e Acessórios',
-      desc: 'Peças de reposição e acessórios para manutenção dos módulos Promax.',
+      desc: 'Peças de reposição e acessórios para manutenção dos módulos Injediesel.',
       price: 'A partir de R$ 60',
       badge: 'REPOSIÇÃO',
     },
@@ -781,7 +781,7 @@ function LojaSection() {
           <div className="lp-observe">
             <Label>Loja Virtual</Label>
             <BigHeadline size="clamp(2.5rem, 5vw, 4rem)">
-              Produtos <Red>Promax</Red><br />para sua máquina
+              Produtos <Red>Injediesel</Red><br />para sua máquina
             </BigHeadline>
           </div>
           <a
@@ -863,7 +863,7 @@ function LojaSection() {
               539 produtos disponíveis no catálogo completo
             </p>
             <p style={{ fontSize: '0.8rem', color: 'hsl(var(--pm-gray-400))', marginTop: '0.25rem' }}>
-              Preços especiais para franqueados parceiros Promax Tuner
+              Preços especiais para franqueados parceiros Injediesel System
             </p>
           </div>
           <div style={{ display: 'flex', gap: '0.75rem', flexShrink: 0 }}>
@@ -944,7 +944,7 @@ function ResultsSection() {
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', alignItems: 'center' }}>
-            <p style={{ fontSize: '0.65rem', color: RED, letterSpacing: '0.2em' }}>PROMAX DATA ANALYTICS</p>
+            <p style={{ fontSize: '0.65rem', color: RED, letterSpacing: '0.2em' }}>INJEDIESEL DATA ANALYTICS</p>
             <span style={{
               fontSize: '0.6rem', padding: '3px 8px', borderRadius: '4px',
               background: 'hsl(var(--pm-green-400) / 0.12)',
@@ -1061,7 +1061,7 @@ function AboutSection() {
             color: 'hsl(var(--pm-gray-400))', marginTop: '1rem', fontSize: '0.875rem',
             maxWidth: '520px', margin: '1rem auto 0',
           }}>
-            A Promax Tuner combina conhecimento técnico, método, leitura de dados e foco em resultado
+            A Injediesel System combina conhecimento técnico, método, leitura de dados e foco em resultado
             real para entregar uma experiência de performance confiável.
           </p>
         </div>
@@ -1164,7 +1164,7 @@ function CTASection({ onLogin }: { onLogin: () => void }) {
           <p style={{ fontSize: '0.6rem', color: RED, letterSpacing: '0.25em', marginBottom: '1.5rem' }}>CONTACT_CENTER</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             {[
-              { icon: Mail,   label: 'E-MAIL',        value: 'contato@promaxtuner.com.br' },
+              { icon: Mail,   label: 'E-MAIL',        value: 'contato@injediesel.com.br' },
               { icon: Phone,  label: 'WHATSAPP',       value: '+55 (11) 99999-9999' },
               { icon: MapPin, label: 'UNIDADE MATRIZ', value: 'São Paulo, SP' },
             ].map((c) => (
@@ -1197,7 +1197,7 @@ function Footer() {
               fontSize: '1.1rem', letterSpacing: '0.06em',
               color: 'hsl(var(--pm-gray-600))', marginBottom: '1rem',
             }}>
-              PROMAX TUNER PERFORMANCE
+              INJEDIESEL SYSTEM PERFORMANCE
             </div>
             <p style={{
               fontSize: '0.75rem', color: 'hsl(var(--pm-gray-500))',
@@ -1251,10 +1251,10 @@ function Footer() {
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}>
           <p style={{ fontSize: '0.65rem', color: 'hsl(var(--pm-gray-600))', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-            © 2026 PROMAX TUNER. TODOS OS DIREITOS RESERVADOS.
+            © 2026 INJEDIESEL SYSTEM. TODOS OS DIREITOS RESERVADOS.
           </p>
           <p style={{ fontSize: '0.65rem', color: 'hsl(var(--pm-gray-600))', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-            POWERED BY <strong style={{ color: 'hsl(var(--pm-gray-400))' }}>PROMAX GROUP</strong>
+            POWERED BY <strong style={{ color: 'hsl(var(--pm-gray-400))' }}>INJEDIESEL GROUP</strong>
           </p>
         </div>
       </div>

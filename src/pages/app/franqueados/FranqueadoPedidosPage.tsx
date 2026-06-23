@@ -15,7 +15,7 @@ import { toast } from 'sonner'
 import type { Order } from '@/hooks/useOrders'
 
 const PIX_KEY  = import.meta.env.VITE_PIX_KEY  ?? ''
-const PIX_NAME = import.meta.env.VITE_PIX_NAME ?? 'PROMAX TUNER'
+const PIX_NAME = import.meta.env.VITE_PIX_NAME ?? 'INJEDIESEL SYSTEM'
 const PIX_CITY = import.meta.env.VITE_PIX_CITY ?? 'CASCAVEL'
 
 const PAYMENT_LABELS: Record<string, string> = {
@@ -264,7 +264,7 @@ export default function FranqueadoPedidosPage() {
 
   return (
     <div>
-      <PageHeader title="Histórico de Pedidos" subtitle="Seus pedidos realizados na Loja Promax" />
+      <PageHeader title="Histórico de Pedidos" subtitle="Seus pedidos realizados na Loja Injediesel" />
 
       {/* PIX modal */}
       {pixModalOrder && <PixModal order={pixModalOrder} onClose={() => setPixModalOrder(null)} />}
@@ -279,7 +279,7 @@ export default function FranqueadoPedidosPage() {
         <div className="flex flex-col items-center justify-center py-24 gap-3 text-center">
           <ShoppingBag size={40} className="text-muted-foreground opacity-30" />
           <p className="text-sm text-muted-foreground">Nenhum pedido realizado ainda.</p>
-          <p className="text-xs text-muted-foreground/60">Seus pedidos via Loja Promax aparecerão aqui.</p>
+          <p className="text-xs text-muted-foreground/60">Seus pedidos via Loja Injediesel aparecerão aqui.</p>
         </div>
       ) : (
         <div className="space-y-3">

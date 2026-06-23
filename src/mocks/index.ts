@@ -10,7 +10,7 @@ import { useAuthStore } from '@/stores/auth'
 
 const MOCK_USER = {
   id: 'aaaaaaaa-0000-0000-0000-000000000001',
-  email: 'admin@promaxtuner.com',
+  email: 'admin@injediesel.com',
   role: 'authenticated',
   aud: 'authenticated',
   created_at: '2024-01-01T00:00:00Z',
@@ -27,7 +27,7 @@ const MOCK_SESSION = {
 const MOCK_PROFILE = {
   id: MOCK_USER.id,
   name: 'Admin Master',
-  email: 'admin@promaxtuner.com',
+  email: 'admin@injediesel.com',
   role: 'company_admin' as const,
   active: true,
 }
@@ -49,9 +49,9 @@ const MOCK_DB: Record<string, AnyRecord[]> = {
   company_settings: [
     {
       id: 'settings-0000-0000-0000-000000000001',
-      name: 'Promax Tuner',
+      name: 'Injediesel System',
       cnpj: '00.000.000/0001-00',
-      email: 'contato@promaxtuner.com',
+      email: 'contato@injediesel.com',
       phone: '(11) 3000-4000',
       address: { street: 'Av. Paulista, 1000', city: 'São Paulo', state: 'SP', zip: '01310-100' },
       updated_at: '2024-01-01T00:00:00Z',
@@ -180,7 +180,7 @@ const MOCK_DB: Record<string, AnyRecord[]> = {
       franchise_margin_percentage: 70.00,
       customers: { name: 'João Silva', email: 'joao@email.com' },
       vehicles: { brand: 'Volkswagen', model: 'Golf GTI', plate: 'ABC1234' },
-      franchise_units: { name: 'Promax SP Centro', city: 'São Paulo', state: 'SP' },
+      franchise_units: { name: 'Injediesel SP Centro', city: 'São Paulo', state: 'SP' },
       ecu_job_files: [
         {
           id: 'file-001', job_id: 'job-0001-0000-0000-000000000001',
@@ -217,7 +217,7 @@ const MOCK_DB: Record<string, AnyRecord[]> = {
       franchise_margin_percentage: null,
       customers: { name: 'Maria Oliveira', email: 'maria@empresa.com' },
       vehicles: null,
-      franchise_units: { name: 'Promax SP Centro', city: 'São Paulo', state: 'SP' },
+      franchise_units: { name: 'Injediesel SP Centro', city: 'São Paulo', state: 'SP' },
       ecu_job_files: [],
       ecu_job_events: [],
     },
@@ -234,7 +234,7 @@ const MOCK_DB: Record<string, AnyRecord[]> = {
       franchise_margin_percentage: 73.33,
       customers: { name: 'Frota Agro Ltda', email: 'frota@agro.com' },
       vehicles: { brand: 'John Deere', model: 'S790', plate: null },
-      franchise_units: { name: 'Promax MT Agro', city: 'Sorriso', state: 'MT' },
+      franchise_units: { name: 'Injediesel MT Agro', city: 'Sorriso', state: 'MT' },
       ecu_job_files: [
         {
           id: 'file-002', job_id: 'job-0003-0000-0000-000000000003',
@@ -281,7 +281,7 @@ const MOCK_DB: Record<string, AnyRecord[]> = {
       franchise_margin_amount: 580.00, franchise_margin_percentage: 72.50,
       customers: { name: 'João Silva', email: 'joao@email.com' },
       vehicles: { brand: 'Volkswagen', model: 'Golf GTI', plate: 'ABC1234' },
-      franchise_units: { name: 'Promax SP Centro', city: 'São Paulo', state: 'SP' },
+      franchise_units: { name: 'Injediesel SP Centro', city: 'São Paulo', state: 'SP' },
       ecu_job_files: [], ecu_job_events: [],
     },
     {
@@ -294,7 +294,7 @@ const MOCK_DB: Record<string, AnyRecord[]> = {
       franchise_margin_amount: 420.00, franchise_margin_percentage: 70.00,
       customers: { name: 'Maria Oliveira', email: 'maria@empresa.com' },
       vehicles: null,
-      franchise_units: { name: 'Promax SP Centro', city: 'São Paulo', state: 'SP' },
+      franchise_units: { name: 'Injediesel SP Centro', city: 'São Paulo', state: 'SP' },
       ecu_job_files: [], ecu_job_events: [],
     },
     {
@@ -307,7 +307,7 @@ const MOCK_DB: Record<string, AnyRecord[]> = {
       franchise_margin_amount: null, franchise_margin_percentage: null,
       customers: { name: 'João Silva', email: 'joao@email.com' },
       vehicles: { brand: 'BMW', model: '320i', plate: 'XYZ9876' },
-      franchise_units: { name: 'Promax SP Centro', city: 'São Paulo', state: 'SP' },
+      franchise_units: { name: 'Injediesel SP Centro', city: 'São Paulo', state: 'SP' },
       ecu_job_files: [], ecu_job_events: [],
     },
     {
@@ -320,7 +320,7 @@ const MOCK_DB: Record<string, AnyRecord[]> = {
       franchise_margin_amount: null, franchise_margin_percentage: null,
       customers: { name: 'Maria Oliveira', email: 'maria@empresa.com' },
       vehicles: null,
-      franchise_units: { name: 'Promax SP Centro', city: 'São Paulo', state: 'SP' },
+      franchise_units: { name: 'Injediesel SP Centro', city: 'São Paulo', state: 'SP' },
       ecu_job_files: [], ecu_job_events: [],
     },
     {
@@ -333,7 +333,7 @@ const MOCK_DB: Record<string, AnyRecord[]> = {
       franchise_margin_amount: 650.00, franchise_margin_percentage: 72.22,
       customers: { name: 'Frota Agro Ltda', email: 'frota@agro.com' },
       vehicles: { brand: 'John Deere', model: 'S790', plate: null },
-      franchise_units: { name: 'Promax MT Agro', city: 'Sorriso', state: 'MT' },
+      franchise_units: { name: 'Injediesel MT Agro', city: 'Sorriso', state: 'MT' },
       ecu_job_files: [], ecu_job_events: [],
     },
     {
@@ -346,7 +346,7 @@ const MOCK_DB: Record<string, AnyRecord[]> = {
       franchise_margin_amount: null, franchise_margin_percentage: null,
       customers: { name: 'Frota Agro Ltda', email: 'frota@agro.com' },
       vehicles: null,
-      franchise_units: { name: 'Promax MT Agro', city: 'Sorriso', state: 'MT' },
+      franchise_units: { name: 'Injediesel MT Agro', city: 'Sorriso', state: 'MT' },
       ecu_job_files: [], ecu_job_events: [],
     },
     {
@@ -359,7 +359,7 @@ const MOCK_DB: Record<string, AnyRecord[]> = {
       franchise_margin_amount: 280.00, franchise_margin_percentage: 70.00,
       customers: { name: 'Frota Agro Ltda', email: 'frota@agro.com' },
       vehicles: { brand: 'John Deere', model: 'S790', plate: null },
-      franchise_units: { name: 'Promax MT Agro', city: 'Sorriso', state: 'MT' },
+      franchise_units: { name: 'Injediesel MT Agro', city: 'Sorriso', state: 'MT' },
       ecu_job_files: [], ecu_job_events: [],
     },
     {
@@ -372,7 +372,7 @@ const MOCK_DB: Record<string, AnyRecord[]> = {
       franchise_margin_amount: 390.00, franchise_margin_percentage: 70.91,
       customers: { name: 'João Silva', email: 'joao@email.com' },
       vehicles: null,
-      franchise_units: { name: 'Promax PR Cascavel', city: 'Cascavel', state: 'PR' },
+      franchise_units: { name: 'Injediesel PR Cascavel', city: 'Cascavel', state: 'PR' },
       ecu_job_files: [], ecu_job_events: [],
     },
     {
@@ -385,7 +385,7 @@ const MOCK_DB: Record<string, AnyRecord[]> = {
       franchise_margin_amount: null, franchise_margin_percentage: null,
       customers: { name: 'Maria Oliveira', email: 'maria@empresa.com' },
       vehicles: null,
-      franchise_units: { name: 'Promax PR Cascavel', city: 'Cascavel', state: 'PR' },
+      franchise_units: { name: 'Injediesel PR Cascavel', city: 'Cascavel', state: 'PR' },
       ecu_job_files: [], ecu_job_events: [],
     },
     {
@@ -398,7 +398,7 @@ const MOCK_DB: Record<string, AnyRecord[]> = {
       franchise_margin_amount: null, franchise_margin_percentage: null,
       customers: { name: 'Carlos Mendes', email: null },
       vehicles: null,
-      franchise_units: { name: 'Promax PR Cascavel', city: 'Cascavel', state: 'PR' },
+      franchise_units: { name: 'Injediesel PR Cascavel', city: 'Cascavel', state: 'PR' },
       ecu_job_files: [], ecu_job_events: [],
     },
     {
@@ -411,7 +411,7 @@ const MOCK_DB: Record<string, AnyRecord[]> = {
       franchise_margin_amount: 550.00, franchise_margin_percentage: 73.33,
       customers: { name: 'João Silva', email: 'joao@email.com' },
       vehicles: { brand: 'BMW', model: '320i', plate: 'XYZ9876' },
-      franchise_units: { name: 'Promax RS Porto Alegre', city: 'Porto Alegre', state: 'RS' },
+      franchise_units: { name: 'Injediesel RS Porto Alegre', city: 'Porto Alegre', state: 'RS' },
       ecu_job_files: [], ecu_job_events: [],
     },
     {
@@ -424,7 +424,7 @@ const MOCK_DB: Record<string, AnyRecord[]> = {
       franchise_margin_amount: null, franchise_margin_percentage: null,
       customers: { name: 'Maria Oliveira', email: 'maria@empresa.com' },
       vehicles: null,
-      franchise_units: { name: 'Promax RS Porto Alegre', city: 'Porto Alegre', state: 'RS' },
+      franchise_units: { name: 'Injediesel RS Porto Alegre', city: 'Porto Alegre', state: 'RS' },
       ecu_job_files: [], ecu_job_events: [],
     },
   ],
@@ -439,32 +439,32 @@ const MOCK_DB: Record<string, AnyRecord[]> = {
 
   franchise_units: [
     {
-      id: 'fu-001', name: 'Promax SP Centro',
-      cnpj: '00.000.000/0001-01', phone: '(11) 3333-4444', email: 'sp@promaxtuner.com',
+      id: 'fu-001', name: 'Injediesel SP Centro',
+      cnpj: '00.000.000/0001-01', phone: '(11) 3333-4444', email: 'sp@injediesel.com',
       address: 'Av. Paulista, 1000', city: 'São Paulo', state: 'SP',
       contract_type: 'full', active: true, commission_rate: 15,
       manager_id: null, created_at: '2024-01-01T00:00:00Z',
       document: '00.000.000/0001-01',
     },
     {
-      id: 'fu-002', name: 'Promax MT Agro',
-      cnpj: '00.000.000/0002-02', phone: '(65) 9999-8888', email: 'mt@promaxtuner.com',
+      id: 'fu-002', name: 'Injediesel MT Agro',
+      cnpj: '00.000.000/0002-02', phone: '(65) 9999-8888', email: 'mt@injediesel.com',
       address: 'Rod. BR-163, Km 10', city: 'Sorriso', state: 'MT',
       contract_type: 'linha_leve', active: true, commission_rate: 10,
       manager_id: null, created_at: '2024-02-01T00:00:00Z',
       document: '00.000.000/0002-02',
     },
     {
-      id: 'fu-003', name: 'Promax PR Cascavel',
-      cnpj: '00.000.000/0003-03', phone: '(45) 3333-5555', email: 'cascavel@promaxtuner.com',
+      id: 'fu-003', name: 'Injediesel PR Cascavel',
+      cnpj: '00.000.000/0003-03', phone: '(45) 3333-5555', email: 'cascavel@injediesel.com',
       address: 'Rua XV de Novembro, 500', city: 'Cascavel', state: 'PR',
       contract_type: 'full', active: true, commission_rate: 15,
       manager_id: null, created_at: '2024-03-01T00:00:00Z',
       document: '00.000.000/0003-03',
     },
     {
-      id: 'fu-004', name: 'Promax RS Porto Alegre',
-      cnpj: '00.000.000/0004-04', phone: '(51) 4444-6666', email: 'poa@promaxtuner.com',
+      id: 'fu-004', name: 'Injediesel RS Porto Alegre',
+      cnpj: '00.000.000/0004-04', phone: '(51) 4444-6666', email: 'poa@injediesel.com',
       address: 'Av. Ipiranga, 1200', city: 'Porto Alegre', state: 'RS',
       contract_type: 'linha_leve', active: true, commission_rate: 10,
       manager_id: null, created_at: '2024-04-01T00:00:00Z',

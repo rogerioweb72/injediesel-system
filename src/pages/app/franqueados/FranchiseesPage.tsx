@@ -71,7 +71,7 @@ export default function FranchiseesPage() {
     <div>
       <PageHeader
         title="Franqueados"
-        subtitle="Unidades da rede Promax Tuner"
+        subtitle="Unidades da rede Injediesel System"
         actions={
           <Button onClick={() => setFormOpen(true)} style={{ background: 'var(--pm-accent-gradient)' }}>
             <Plus size={16} className="mr-2" />Nova Unidade

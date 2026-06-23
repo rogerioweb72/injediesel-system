@@ -64,7 +64,7 @@ const VEHICLES: VehicleData[] = [
     ecuTitle: 'Bosch MED17.5.5 — Plataforma Gasolina',
     ecuDesc: 'Controle por barramento CAN de alta velocidade. Suporte a mapeamento de pressão de wastegate e correção de mistura em malha fechada via sonda lambda banda larga.',
     ecuLines: [
-      '> PROMAX_ECU_TOOL v4.2.1',
+      '> INJEDIESEL_ECU_TOOL v4.2.1',
       '> CONNECT Bosch MED17.5.5 ... OK',
       '> READ FLASH 0x0000–0xFFFF ... OK [512KB]',
       '> PATCH wastegate_map[16x16] delta=+180mbar',
@@ -100,7 +100,7 @@ const VEHICLES: VehicleData[] = [
     ecuTitle: 'Bosch EDC17C54 — Plataforma Diesel',
     ecuDesc: 'Protocolo KWP2004 com acesso direto a mapas de injeção, boost e emissões. Suporte a common rail de alta pressão com pressão de rail até 2.000 bar.',
     ecuLines: [
-      '> PROMAX_ECU_TOOL v4.2.1',
+      '> INJEDIESEL_ECU_TOOL v4.2.1',
       '> CONNECT Bosch EDC17C54 ... OK',
       '> READ FLASH 0x0000–0xFFFF ... OK [1MB]',
       '> PATCH injection_duration[16x16] delta=+1.4ms',
@@ -137,7 +137,7 @@ const VEHICLES: VehicleData[] = [
     ecuTitle: 'Continental CM2350A — Heavy Duty',
     ecuDesc: 'Protocolo J1939 CAN com acesso a mapas de torque por marcha, controle de emissões e limitadores de velocidade de frota. Suporte a múltiplas ECUs em configuração master/slave.',
     ecuLines: [
-      '> PROMAX_ECU_TOOL v4.2.1',
+      '> INJEDIESEL_ECU_TOOL v4.2.1',
       '> CONNECT Continental CM2350A J1939 ... OK',
       '> READ FLASH 0x0000–0x1FFFF ... OK [2MB]',
       '> PATCH gear_torque_limiter[8x6]   delta=REMOVED',
@@ -174,7 +174,7 @@ const VEHICLES: VehicleData[] = [
     ecuTitle: 'Bosch EDC7 — Agricultural Platform',
     ecuDesc: 'Protocolo CARB-compliant CAN com suporte a ISO 11783 ISOBUS. Acesso a mapas de regulador, torque e curvas de carga. Compatível com John Deere, Case, New Holland e Massey Ferguson.',
     ecuLines: [
-      '> PROMAX_ECU_TOOL v4.2.1',
+      '> INJEDIESEL_ECU_TOOL v4.2.1',
       '> CONNECT Bosch EDC7 ISOBUS ... OK',
       '> READ FLASH 0x0000–0x7FFF ... OK [256KB]',
       '> PATCH governor_rate_map[8x8]     delta=+15%',
@@ -211,7 +211,7 @@ const VEHICLES: VehicleData[] = [
     ecuTitle: 'Denso HP3 / Common Rail — Industrial',
     ecuDesc: 'Protocolo OBD-II Tier 4 com acesso a mapas de correspondência motor-bomba, torque de trabalho e proteções térmicas. Compatível com Caterpillar, Komatsu, Volvo CE e Liebherr.',
     ecuLines: [
-      '> PROMAX_ECU_TOOL v4.2.1',
+      '> INJEDIESEL_ECU_TOOL v4.2.1',
       '> CONNECT Denso HP3 Tier4 ... OK',
       '> READ FLASH 0x0000–0xFFFF ... OK [512KB]',
       '> PATCH engine_pump_match[12x12]  delta=OPTIMIZED',
@@ -248,7 +248,7 @@ const VEHICLES: VehicleData[] = [
     ecuTitle: 'Keihin / Magneti Marelli — Moto ECU',
     ecuDesc: 'Protocolo diagnóstico proprietário por OBD-II adaptado. Suporte a BMW, Honda, Triumph, Kawasaki e Ducati. Acesso a mapas de ETV, ignição e injeção por canal de RPM.',
     ecuLines: [
-      '> PROMAX_ECU_TOOL v4.2.1',
+      '> INJEDIESEL_ECU_TOOL v4.2.1',
       '> CONNECT Magneti Marelli 5SM ... OK',
       '> READ FLASH 0x0000–0x3FFF ... OK [128KB]',
       '> PATCH etv_map[16x16]          delta=DIRECT_RESPONSE',
@@ -514,7 +514,7 @@ export default function VehicleDetailPage() {
         {/* ── FOOTER ── */}
         <div style={{ borderTop: `1px solid ${BORDER}`, padding: '1.25rem 2.5rem', display: 'flex', justifyContent: 'center' }}>
           <span style={{ fontFamily: MONO, fontSize: '0.65rem', color: 'rgba(255,255,255,0.18)', letterSpacing: '0.15em' }}>
-            PROMAX TUNER © 2025 — REPROGRAMAÇÃO DE ECU
+            INJEDIESEL SYSTEM © 2025 — REPROGRAMAÇÃO DE ECU
           </span>
         </div>
 

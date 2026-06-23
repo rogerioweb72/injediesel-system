@@ -91,7 +91,7 @@ export function Sidebar({ mode, onTogglePin, onNavClick }: SidebarProps) {
             flexShrink: 0,
           }}
         >
-          <a href={`${prefix}/dashboard`} aria-label="Promax Tuner — Dashboard" tabIndex={isExpanded ? 0 : -1}>
+          <a href={`${prefix}/dashboard`} aria-label="Injediesel System — Dashboard" tabIndex={isExpanded ? 0 : -1}>
             <TunerLogo className="pm-sidebar-logo" />
           </a>
         </div>

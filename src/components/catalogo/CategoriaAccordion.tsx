@@ -116,8 +116,8 @@ export function CategoriaAccordion({ category, rows, isOpen, onToggle, readOnly 
             {rows.length} ECU
           </span>
           <div className="w-px h-5 bg-white/10 mr-4" />
-          <div className={cn('w-8 h-8 rounded-full flex items-center justify-center border transition-all duration-300', isOpen ? 'rotate-180 bg-red-500/15 border-red-500/40' : 'bg-green-500/10 border-green-500/30')}>
-            <ChevronDown size={16} className={cn('transition-colors duration-300', isOpen ? 'text-red-400' : 'text-green-400')} />
+          <div className={cn('w-8 h-8 rounded-full flex items-center justify-center border transition-all duration-300', isOpen ? 'rotate-180 bg-blue-500/15 border-blue-500/40' : 'bg-green-500/10 border-green-500/30')}>
+            <ChevronDown size={16} className={cn('transition-colors duration-300', isOpen ? 'text-blue-400' : 'text-green-400')} />
           </div>
         </div>
       </button>

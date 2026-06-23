@@ -37,7 +37,7 @@ export default function CadastrosPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-2">
-        <BookOpen className="h-5 w-5 text-red-400" />
+        <BookOpen className="h-5 w-5 text-blue-400" />
         <h1 className="text-xl font-bold text-white">Cadastros</h1>
       </div>
 
@@ -69,7 +69,7 @@ export default function CadastrosPage() {
               onClick={() => setActiveTab(tab.id)}
               className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
                 activeTab === tab.id
-                  ? 'border-red-500 text-white'
+                  ? 'border-blue-500 text-white'
                   : 'border-transparent text-zinc-400 hover:text-white'
               }`}
             >

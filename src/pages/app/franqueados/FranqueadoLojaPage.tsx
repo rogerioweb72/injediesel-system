@@ -61,7 +61,7 @@ export default function FranqueadoLojaPage() {
 
   return (
     <div>
-      <PageHeader title="Loja Promax" subtitle="Produtos disponíveis para sua unidade" />
+      <PageHeader title="Loja Injediesel" subtitle="Produtos disponíveis para sua unidade" />
 
       {/* Toolbar */}
       <div className="flex items-center gap-3 mb-4">

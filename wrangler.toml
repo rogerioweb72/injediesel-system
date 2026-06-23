@@ -1,4 +1,4 @@
-name = "promax-tuner-r2"
+name = "injediesel-r2"
 main = "workers/r2-presign.ts"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
@@ -7,19 +7,19 @@ compatibility_flags = ["nodejs_compat"]
 
 [[r2_buckets]]
 binding = "ECU_ORIGINALS"
-bucket_name = "promax-ecu-originals"
+bucket_name = "injediesel-ecu-originals"
 
 [[r2_buckets]]
 binding = "ECU_DELIVERED"
-bucket_name = "promax-ecu-delivered"
+bucket_name = "injediesel-ecu-delivered"
 
 [[r2_buckets]]
 binding = "MKT_MATERIALS"
-bucket_name = "promax-mkt-materials"
+bucket_name = "injediesel-mkt-materials"
 
 [[r2_buckets]]
 binding = "FIRMWARE"
-bucket_name = "promax-firmware"
+bucket_name = "injediesel-firmware"
 
 # Secrets:
 # wrangler secret put SUPABASE_ANON_KEY --env production
@@ -28,42 +28,42 @@ bucket_name = "promax-firmware"
 SUPABASE_URL = ""
 
 [env.staging]
-name = "promax-tuner-r2-staging"
+name = "injediesel-r2-staging"
 
 [[env.staging.r2_buckets]]
 binding = "ECU_ORIGINALS"
-bucket_name = "promax-ecu-originals-staging"
+bucket_name = "injediesel-ecu-originals-staging"
 
 [[env.staging.r2_buckets]]
 binding = "ECU_DELIVERED"
-bucket_name = "promax-ecu-delivered-staging"
+bucket_name = "injediesel-ecu-delivered-staging"
 
 [[env.staging.r2_buckets]]
 binding = "MKT_MATERIALS"
-bucket_name = "promax-mkt-materials-staging"
+bucket_name = "injediesel-mkt-materials-staging"
 
 [[env.staging.r2_buckets]]
 binding = "FIRMWARE"
-bucket_name = "promax-firmware-staging"
+bucket_name = "injediesel-firmware-staging"
 
 [env.production]
-name = "promax-tuner-r2-prod"
+name = "injediesel-r2-prod"
 
 [env.production.vars]
-SUPABASE_URL = "https://myjrylmxzertrbwuosrv.supabase.co"
+SUPABASE_URL = ""   # preencher após criar projeto Supabase
 
 [[env.production.r2_buckets]]
 binding = "ECU_ORIGINALS"
-bucket_name = "promax-ecu-originals"
+bucket_name = "injediesel-ecu-originals"
 
 [[env.production.r2_buckets]]
 binding = "ECU_DELIVERED"
-bucket_name = "promax-ecu-delivered"
+bucket_name = "injediesel-ecu-delivered"
 
 [[env.production.r2_buckets]]
 binding = "MKT_MATERIALS"
-bucket_name = "promax-mkt-materials"
+bucket_name = "injediesel-mkt-materials"
 
 [[env.production.r2_buckets]]
 binding = "FIRMWARE"
-bucket_name = "promax-firmware"
+bucket_name = "injediesel-firmware"

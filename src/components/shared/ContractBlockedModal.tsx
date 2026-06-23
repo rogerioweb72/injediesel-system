@@ -87,7 +87,7 @@ export function ContractBlockedModal({ open, onClose, reason }: ContractBlockedM
           fontFamily: '"DM Sans", sans-serif', fontSize: '12px',
           color: '#333', textAlign: 'center', lineHeight: 1.5,
         }}>
-          Entre em contato com a Matriz Promax Tuner para regularizar a situação e reativar sua unidade.
+          Entre em contato com a Matriz Injediesel System para regularizar a situação e reativar sua unidade.
         </p>
 
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>

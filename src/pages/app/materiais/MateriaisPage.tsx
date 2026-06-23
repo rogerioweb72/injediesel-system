@@ -139,7 +139,7 @@ export default function MateriaisPage() {
           Materiais de Marketing
         </h1>
         <p className="text-sm mt-1" style={{ color: 'hsl(var(--pm-gray-500))' }}>
-          Baixe os materiais disponibilizados pela Promax Tuner para sua franquia.
+          Baixe os materiais disponibilizados pela Injediesel System para sua franquia.
         </p>
       </div>
 

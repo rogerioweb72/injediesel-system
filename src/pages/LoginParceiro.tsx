@@ -331,7 +331,7 @@ export default function LoginParceiro() {
                     Acesso Negado
                   </CardTitle>
                   <CardDescription className="text-slate-400 text-sm mt-1">
-                    Área do Parceiro — PROMAX Tuner
+                    Área do Parceiro — INJEDIESEL Tuner
                   </CardDescription>
                 </div>
               </CardHeader>
@@ -403,7 +403,7 @@ export default function LoginParceiro() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="sua-unidade@promaxtuner.com"
+                    placeholder="sua-unidade@injediesel.com"
                     {...register('email')}
                     className="pl-10 h-11 border-white/5 focus-visible:border-white/20 focus-visible:ring-1 focus-visible:ring-offset-0 text-white placeholder:text-slate-600 transition-all rounded-xl"
                     style={{ background: '#0B0C10' }}

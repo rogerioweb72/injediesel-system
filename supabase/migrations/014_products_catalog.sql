@@ -7,7 +7,7 @@ delete from public.products where sku in ('ECU-REMAP-001','ECU-REMAP-002','CHIP-
 -- Catálogo completo de produtos (539 itens, sem marca Injediesel)
 -- Importado de produtos_2026-04-25_precos_atualizados.xlsx
 insert into public.products (id, sku, name, category, description, active, stock) values
-  ('3a27796c-3248-49e3-9776-f2eb6b2cca14', '1001', 'BOTÃO  PRO BOOSTER  5V', 'Man. e Acessórios', 'Item de substituição para o módulo de potência da linha PromaxBooster.', true, 0),
+  ('3a27796c-3248-49e3-9776-f2eb6b2cca14', '1001', 'BOTÃO  PRO BOOSTER  5V', 'Man. e Acessórios', 'Item de substituição para o módulo de potência da linha InjedieselBooster.', true, 0),
   ('56f79958-8aa8-42e7-bddf-44a7a8e1e8f8', '1003', 'Filtro Combustível - Fiat Toro - Ducato - Jeep Compass  - 5 Micras', 'Refil de Filtros', 'COMPATIVEL COM:FIAT: Toro 2.0L 16V 2016-->JEEP: Compass 2.0L 16V 2016-->JEEP: ComanderJEEP: Renegade 2.0L 16V 2015-->CITROEN: Jumper 2.3L 2019-->DUCATO: Ducato 2.8 8V / 2.3L 16V 2017-->2021', true, 0),
   ('c8c39aba-1b02-406a-a55e-eadf27363cad', '1005', 'CONJ 5 REFIL 20 - PARA C-5', 'Refil de Filtros', 'CONJ 5 REFIL 20 - PARA C-5', true, 0),
   ('62ac95d2-b027-4895-b965-c71c301c6143', '1007', 'CONJ 3 REFIL 10 - PARA C- 2', 'Refil de Filtros', 'CONJ 3 REFIL 10 - PARA C- 2', true, 0),

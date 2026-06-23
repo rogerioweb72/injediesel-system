@@ -61,8 +61,8 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       fontFamily: {
-        display: ['"Barlow Condensed"', '"Arial Narrow"', 'sans-serif'],
-        body:    ['"DM Sans"', '"Helvetica Neue"', 'sans-serif'],
+        display: ['"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
+        body:    ['"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
         mono:    ['"JetBrains Mono"', '"Fira Code"', 'monospace'],
       },
     },

@@ -78,7 +78,7 @@ function CategoriaModal({ item, open, onOpenChange }: {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button className="bg-red-600 hover:bg-red-700" disabled={!name.trim() || upsert.isPending} onClick={save}>
+          <Button className="bg-blue-600 hover:bg-blue-700" disabled={!name.trim() || upsert.isPending} onClick={save}>
             {upsert.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
           </Button>
         </DialogFooter>
@@ -108,7 +108,7 @@ export function TabCategorias() {
     <div className="rounded-xl border border-zinc-700 bg-zinc-900 overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
         <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Categorias Financeiras ({items.length})</p>
-        <Button size="sm" className="h-7 bg-red-600 hover:bg-red-700 text-xs" onClick={() => { setEditing(null); setOpen(true) }}>
+        <Button size="sm" className="h-7 bg-blue-600 hover:bg-blue-700 text-xs" onClick={() => { setEditing(null); setOpen(true) }}>
           <Plus className="mr-1 h-3 w-3" />Nova
         </Button>
       </div>
@@ -142,7 +142,7 @@ export function TabCategorias() {
                       <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-zinc-400 hover:text-white" onClick={() => { setEditing(item); setOpen(true) }}>
                         <Edit2 className="h-3 w-3" />
                       </Button>
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-zinc-400 hover:text-red-400" disabled={deactivate.isPending} onClick={() => deactivate.mutate(item)}>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-zinc-400 hover:text-blue-400" disabled={deactivate.isPending} onClick={() => deactivate.mutate(item)}>
                         <PowerOff className="h-3 w-3" />
                       </Button>
                     </div>

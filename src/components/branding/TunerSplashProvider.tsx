@@ -32,7 +32,7 @@ type SplashContextValue = {
 
 const SplashContext = createContext<SplashContextValue | null>(null)
 
-const INTRO_FLAG         = 'tuner-intro-played'
+const INTRO_FLAG         = 'injediesel-intro-played'
 const DEFAULT_INTRO_DUR  = 2200
 const DEFAULT_AUTH_DUR   = 1600
 const DEFAULT_NAV_DELAY  = 900
@@ -45,7 +45,7 @@ const IS_FIRST_VISIT = typeof window !== 'undefined'
   && !window.sessionStorage.getItem(INTRO_FLAG)
 
 const SPLASH_CSS = `
-.tuner-splash {
+.injediesel-splash {
   position: fixed;
   inset: 0;
   z-index: 9999;
@@ -56,95 +56,71 @@ const SPLASH_CSS = `
   visibility: hidden;
   pointer-events: none;
   background:
-    radial-gradient(circle at 50% 36%, rgba(193,13,25,0.18), transparent 30%),
-    rgba(5,7,11,0.96);
+    radial-gradient(circle at 50% 36%, rgba(37,99,235,0.18), transparent 30%),
+    rgba(10,14,26,0.96);
   transition:
     opacity ${EXIT_DURATION}ms cubic-bezier(0.7,0,0.2,1),
     visibility ${EXIT_DURATION}ms cubic-bezier(0.7,0,0.2,1);
 }
-.tuner-splash.is-visible {
+.injediesel-splash.is-visible {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
 }
-.tuner-splash__inner {
+.injediesel-splash__inner {
   position: relative;
   width: min(560px, 88vw);
   transform: translateY(10px) scale(0.965);
   opacity: 0;
 }
-.tuner-splash.is-visible .tuner-splash__inner {
-  animation: tuner-splash-enter 820ms cubic-bezier(0.22,1,0.36,1) 120ms forwards;
+.injediesel-splash.is-visible .injediesel-splash__inner {
+  animation: injediesel-splash-enter 820ms cubic-bezier(0.22,1,0.36,1) 120ms forwards;
 }
-.tuner-splash.is-closing .tuner-splash__inner {
-  animation: tuner-splash-exit ${EXIT_DURATION}ms cubic-bezier(0.7,0,0.2,1) forwards;
+.injediesel-splash.is-closing .injediesel-splash__inner {
+  animation: injediesel-splash-exit ${EXIT_DURATION}ms cubic-bezier(0.7,0,0.2,1) forwards;
 }
-.tuner-splash__halo {
+.injediesel-splash__halo {
   position: absolute;
   inset: -18% -8%;
   background: linear-gradient(100deg, transparent 12%, rgba(255,255,255,0.18) 48%, transparent 72%);
   transform: translateX(-120%);
   mix-blend-mode: screen;
 }
-.tuner-splash.is-visible .tuner-splash__halo {
-  animation: tuner-splash-sheen 960ms ease-out 1180ms forwards;
+.injediesel-splash.is-visible .injediesel-splash__halo {
+  animation: injediesel-splash-sheen 960ms ease-out 1180ms forwards;
 }
-.tuner-splash__logo {
+.injediesel-splash__logo {
   display: block;
   width: 100%;
   height: auto;
   overflow: visible;
   filter: drop-shadow(0 20px 48px rgba(0,0,0,0.42));
-}
-.tuner-splash__logo .st1 {
-  fill: #c10d19;
-  transform-box: fill-box;
-  transform-origin: left center;
-  transform: scaleX(0);
-}
-.tuner-splash__logo .st2 {
-  fill: #848484;
-  opacity: 0;
-  transform: translateY(8px);
-  transform-box: fill-box;
-  transform-origin: center;
-}
-.tuner-splash__logo .st3 {
-  fill: #ffffff;
   opacity: 0;
   transform: translateY(6px);
-  transform-box: fill-box;
-  transform-origin: center;
 }
-.tuner-splash.is-visible .tuner-splash__logo .st1 {
-  animation: tuner-splash-red 680ms cubic-bezier(0.65,0,0.35,1) 280ms forwards;
+.injediesel-splash.is-visible .injediesel-splash__logo {
+  animation: injediesel-splash-text 680ms ease-out 280ms forwards;
 }
-.tuner-splash.is-visible .tuner-splash__logo .st3 {
-  animation: tuner-splash-text 560ms ease-out 780ms forwards;
-}
-.tuner-splash.is-visible .tuner-splash__logo .st2 {
-  animation: tuner-splash-text 560ms ease-out 1080ms forwards;
-}
-.tuner-splash__progress {
+.injediesel-splash__progress {
   width: min(340px, 58vw);
   height: 3px;
   margin: 24px auto 0;
   overflow: hidden;
   background: rgba(255,255,255,0.12);
 }
-.tuner-splash__progress::before {
+.injediesel-splash__progress::before {
   content: '';
   display: block;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, #c10d19, #ff6670);
+  background: linear-gradient(90deg, #2563EB, #3B82F6);
   transform: scaleX(0);
   transform-origin: left center;
 }
-.tuner-splash.is-visible .tuner-splash__progress::before {
-  animation: tuner-splash-progress 1500ms cubic-bezier(0.22,1,0.36,1) 240ms forwards;
+.injediesel-splash.is-visible .injediesel-splash__progress::before {
+  animation: injediesel-splash-progress 1500ms cubic-bezier(0.22,1,0.36,1) 240ms forwards;
 }
-.tuner-splash__label {
+.injediesel-splash__label {
   margin: 12px 0 0;
   text-align: center;
   color: #bcc6d4;
@@ -153,40 +129,40 @@ const SPLASH_CSS = `
   text-transform: uppercase;
   opacity: 0;
 }
-.tuner-splash.is-visible .tuner-splash__label {
-  animation: tuner-splash-fade 320ms ease-out 200ms forwards;
+.injediesel-splash.is-visible .injediesel-splash__label {
+  animation: injediesel-splash-fade 320ms ease-out 200ms forwards;
 }
-.tuner-splash.is-auth {
+.injediesel-splash.is-auth {
   background:
-    radial-gradient(circle at 50% 36%, rgba(193,13,25,0.22), transparent 32%),
-    rgba(5,7,11,0.985);
+    radial-gradient(circle at 50% 36%, rgba(37,99,235,0.22), transparent 32%),
+    rgba(10,14,26,0.985);
 }
-@keyframes tuner-splash-enter {
+@keyframes injediesel-splash-enter {
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
-@keyframes tuner-splash-exit {
+@keyframes injediesel-splash-exit {
   to { opacity: 0; transform: translateY(-8px) scale(0.985); }
 }
-@keyframes tuner-splash-red {
+@keyframes injediesel-splash-red {
   to { transform: scaleX(1); }
 }
-@keyframes tuner-splash-text {
+@keyframes injediesel-splash-text {
   to { opacity: 1; transform: translateY(0); }
 }
-@keyframes tuner-splash-progress {
+@keyframes injediesel-splash-progress {
   to { transform: scaleX(1); }
 }
-@keyframes tuner-splash-fade {
+@keyframes injediesel-splash-fade {
   to { opacity: 1; }
 }
-@keyframes tuner-splash-sheen {
+@keyframes injediesel-splash-sheen {
   to { transform: translateX(120%); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .tuner-splash,
-  .tuner-splash *,
-  .tuner-splash *::before,
-  .tuner-splash *::after {
+  .injediesel-splash,
+  .injediesel-splash *,
+  .injediesel-splash *::before,
+  .injediesel-splash *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -285,7 +261,7 @@ export function TunerSplashProvider({ children }: { children: ReactNode }) {
   )
 
   const classes = [
-    'tuner-splash',
+    'injediesel-splash',
     visible ? 'is-visible' : '',
     closing ? 'is-closing' : '',
     variant === 'auth' ? 'is-auth' : 'is-intro',
@@ -296,11 +272,11 @@ export function TunerSplashProvider({ children }: { children: ReactNode }) {
       <style dangerouslySetInnerHTML={{ __html: SPLASH_CSS }} />
       {children}
       <div className={classes} aria-hidden={!visible}>
-        <div className="tuner-splash__inner">
-          <div className="tuner-splash__halo" />
-          <TunerLogo className="tuner-splash__logo" />
-          <div className="tuner-splash__progress" />
-          <p className="tuner-splash__label">
+        <div className="injediesel-splash__inner">
+          <div className="injediesel-splash__halo" />
+          <TunerLogo className="injediesel-splash__logo" />
+          <div className="injediesel-splash__progress" />
+          <p className="injediesel-splash__label">
             {variant === 'auth' ? 'Entrando no Back Office' : 'Carregando experiência'}
           </p>
         </div>

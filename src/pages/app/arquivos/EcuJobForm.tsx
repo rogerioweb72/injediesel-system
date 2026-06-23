@@ -987,7 +987,7 @@ export default function EcuJobForm() {
               Consentimento LGPD <span className="text-red-400">*</span>
             </p>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Cliente foi informado e concorda presencialmente com os termos de uso e de dados da Promax Tuner.
+              Cliente foi informado e concorda presencialmente com os termos de uso e de dados da Injediesel System.
             </p>
             <label className="flex items-center gap-3 cursor-pointer group">
               <input

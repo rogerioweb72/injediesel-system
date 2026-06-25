@@ -1,26 +1,28 @@
+import { supabase } from '@/lib/supabase'
+
 export interface VehicleInfo {
   marca: string
   modelo: string
-  anoModelo: number | null
-  combustivel: string | null
-  motor: string | null
+  ano: string | null
+  motorSugestao: string | null
+  cilindradas: string | null
 }
 
 export function useBrasilAPI() {
   async function lookupPlate(plate: string): Promise<VehicleInfo | null> {
     try {
-      const res = await fetch(`https://apiplacas.com.br/api/v1/placa/${plate.toUpperCase()}`, {
-        headers: { Accept: 'application/json' },
+      const { data, error } = await supabase.functions.invoke('plate-lookup', {
+        body: { plate: plate.toUpperCase() },
       })
-      if (!res.ok) return null
-      const data = await res.json()
-      if (!data?.marca) return null
+      if (error) return null
+      const info = data?.data
+      if (!info?.marca) return null
       return {
-        marca: data.marca ?? '',
-        modelo: data.modelo ?? '',
-        anoModelo: data.anoModelo ?? null,
-        combustivel: data.combustivel ?? null,
-        motor: data.motor ?? null,
+        marca: info.marca ?? '',
+        modelo: info.modelo ?? '',
+        ano: info.ano ?? null,
+        motorSugestao: info.motorSugestao ?? null,
+        cilindradas: info.cilindradas ?? null,
       }
     } catch {
       return null

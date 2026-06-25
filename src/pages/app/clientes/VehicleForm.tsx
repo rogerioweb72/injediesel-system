@@ -59,8 +59,11 @@ export function VehicleForm({ open, onOpenChange, customerId }: VehicleFormProps
   function handlePlateLookupFound(info: VehicleInfo) {
     setValue('brand', info.marca)
     setValue('model', info.modelo)
-    if (info.anoModelo) setValue('year', info.anoModelo)
-    if (info.motor) setValue('engine', info.motor)
+    if (info.ano) {
+      const yearNum = parseInt(info.ano, 10)
+      if (!isNaN(yearNum)) setValue('year', yearNum)
+    }
+    if (info.motorSugestao) setValue('engine', info.motorSugestao)
   }
 
   async function onSubmit(values: FormValues) {

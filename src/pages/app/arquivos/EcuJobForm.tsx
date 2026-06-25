@@ -421,11 +421,11 @@ export default function EcuJobForm() {
     setLookupLoading(true)
     try {
       const info = await lookupPlate(placa.trim())
-      if (!info) { toast.error('Placa não encontrada'); return }
-      if (info.marca)     setValue('vehicle_marca',  info.marca)
-      if (info.modelo)    setValue('vehicle_modelo', info.modelo)
-      if (info.motor)     setValue('vehicle_motor',  info.motor)
-      if (info.anoModelo) setValue('vehicle_ano',    String(info.anoModelo))
+      if (!info) { toast.error('Placa não encontrada — preencha os campos manualmente'); return }
+      if (info.marca)         setValue('vehicle_marca',  info.marca)
+      if (info.modelo)        setValue('vehicle_modelo', info.modelo)
+      if (info.motorSugestao) setValue('vehicle_motor',  info.motorSugestao)
+      if (info.ano)           setValue('vehicle_ano',    info.ano)
       toast.success('Dados preenchidos automaticamente')
     } catch {
       toast.error('Erro ao consultar placa')

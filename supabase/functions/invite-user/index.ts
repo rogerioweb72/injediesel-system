@@ -161,17 +161,21 @@ serve(async (req) => {
     let emailSent = false
     const resendKey = Deno.env.get('RESEND_API_KEY')
     if (!linkErr && linkData?.properties?.action_link && resendKey) {
-      const resendRes = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${resendKey}` },
-        body: JSON.stringify({
-          from: 'Injediesel <noreply@web72.com.br>',
-          to: [email],
-          subject: 'Acesso liberado — Injediesel',
-          html: `<p>Olá,</p><p>Seu acesso ao sistema <strong>Injediesel</strong> foi vinculado a um novo perfil.</p><p><a href="${linkData.properties.action_link}" style="background:#E72B2B;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">Acessar o Sistema</a></p><p>O link expira em 1 hora.</p>`,
-        }),
-      })
-      emailSent = resendRes.ok
+      try {
+        const resendRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${resendKey}` },
+          body: JSON.stringify({
+            from: 'Injediesel <noreply@web72.com.br>',
+            to: [email],
+            subject: 'Acesso liberado — Injediesel',
+            html: `<p>Olá,</p><p>Seu acesso ao sistema <strong>Injediesel</strong> foi vinculado a um novo perfil.</p><p><a href="${linkData.properties.action_link}" style="background:#E72B2B;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">Acessar o Sistema</a></p><p>O link expira em 1 hora.</p>`,
+          }),
+        })
+        emailSent = resendRes.ok
+      } catch {
+        emailSent = false
+      }
     }
 
     return new Response(JSON.stringify({ ok: true, user_id: userId, email_sent: emailSent }), {

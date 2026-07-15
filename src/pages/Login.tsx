@@ -37,6 +37,8 @@ export default function Login() {
   const navigate = useNavigate()
   const location = useLocation()
 
+  // Capture hash before supabase-js clears it
+  const isInviteFlow = useRef(window.location.hash.includes('type=invite')).current
   const [isRecoveryFlow, setIsRecoveryFlow] = useState(
     window.location.hash.includes('type=recovery')
   )
@@ -52,6 +54,9 @@ export default function Login() {
   const [forgotEmail, setForgotEmail] = useState('')
   const [forgotSent, setForgotSent] = useState(false)
   const [forgotLoading, setForgotLoading] = useState(false)
+
+  // Invite (set password)
+  const [inviteDone, setInviteDone] = useState(false)
 
   // Recovery (reset password)
   const [recoveryDone, setRecoveryDone] = useState(false)
@@ -83,7 +88,8 @@ export default function Login() {
     try {
       const { error } = await supabase.auth.updateUser({ password: data.password })
       if (error) throw error
-      setRecoveryDone(true)
+      if (isRecoveryFlow) setRecoveryDone(true)
+      else setInviteDone(true)
     } catch (err) {
       setSetPassError(err instanceof Error ? err.message : 'Erro ao definir senha.')
     } finally {
@@ -113,6 +119,7 @@ export default function Login() {
   useEffect(() => {
     if (!session || !profile) return
     if (rejectingRef.current) return
+    if (isInviteFlow && !inviteDone) return
     if (isRecoveryFlow && !recoveryDone) return
 
     if (FRANCHISE_ROLES.includes(profile.role)) {
@@ -224,6 +231,48 @@ export default function Login() {
           </Card>
         )}
 
+        {/* ── CONVITE: definir senha ── */}
+        {isInviteFlow && !inviteDone && session && (
+          <Card className="lm-animate w-full max-w-md border-white/5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]" style={{ background: 'rgba(20,21,28,0.85)' }}>
+            <CardHeader className="items-center text-center space-y-3 pb-5 pt-7">
+              <div className="login-logo mb-1"><TunerLogo style={{ width: 280, height: 'auto' }} /></div>
+              <div>
+                <CardTitle className="text-xl font-bold text-white tracking-tight">Bem-vindo(a)! Defina sua senha</CardTitle>
+                <CardDescription className="text-slate-400 text-sm mt-1">Crie uma senha para acessar o sistema.</CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={pwForm.handleSubmit(handleSetPassword)} className="grid gap-5">
+                <div className="grid gap-2">
+                  <Label className="text-slate-300 text-xs font-medium uppercase tracking-wider">Nova senha</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+                    <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...pwForm.register('password')}
+                      className="pl-10 pr-10 h-11 border-white/5 text-white placeholder:text-slate-600 rounded-xl" style={{ background: '#0B0C10' }} />
+                    <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-md text-slate-500 hover:text-slate-300 transition-colors" onClick={() => setShowPassword(v => !v)}>
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {pwForm.formState.errors.password && <p className="text-xs text-red-400">{pwForm.formState.errors.password.message}</p>}
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-slate-300 text-xs font-medium uppercase tracking-wider">Confirmar senha</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+                    <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...pwForm.register('password2')}
+                      className="pl-10 h-11 border-white/5 text-white placeholder:text-slate-600 rounded-xl" style={{ background: '#0B0C10' }} />
+                  </div>
+                  {pwForm.formState.errors.password2 && <p className="text-xs text-red-400">{pwForm.formState.errors.password2.message}</p>}
+                </div>
+                {setPassError && <div className="rounded-xl px-4 py-3 text-sm text-red-400" style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)' }}>{setPassError}</div>}
+                <Button type="submit" disabled={settingPass} className="w-full h-11 rounded-xl text-white font-bold border-0" style={{ background: 'var(--pm-accent-gradient)' }}>
+                  {settingPass ? 'Salvando...' : 'Definir senha e entrar'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+
         {/* ── ESQUECI SENHA ── */}
         {!isRecoveryFlow && forgotMode && (
           <Card className="lm-animate w-full max-w-md border-white/5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]" style={{ background: 'rgba(20,21,28,0.85)' }}>
@@ -262,7 +311,7 @@ export default function Login() {
           </Card>
         )}
 
-        {!isRecoveryFlow && !forgotMode && (rejected ? (
+        {!isRecoveryFlow && (!isInviteFlow || inviteDone) && !forgotMode && (rejected ? (
           /* ── ACESSO NEGADO ── */
           <div className="lm-animate w-full max-w-md">
             <Card

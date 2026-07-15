@@ -22,7 +22,7 @@ import {
 import {
   Shield, ChevronDown, ChevronUp, RotateCcw, Percent, Plus, Mail, CheckCircle2, MoreVertical,
   ShieldCheck, UserCog, Wrench, BadgeDollarSign, ClipboardCheck, LineChart,
-  Building2, Settings, Wallet, Headset, Store,
+  Building2, Settings, Wallet, Headset, Store, AlertTriangle,
   type LucideIcon,
 } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
@@ -295,6 +295,7 @@ export function UsersTab() {
   // Create / invite state
   const [createOpen, setCreateOpen]           = useState(false)
   const [createDone, setCreateDone]           = useState(false)
+  const [createEmailSent, setCreateEmailSent] = useState(true)
   const [createEmail, setCreateEmail]         = useState('')
   const [createName, setCreateName]           = useState('')
   const [createRole, setCreateRole]           = useState<UserRole>('unit_seller')
@@ -320,6 +321,7 @@ export function UsersTab() {
     setCreatePermissions(ROLE_DEFAULT_PERMISSIONS[defaultRole] ?? [])
     setCreateShowPerms(false)
     setCreateDone(false)
+    setCreateEmailSent(true)
     setCreateOpen(true)
   }
 
@@ -330,7 +332,7 @@ export function UsersTab() {
   }
 
   async function submitCreate() {
-    await inviteUser.mutateAsync({
+    const result = await inviteUser.mutateAsync({
       email: createEmail.trim(),
       name: createName.trim(),
       role: createRole,
@@ -339,6 +341,7 @@ export function UsersTab() {
       max_discount_pct: parseFloat(createMaxDiscount) || 0,
       permissions: createPermissions,
     })
+    setCreateEmailSent(result?.email_sent !== false)
     setCreateDone(true)
   }
 
@@ -832,12 +835,25 @@ export function UsersTab() {
 
           {createDone ? (
             <div className="mt-10 flex flex-col items-center gap-4 text-center">
-              <CheckCircle2 size={40} style={{ color: '#34D399' }} />
-              <p className="text-base font-semibold text-foreground">Convite enviado!</p>
-              <p className="text-sm text-muted-foreground">
-                Um e-mail de convite foi enviado para <strong>{createEmail}</strong>.<br />
-                O usuário receberá um link para definir sua senha e acessar o sistema.
-              </p>
+              {createEmailSent ? (
+                <>
+                  <CheckCircle2 size={40} style={{ color: '#34D399' }} />
+                  <p className="text-base font-semibold text-foreground">Convite enviado!</p>
+                  <p className="text-sm text-muted-foreground">
+                    Um e-mail de convite foi enviado para <strong>{createEmail}</strong>.<br />
+                    O usuário receberá um link para definir sua senha e acessar o sistema.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <AlertTriangle size={40} style={{ color: '#FBBF24' }} />
+                  <p className="text-base font-semibold text-foreground">Usuário vinculado, e-mail não enviado</p>
+                  <p className="text-sm text-muted-foreground">
+                    Usuário vinculado, mas nenhum e-mail foi enviado automaticamente.<br />
+                    Envie um link de recuperação de senha manualmente para <strong>{createEmail}</strong>.
+                  </p>
+                </>
+              )}
               <Button
                 className="mt-4 w-full"
                 variant="outline"

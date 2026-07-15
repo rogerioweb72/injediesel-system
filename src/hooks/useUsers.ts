@@ -131,7 +131,7 @@ export function useInviteUser() {
       if (!res.ok) throw new Error(json.error ?? 'Erro ao convidar usuário')
       return { ...json, email: payload.email, name: payload.name, role: payload.role }
     },
-    onSuccess: ({ user_id, name, role }: { user_id: string; name: string; role: string }) => {
+    onSuccess: ({ user_id, name, role }: { user_id: string; name: string; role: string; email_sent?: boolean }) => {
       qc.invalidateQueries({ queryKey: ['users'] })
       log({ entity: 'profile', entityId: user_id, action: 'invited', metadata: { name, role } })
     },

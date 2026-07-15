@@ -81,7 +81,7 @@ serve(async (req) => {
         'Accept':        'application/json',
         'Content-Type':  'application/json',
         'Authorization': token,
-        'User-Agent':    'Promax Tuner (suporte@promaxtuner.com.br)',
+        'User-Agent':    'Injediesel System (suporte@web72.com.br)',
       },
       body: JSON.stringify(payload),
     })

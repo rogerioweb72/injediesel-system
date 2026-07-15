@@ -1,5 +1,5 @@
 // Allowed origins: set ALLOWED_ORIGIN secret in Supabase Dashboard.
-// Multiple origins: comma-separated, e.g. "https://app.promaxtuner.com.br,https://promaxtuner.com.br"
+// Multiple origins: comma-separated, e.g. "https://inje.tech,https://www.inje.tech"
 const RAW = Deno.env.get('ALLOWED_ORIGIN') ?? ''
 const ALLOWED = new Set<string>(
   RAW.split(',').map((o) => o.trim()).filter(Boolean)

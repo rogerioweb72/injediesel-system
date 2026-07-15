@@ -30,7 +30,7 @@ serve(async (req) => {
   const siteUrl = Deno.env.get('SITE_URL') ?? 'http://localhost:5173'
   const { data: invited, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
     data: { unit_id, role },
-    redirectTo: `${siteUrl}/admin-staging`,
+    redirectTo: `${siteUrl}/login`,
   })
 
   if (inviteErr) {
@@ -90,7 +90,7 @@ serve(async (req) => {
     const { data: linkData } = await adminClient.auth.admin.generateLink({
       type: 'magiclink',
       email,
-      options: { redirectTo: `${siteUrlForRecovery}/admin-staging?setup=1` },
+      options: { redirectTo: `${siteUrlForRecovery}/login?setup=1` },
     })
 
     const resendKey = Deno.env.get('RESEND_API_KEY')
@@ -102,16 +102,16 @@ serve(async (req) => {
           'Authorization': `Bearer ${resendKey}`,
         },
         body: JSON.stringify({
-          from: 'Promax Tuner <noreply@web72.com.br>',
+          from: 'Injediesel <noreply@web72.com.br>',
           to: [email],
-          subject: 'Acesso liberado — Promax Tuner',
+          subject: 'Acesso liberado — Injediesel',
           html: `
             <p>Olá,</p>
-            <p>Seu acesso ao sistema <strong>Promax Tuner</strong> foi liberado para uma nova unidade.</p>
+            <p>Seu acesso ao sistema <strong>Injediesel</strong> foi liberado para uma nova unidade.</p>
             <p>Clique no botão abaixo para entrar diretamente (sem precisar de senha):</p>
             <p><a href="${linkData.properties.action_link}" style="background:#E72B2B;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">Acessar o Sistema</a></p>
             <p>O link expira em 1 hora. Use em modo anônimo ou deslogado.</p>
-            <p>Promax Tuner</p>
+            <p>Injediesel</p>
           `,
         }),
       })

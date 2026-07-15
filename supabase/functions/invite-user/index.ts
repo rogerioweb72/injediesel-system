@@ -84,12 +84,17 @@ serve(async (req) => {
 
   const siteUrl = Deno.env.get('SITE_URL') ?? 'http://localhost:5173'
 
+  // Matriz e franquia usam telas de login/definição de senha diferentes —
+  // /login é a tela de franquia (LoginParceiro.tsx), /appinjediesel é a de matriz (Login.tsx).
+  const inviteRedirectPath = isMatrixRole ? '/appinjediesel' : '/login'
+
   const { data: invited, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
     data: { role, unit_id: unit_id ?? null },
-    redirectTo: `${siteUrl}/login`,
+    redirectTo: `${siteUrl}${inviteRedirectPath}`,
   })
 
   let userId: string
+  let isOrphanedAccount = false
 
   if (inviteErr) {
     const alreadyExists =
@@ -119,6 +124,7 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: 'Usuário não encontrado no sistema.' }), { status: 404, headers: CORS })
       }
       userId = authUser.id
+      isOrphanedAccount = true
     }
   } else {
     userId = invited.user.id
@@ -141,6 +147,37 @@ serve(async (req) => {
       unit_id,
       role,
     }, { onConflict: 'user_id,unit_id' })
+  }
+
+  if (isOrphanedAccount) {
+    // Conta órfã: auth.users já existia sem profile — inviteUserByEmail não envia e-mail
+    // nesse caso. Gerar link de recovery e tentar mandar por Resend (best-effort).
+    const { data: linkData, error: linkErr } = await adminClient.auth.admin.generateLink({
+      type: 'recovery',
+      email,
+      options: { redirectTo: `${siteUrl}${inviteRedirectPath}` },
+    })
+
+    let emailSent = false
+    const resendKey = Deno.env.get('RESEND_API_KEY')
+    if (!linkErr && linkData?.properties?.action_link && resendKey) {
+      const resendRes = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${resendKey}` },
+        body: JSON.stringify({
+          from: 'Injediesel <noreply@web72.com.br>',
+          to: [email],
+          subject: 'Acesso liberado — Injediesel',
+          html: `<p>Olá,</p><p>Seu acesso ao sistema <strong>Injediesel</strong> foi vinculado a um novo perfil.</p><p><a href="${linkData.properties.action_link}" style="background:#E72B2B;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">Acessar o Sistema</a></p><p>O link expira em 1 hora.</p>`,
+        }),
+      })
+      emailSent = resendRes.ok
+    }
+
+    return new Response(JSON.stringify({ ok: true, user_id: userId, email_sent: emailSent }), {
+      status: 200,
+      headers: { ...CORS, 'Content-Type': 'application/json' },
+    })
   }
 
   return new Response(JSON.stringify({ ok: true, user_id: userId }), {

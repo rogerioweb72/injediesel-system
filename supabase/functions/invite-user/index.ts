@@ -130,7 +130,7 @@ serve(async (req) => {
     userId = invited.user.id
   }
 
-  await adminClient.from('profiles').upsert({
+  const { error: profileErr } = await adminClient.from('profiles').upsert({
     id: userId,
     email,
     name: name || email.split('@')[0],
@@ -140,6 +140,10 @@ serve(async (req) => {
     max_discount_pct,
     permissions,
   }, { onConflict: 'id', ignoreDuplicates: false })
+
+  if (profileErr) {
+    return new Response(JSON.stringify({ error: profileErr.message }), { status: 500, headers: CORS })
+  }
 
   if (isFranchiseRole && unit_id) {
     await adminClient.from('user_unit_roles').upsert({
@@ -169,7 +173,7 @@ serve(async (req) => {
             from: 'Injediesel <noreply@web72.com.br>',
             to: [email],
             subject: 'Acesso liberado — Injediesel',
-            html: `<p>Olá,</p><p>Seu acesso ao sistema <strong>Injediesel</strong> foi vinculado a um novo perfil.</p><p><a href="${linkData.properties.action_link}" style="background:#E72B2B;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">Acessar o Sistema</a></p><p>O link expira em 1 hora.</p>`,
+            html: `<p>Olá,</p><p>Seu acesso ao sistema <strong>Injediesel</strong> foi vinculado a um novo perfil.</p><p><a href="${linkData.properties.action_link}" style="background:#E72B2B;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">Acessar o Sistema</a></p><p>O link expira em 1 hora. Use em modo anônimo ou deslogado.</p>`,
           }),
         })
         emailSent = resendRes.ok

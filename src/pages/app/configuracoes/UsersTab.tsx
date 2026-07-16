@@ -857,7 +857,7 @@ export function UsersTab() {
               <Button
                 className="mt-4 w-full"
                 variant="outline"
-                onClick={() => { setCreateDone(false); setCreateEmail(''); setCreateName('') }}
+                onClick={() => { setCreateDone(false); setCreateEmail(''); setCreateName(''); setCreateEmailSent(true) }}
               >
                 Convidar outro usuário
               </Button>

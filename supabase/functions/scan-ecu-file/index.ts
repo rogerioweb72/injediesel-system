@@ -241,12 +241,13 @@ serve(async (req) => {
     }
 
     // ── 8. VirusTotal scan ───────────────────────────────────────────────────
-    let status: 'clean' | 'infected' | 'pending' = 'pending'
+    let status: 'clean' | 'infected' | 'pending' | 'skipped' = 'pending'
     let analysisId: string | null = null
 
     if (!VT_KEY) {
       // No VT key configured: extension + magic bytes checks above are the only gate.
-      status = 'clean'
+      // 'skipped' (never 'clean') — file was NOT verified by antivirus.
+      status = 'skipped'
     } else {
       const vtResult = await vtCheckByHash(hash)
 

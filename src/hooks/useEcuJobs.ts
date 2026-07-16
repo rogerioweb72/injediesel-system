@@ -6,7 +6,7 @@ import type { FileStatus, PriorityLevel } from '@/types/app'
 
 const sb = () => supabase as any // eslint-disable-line @typescript-eslint/no-explicit-any
 
-export type EcuFileScanStatus = 'pending' | 'clean' | 'infected' | 'blocked'
+export type EcuFileScanStatus = 'pending' | 'clean' | 'infected' | 'blocked' | 'skipped'
 
 export interface EcuJobFile {
   id: string

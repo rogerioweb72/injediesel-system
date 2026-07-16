@@ -25,7 +25,7 @@ bucket_name = "injediesel-firmware"
 # wrangler secret put SUPABASE_ANON_KEY --env production
 
 [vars]
-SUPABASE_URL = ""
+SUPABASE_URL = "https://ttnmvheptxedwninjedv.supabase.co"
 
 [env.staging]
 name = "injediesel-r2-staging"
@@ -50,7 +50,7 @@ bucket_name = "injediesel-firmware-staging"
 name = "injediesel-r2-prod"
 
 [env.production.vars]
-SUPABASE_URL = ""   # preencher após criar projeto Supabase
+SUPABASE_URL = "https://ttnmvheptxedwninjedv.supabase.co"
 
 [[env.production.r2_buckets]]
 binding = "ECU_ORIGINALS"

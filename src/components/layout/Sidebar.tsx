@@ -41,6 +41,7 @@ import { useModulePermission } from '@/hooks/usePermissions'
 import { useUnseenJobs } from '@/hooks/useUnseenJobs'
 import { useUnreadSupportCount } from '@/hooks/useSupportTickets'
 import { usePendingB2BCount } from '@/hooks/useNotifications'
+import { usePendingValueEdits } from '@/hooks/useEcuValueEdit'
 import { useSignOut } from '@/hooks/useSignOut'
 import { TunerLogo } from '@/components/branding/TunerLogo'
 import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
@@ -63,6 +64,7 @@ export function Sidebar({ mode, onTogglePin, onNavClick }: SidebarProps) {
   const { count: unseenJobs } = useUnseenJobs()
   const { data: unreadSupport = 0 } = useUnreadSupportCount()
   const { data: b2bPending = 0 } = usePendingB2BCount()
+  const { data: pendingValueEdits = [] } = usePendingValueEdits()
 
   const isExpanded = mode === 'pinned'
   const collapsed  = !isExpanded
@@ -131,7 +133,7 @@ export function Sidebar({ mode, onTogglePin, onNavClick }: SidebarProps) {
         {!collapsed && <div className="pm-sidebar-group-title">Gestão</div>}
         {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
         {permFinanceiro.canView && (
-          <NavItem to={`${prefix}/financeiro`} icon={IconFinanceiro} label="Financeiro" collapsed={collapsed} onNavigate={onNavClick} />
+          <NavItem to={`${prefix}/financeiro`} icon={IconFinanceiro} label="Financeiro" collapsed={collapsed} onNavigate={onNavClick} badge={pendingValueEdits.length} />
         )}
         <NavItem to={`${prefix}/cadastros`} icon={BookOpen} label="Cadastros" collapsed={collapsed} onNavigate={onNavClick} />
         <NavItem to={`${prefix}/suporte`}   icon={Headphones} label="Suporte"       collapsed={collapsed} onNavigate={onNavClick} badge={unreadSupport} />

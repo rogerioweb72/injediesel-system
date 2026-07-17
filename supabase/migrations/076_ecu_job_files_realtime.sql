@@ -1,0 +1,11 @@
+-- ============================================================
+-- 076_ecu_job_files_realtime.sql
+--
+-- Habilita Realtime em ecu_job_files pro auto-refresh do status de
+-- scan (antivírus) na tela de detalhe do job — matriz e franquia.
+-- Mesmo padrão usado em support_messages (038_support_b2b.sql).
+--
+-- Sem isso a tela ainda funciona via polling de 5s (fallback já
+-- implementado no front), só não fica instantâneo.
+-- ============================================================
+ALTER PUBLICATION supabase_realtime ADD TABLE ecu_job_files;

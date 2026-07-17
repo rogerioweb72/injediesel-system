@@ -114,6 +114,14 @@ export function useEcuJob(id: string) {
       if (error) throw error
       return data as EcuJob
     },
+    // Fallback pro scan de antivírus (assíncrono, termina em segundos): enquanto
+    // houver arquivo com scan_status pending, revalida a cada 5s. Realtime
+    // (useEcuJobFilesRealtime) cobre o caso feliz; isso cobre a lacuna/fallback.
+    refetchInterval: (query) => {
+      const data = query.state.data as EcuJob | undefined
+      const hasPendingScan = data?.ecu_job_files?.some((f) => f.scan_status === 'pending')
+      return hasPendingScan ? 5000 : false
+    },
   })
 }
 

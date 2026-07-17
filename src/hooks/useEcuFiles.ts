@@ -1,8 +1,37 @@
+import { useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { uploadFileToR2 } from '@/lib/r2'
 import { useAuthStore } from '@/stores/auth'
 import { toast } from 'sonner'
+
+// Atualização automática do status de scan (antivírus) sem F5 manual.
+// Cobre matriz e franquia — ambos abrem a mesma tela de detalhe do job.
+export function useEcuJobFilesRealtime(jobId: string) {
+  const qc = useQueryClient()
+
+  useEffect(() => {
+    if (!jobId) return
+
+    const channel = supabase
+      .channel(`ecu-job-files-${jobId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ecu_job_files',
+          filter: `job_id=eq.${jobId}`,
+        },
+        () => {
+          qc.invalidateQueries({ queryKey: ['ecu-job', jobId] })
+        }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [jobId, qc])
+}
 
 export function useUploadEcuFile() {
   const qc = useQueryClient()

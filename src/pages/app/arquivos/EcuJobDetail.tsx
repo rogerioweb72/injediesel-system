@@ -14,7 +14,7 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { EcuStatusBadge, STATUS_LABELS } from '@/components/shared/EcuStatusBadge'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { useEcuJob, useUpdateEcuJobStatus, useSetMatrixPrice, NEXT_STATUS, useEcuJobFinancialEntry, useSendToFinance, type EcuJob } from '@/hooks/useEcuJobs'
-import { useUploadEcuFile, useDownloadEcuFile } from '@/hooks/useEcuFiles'
+import { useUploadEcuFile, useDownloadEcuFile, useEcuJobFilesRealtime } from '@/hooks/useEcuFiles'
 import { useCreateSupportTicket } from '@/hooks/useSupportTickets'
 import { useMyUnit } from '@/hooks/useMyUnit'
 import { useProfile } from '@/hooks/useProfile'
@@ -263,6 +263,7 @@ export default function EcuJobDetail() {
   const [valueEditOpen, setValueEditOpen] = useState(false)
 
   const { data: job, isLoading } = useEcuJob(id ?? '')
+  useEcuJobFilesRealtime(id ?? '')
   const updateStatus = useUpdateEcuJobStatus()
   const setPrice     = useSetMatrixPrice()
   const uploadFile   = useUploadEcuFile()
@@ -281,11 +282,19 @@ export default function EcuJobDetail() {
   if (isLoading || !job) return <div className="pm-skeleton h-96 w-full rounded" />
 
   const isFranchise = isFranchiseUser()
-  const canSendToFinance = isFranchise || (isMatrixUser() && job.unit_id === null)
+  // Matriz precisa ver/acionar o financeiro tanto no job direto quanto no de franquia
+  // (era só isMatrixUser() && unit_id === null — escondia o botão em job de franquia).
+  const canSendToFinance = isFranchise || isMatrixUser()
   const allNextStatuses = NEXT_STATUS[job.status] ?? []
   const nextStatuses = isFranchise
     ? (job.status === 'recebido' ? (['cancelado'] as typeof allNextStatuses) : [])
     : allNextStatuses
+  // Job de franquia cobra pelo valor que a matriz repassa; job direto de matriz
+  // (sem unidade) cobra direto do valor passado ao cliente — não existe repasse.
+  const isFranchiseJob = job.unit_id !== null
+  const chargeAmount = isFranchiseJob ? job.amount_charged_by_matrix : job.amount_charged_to_customer
+  const chargeFieldLabel = isFranchiseJob ? 'cobrado pela matriz' : 'cobrado do cliente'
+  const missingMatrixPriceToConclude = isFranchiseJob && !job.amount_charged_by_matrix
   const files  = job.ecu_job_files ?? []
   const events = [...(job.ecu_job_events ?? [])].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -305,6 +314,10 @@ export default function EcuJobDetail() {
       ? 'entrega'
       : 'original'
     if (fileType === 'entrega') {
+      if (missingMatrixPriceToConclude) {
+        toast.error('Informe o valor cobrado pela matriz antes de concluir o job.')
+        return
+      }
       setPendingDeliveryFile(file)
       setDeliveryConfirmOpen(true)
     } else {
@@ -342,11 +355,11 @@ export default function EcuJobDetail() {
 
   async function handleSendToFinance() {
     if (!job) return
-    if (!job.amount_charged_by_matrix) return
+    if (!chargeAmount) return
     await sendToFinance.mutateAsync({
       jobId: job.id,
       unitId: job.unit_id,
-      amount: job.amount_charged_by_matrix,
+      amount: chargeAmount,
       serviceType: job.service_type,
       customerName: job.customers?.name ?? 'Cliente',
     })
@@ -685,20 +698,37 @@ export default function EcuJobDetail() {
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 Próximas Ações
               </p>
-              {nextStatuses.map((next) => (
-                <Button
-                  key={next}
-                  className="w-full justify-between"
-                  variant={next === 'cancelado' ? 'ghost' : 'outline'}
-                  onClick={() => setConfirmStatus(next)}
-                >
-                  <span className={next === 'cancelado' ? 'text-red-400' : ''}>
-                    {STATUS_ACTION_LABELS[next] ?? STATUS_LABELS[next]}
-                  </span>
-                  {next !== 'cancelado' && <ChevronRight size={14} />}
-                  {next === 'cancelado' && <AlertCircle size={14} className="text-red-400" />}
-                </Button>
-              ))}
+              {nextStatuses.map((next) => {
+                const blocked = next === 'concluido' && missingMatrixPriceToConclude
+                return (
+                  <Button
+                    key={next}
+                    className="w-full justify-between"
+                    variant={next === 'cancelado' ? 'ghost' : 'outline'}
+                    disabled={blocked}
+                    title={blocked ? 'Informe o valor cobrado pela matriz antes de concluir' : undefined}
+                    onClick={() => {
+                      if (blocked) {
+                        toast.error('Informe o valor cobrado pela matriz antes de concluir o job.')
+                        return
+                      }
+                      setConfirmStatus(next)
+                    }}
+                  >
+                    <span className={next === 'cancelado' ? 'text-red-400' : ''}>
+                      {STATUS_ACTION_LABELS[next] ?? STATUS_LABELS[next]}
+                    </span>
+                    {blocked && <ShieldAlert size={14} className="text-amber-400" />}
+                    {!blocked && next !== 'cancelado' && <ChevronRight size={14} />}
+                    {next === 'cancelado' && <AlertCircle size={14} className="text-red-400" />}
+                  </Button>
+                )
+              })}
+              {missingMatrixPriceToConclude && nextStatuses.includes('concluido') && (
+                <p className="text-xs" style={{ color: '#FB923C' }}>
+                  Informe o valor cobrado pela matriz para poder concluir este job.
+                </p>
+              )}
             </div>
           )}
 
@@ -741,8 +771,10 @@ export default function EcuJobDetail() {
                 </div>
               )}
 
-              {/* Botão Enviar para o Financeiro — qualquer status, enquanto não enviado */}
-              {!financialEntry && job.amount_charged_by_matrix ? (
+              {/* Botão Enviar para o Financeiro — qualquer status, enquanto não enviado.
+                  Cobrança: job de franquia usa amount_charged_by_matrix (repasse);
+                  job direto de matriz usa amount_charged_to_customer (sem repasse). */}
+              {!financialEntry && chargeAmount ? (
                 <button
                   onClick={handleSendToFinance}
                   disabled={sendToFinance.isPending}
@@ -756,9 +788,9 @@ export default function EcuJobDetail() {
                   )}
                   Enviar para o Financeiro
                 </button>
-              ) : !financialEntry && !job.amount_charged_by_matrix ? (
+              ) : !financialEntry && !chargeAmount ? (
                 <p className="text-xs text-center" style={{ color: 'hsl(var(--pm-gray-500))' }}>
-                  Informe o valor cobrado pela matriz antes de enviar ao financeiro.
+                  Informe o valor {chargeFieldLabel} antes de enviar ao financeiro.
                 </p>
               ) : null}
             </div>

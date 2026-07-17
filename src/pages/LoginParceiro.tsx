@@ -45,6 +45,7 @@ export default function LoginParceiro() {
 
   // Capture hash before supabase-js clears it
   const isInviteFlow = useRef(window.location.hash.includes('type=invite')).current
+  const hasAuthToken = useRef(window.location.hash.includes('access_token=')).current
   const [isRecoveryFlow, setIsRecoveryFlow] = useState(
     window.location.hash.includes('type=recovery')
   )
@@ -60,6 +61,15 @@ export default function LoginParceiro() {
   const [setPassError, setSetPassError] = useState<string | null>(null)
   const [settingPass, setSettingPass]   = useState(false)
 
+  // A página é lazy-loaded — o hash do link de convite/recovery pode já estar sendo
+  // processado pelo useAuth() do RootLayout antes deste componente montar. Enquanto
+  // isso, sem esse estado, o form de login normal aparecia na tela até o usuário dar
+  // F5 manualmente. Aqui seguramos a UI em "Entrando..." até a sessão chegar (ou até
+  // 8s, quando desistimos e mostramos o form com aviso de link expirado).
+  const [awaitingSession, setAwaitingSession] = useState(hasAuthToken && !isRecoveryFlow)
+  const [linkExpired, setLinkExpired] = useState(false)
+  const sessionArrivedRef = useRef(false)
+
   const pwForm = useForm<{ password: string; password2: string }>({
     resolver: zodResolver(passwordSchema),
   })
@@ -69,6 +79,25 @@ export default function LoginParceiro() {
       if (event === 'PASSWORD_RECOVERY') setIsRecoveryFlow(true)
     })
     return () => subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    if (session) {
+      sessionArrivedRef.current = true
+      setAwaitingSession(false)
+    }
+  }, [session])
+
+  useEffect(() => {
+    if (!hasAuthToken || isRecoveryFlow) return
+    const timer = setTimeout(() => {
+      if (!sessionArrivedRef.current) {
+        setAwaitingSession(false)
+        setLinkExpired(true)
+      }
+    }, 8000)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps, react-x/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -170,8 +199,19 @@ export default function LoginParceiro() {
 
       <div className="relative z-10 h-full w-full grid place-items-center px-4">
 
+        {/* ── AGUARDANDO SESSÃO (link de convite recém-clicado) ── */}
+        {awaitingSession && (
+          <Card className="lp-animate w-full max-w-md border-white/5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]" style={{ background: 'rgba(20,21,28,0.85)' }}>
+            <CardContent className="pt-10 pb-8 text-center space-y-4">
+              <div className="login-logo flex justify-center mb-4"><TunerLogo style={{ width: 140, height: 'auto' }} /></div>
+              <div className="w-8 h-8 mx-auto border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              <p className="text-slate-400 text-sm">Entrando...</p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* ── RECOVERY: redefinir senha ── */}
-        {isRecoveryFlow && !recoveryDone && (
+        {!awaitingSession && isRecoveryFlow && !recoveryDone && (
           <Card className="lp-animate w-full max-w-md border-white/5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]" style={{ background: 'rgba(20,21,28,0.85)' }}>
             <CardHeader className="items-center text-center space-y-3 pb-5 pt-7">
               <div className="login-logo mb-1"><TunerLogo style={{ width: 156, height: 'auto' }} /></div>
@@ -213,7 +253,7 @@ export default function LoginParceiro() {
         )}
 
         {/* ── RECOVERY: senha salva ── */}
-        {isRecoveryFlow && recoveryDone && (
+        {!awaitingSession && isRecoveryFlow && recoveryDone && (
           <Card className="lp-animate w-full max-w-md border-white/5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]" style={{ background: 'rgba(20,21,28,0.85)' }}>
             <CardContent className="pt-10 pb-8 text-center space-y-4">
               <div className="login-logo flex justify-center mb-4"><TunerLogo style={{ width: 140, height: 'auto' }} /></div>
@@ -227,7 +267,7 @@ export default function LoginParceiro() {
         )}
 
         {/* ── LOGIN NORMAL ── */}
-        {matrixRejected ? (
+        {!awaitingSession && (matrixRejected ? (
           <div className="lp-animate w-full max-w-md">
             <Card
               className="border-red-900/40 backdrop-blur-xl shadow-[0_8px_40px_rgba(0,0,0,0.6)]"
@@ -313,6 +353,14 @@ export default function LoginParceiro() {
           </CardHeader>
 
           <CardContent>
+            {linkExpired && (
+              <div
+                className="rounded-xl px-4 py-3 text-sm text-amber-400 mb-4"
+                style={{ background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.2)' }}
+              >
+                Link expirado ou já utilizado. Faça login com seu e-mail e senha, ou peça um novo convite.
+              </div>
+            )}
             <form onSubmit={handleSubmit(onSubmit)} className="grid gap-5">
               <div className="grid gap-2">
                 <Label htmlFor="email" className="text-slate-300 text-xs font-medium uppercase tracking-wider">
@@ -414,7 +462,7 @@ export default function LoginParceiro() {
             </Link>
           </CardFooter>
         </Card>
-        )}
+        ))}
       </div>
     </section>
   )

@@ -1,4 +1,5 @@
 // supabase/functions/ecu-download-url/index.ts
+// Force redeploy: pick up R2_* secrets (read at module top-level).
 // Issues a short-lived R2 presigned URL ONLY after verifying:
 //   1. User is authenticated + active
 //   2. User has RLS-level access to the job that owns this file

@@ -592,13 +592,11 @@ export default function EcuJobDetail() {
                         disabled={f.r2_key.startsWith('mock/') || downloadFile.isPending}
                         className={f.r2_key.startsWith('mock/')
                           ? 'opacity-40 cursor-not-allowed'
-                          : f.scan_status === 'skipped'
-                          ? 'bg-amber-600 hover:bg-amber-500 text-white border-0 gap-1.5'
                           : 'bg-green-600 hover:bg-green-500 text-white border-0 gap-1.5'}
                         onClick={() => handleDownloadFile(f)}
                       >
                         <ShieldCheck size={14} />
-                        {f.scan_status === 'skipped' ? 'Liberado sem análise' : 'Baixar'}
+                        Baixar
                       </Button>
                     )}
                   </div>

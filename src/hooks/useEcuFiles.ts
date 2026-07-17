@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { uploadFileToR2 } from '@/lib/r2'
 import { useAuthStore } from '@/stores/auth'
+import { toast } from 'sonner'
 
 export function useUploadEcuFile() {
   const qc = useQueryClient()
@@ -141,6 +142,9 @@ export function useDownloadEcuFile() {
         a.click()
         document.body.removeChild(a)
       }
+    },
+    onError: (err: unknown) => {
+      toast.error(err instanceof Error ? err.message : 'Erro ao baixar arquivo')
     },
   })
 }

@@ -379,7 +379,7 @@ export default function AjudaPage() {
               <p className="text-xs" style={{ color: 'hsl(var(--pm-gray-500))' }}>suporte@inje.tech</p>
             </div>
           </a>
-          <a href="https://wa.me/5500000000000" target="_blank" rel="noreferrer"
+          <a href="https://wa.me/5545999986565" target="_blank" rel="noreferrer"
             className="flex items-center gap-3 rounded-xl p-4 transition-colors"
             style={{ background: 'hsl(var(--pm-gray-900))', border: '1px solid rgba(255,255,255,0.05)' }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(52,211,153,0.3)' }}
@@ -391,7 +391,7 @@ export default function AjudaPage() {
             </div>
             <div>
               <p className="text-sm font-semibold text-white">WhatsApp</p>
-              <p className="text-xs" style={{ color: 'hsl(var(--pm-gray-500))' }}>Atendimento em horário comercial</p>
+              <p className="text-xs" style={{ color: 'hsl(var(--pm-gray-500))' }}>(45) 99998-6565</p>
             </div>
           </a>
         </div>

@@ -1,4 +1,5 @@
 // supabase/functions/scan-ecu-file/index.ts
+// Force redeploy: pick up R2_* secrets (read at module top-level).
 // Triggered by Supabase Database Webhook on INSERT into ecu_job_files.
 // Setup: Dashboard → Database → Webhooks → New Webhook
 //   Table: ecu_job_files | Event: INSERT

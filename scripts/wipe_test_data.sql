@@ -136,16 +136,22 @@ DELETE FROM public.audit_events;
 DELETE FROM public.audit_logs;
 
 -- ────────────────────────────────────────────────────────────
--- FASE 3 — Meio da cadeia (ecu_jobs.matrix_payment_id ->
--- financeiro_pagamentos exige ecu_jobs apagado ANTES de
--- financeiro_pagamentos — ordem abaixo já respeita isso)
+-- FASE 3 — Meio da cadeia. Aperto duplo em torno de ecu_jobs:
+--   financial_entries.ecu_job_id -> ecu_jobs (sem cascade) exige
+--     financial_entries apagada ANTES de ecu_jobs (achado em produção
+--     — 1ª tentativa tinha isso na ordem errada: FK
+--     financial_entries_ecu_job_id_fkey, de 055_ecu_seller_commission.sql,
+--     ADD COLUMN na tabela financial_entries, não em ecu_jobs/commission_entries).
+--   ecu_jobs.matrix_payment_id -> financeiro_pagamentos (sem cascade)
+--     exige ecu_jobs apagado ANTES de financeiro_pagamentos.
+--   Ordem correta do trio: financial_entries → ecu_jobs → financeiro_pagamentos.
 -- ────────────────────────────────────────────────────────────
+DELETE FROM public.financial_entries;                -- ecu_job_id -> ecu_jobs: antes de ecu_jobs
 DELETE FROM public.support_tickets;                 -- ecu_job_id -> ecu_jobs: antes de ecu_jobs
 DELETE FROM public.ecu_jobs;                         -- antes de financeiro_pagamentos (matrix_payment_id)
 DELETE FROM public.orders;
 DELETE FROM public.pos_sales;
 DELETE FROM public.financeiro_pagamentos;
-DELETE FROM public.financial_entries;
 DELETE FROM public.monthly_closings;
 DELETE FROM public.unit_employees;
 DELETE FROM public.unit_custom_categories;

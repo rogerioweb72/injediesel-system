@@ -89,7 +89,7 @@ serve(async (req) => {
   const inviteRedirectPath = isMatrixRole ? '/appinjediesel' : '/login'
 
   const { data: invited, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
-    data: { role, unit_id: unit_id ?? null },
+    data: { role, unit_id: unit_id ?? null, must_set_password: true },
     redirectTo: `${siteUrl}${inviteRedirectPath}`,
   })
 

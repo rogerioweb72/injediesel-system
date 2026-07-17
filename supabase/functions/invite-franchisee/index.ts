@@ -29,7 +29,7 @@ serve(async (req) => {
   // Send invite via Supabase Auth
   const siteUrl = Deno.env.get('SITE_URL') ?? 'http://localhost:5173'
   const { data: invited, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
-    data: { unit_id, role },
+    data: { unit_id, role, must_set_password: true },
     redirectTo: `${siteUrl}/login`,
   })
 

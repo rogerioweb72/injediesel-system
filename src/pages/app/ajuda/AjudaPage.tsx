@@ -364,7 +364,7 @@ export default function AjudaPage() {
           Fale Conosco
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <a href="mailto:suporte@promax.com.br"
+          <a href="mailto:suporte@inje.tech"
             className="flex items-center gap-3 rounded-xl p-4 transition-colors"
             style={{ background: 'hsl(var(--pm-gray-900))', border: '1px solid rgba(255,255,255,0.05)' }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(96,165,250,0.3)' }}
@@ -376,7 +376,7 @@ export default function AjudaPage() {
             </div>
             <div>
               <p className="text-sm font-semibold text-white">E-mail de Suporte</p>
-              <p className="text-xs" style={{ color: 'hsl(var(--pm-gray-500))' }}>suporte@promax.com.br</p>
+              <p className="text-xs" style={{ color: 'hsl(var(--pm-gray-500))' }}>suporte@inje.tech</p>
             </div>
           </a>
           <a href="https://wa.me/5500000000000" target="_blank" rel="noreferrer"

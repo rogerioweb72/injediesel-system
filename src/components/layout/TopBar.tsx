@@ -18,6 +18,7 @@ import { usePageHeaderContext } from '@/contexts/PageHeaderContext'
 import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
 import { ProfileDialog } from '@/components/shared/ProfileDialog'
 import { useMustSetPassword } from '@/hooks/useMustSetPassword'
+import { useAuthStore } from '@/stores/auth'
 
 const EXACT_TITLES: Record<string, string> = {
   '/matriz/dashboard':        'Command Center',
@@ -72,8 +73,15 @@ export function TopBar({ sidebarExpanded, isMobile = false, onMobileMenuToggle }
   const [profileOpen, setProfileOpen] = useState(false)
   const [lancamentoOpen, setLancamentoOpen] = useState(false)
   const mustSetPassword = useMustSetPassword()
+  const hashRecoveryFlow = useAuthStore(s => s.hashRecoveryFlow)
   const { signOut: logout } = useSignOut()
   const { data: myUnit } = useMyUnit()
+
+  function handleProfileDialogChange(v: boolean) {
+    if (mustSetPassword) return
+    if (!v) useAuthStore.getState().setHashRecoveryFlow(false)
+    setProfileOpen(v)
+  }
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
@@ -268,9 +276,10 @@ export function TopBar({ sidebarExpanded, isMobile = false, onMobileMenuToggle }
       </div>
 
       <ProfileDialog
-        open={profileOpen || mustSetPassword}
-        onOpenChange={mustSetPassword ? () => {} : setProfileOpen}
+        open={profileOpen || mustSetPassword || hashRecoveryFlow}
+        onOpenChange={handleProfileDialogChange}
         forced={mustSetPassword}
+        recoveryMode={hashRecoveryFlow}
       />
     </header>
 

@@ -435,12 +435,6 @@ export default function EcuJobForm() {
   }, [lookupPlate, setValue, watch])
 
   async function onSubmit(values: FormValues) {
-    console.log('submitting job', {
-      values,
-      customer_id: values.customer_id,
-      hasClient,
-      ecuFiles,
-    })
     if (!ecuFiles.originalA) {
       toast.error('Selecione o arquivo original antes de enviar o formulário.')
       return
@@ -505,14 +499,7 @@ export default function EcuJobForm() {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function handleInvalidSubmit(errors: any) {
-    console.log('invalid submit', {
-      errors,
-      customer_id: watch('customer_id'),
-      hasClient,
-      ecuFiles,
-    })
+  function handleInvalidSubmit() {
     toast.error('Corrija os campos obrigatórios antes de enviar.')
     setFlashKey((k) => k + 1)
   }

@@ -25,11 +25,6 @@ const schema = z.object({
   password: z.string().min(6, 'Mínimo 6 caracteres'),
 })
 
-const passwordSchema = z.object({
-  password:  z.string().min(6, 'Mínimo 6 caracteres'),
-  password2: z.string().min(6, 'Mínimo 6 caracteres'),
-}).refine(d => d.password === d.password2, { message: 'As senhas não coincidem', path: ['password2'] })
-
 type FormData = z.infer<typeof schema>
 
 export default function Login() {
@@ -40,9 +35,6 @@ export default function Login() {
   // Capture hash before supabase-js clears it
   const isInviteFlow = useRef(window.location.hash.includes('type=invite')).current
   const hasAuthToken = useRef(window.location.hash.includes('access_token=')).current
-  const [isRecoveryFlow, setIsRecoveryFlow] = useState(
-    window.location.hash.includes('type=recovery')
-  )
 
   useEffect(() => {
     if (isInviteFlow) useAuthStore.getState().setHashInviteFlow(true)
@@ -60,20 +52,14 @@ export default function Login() {
   const [forgotSent, setForgotSent] = useState(false)
   const [forgotLoading, setForgotLoading] = useState(false)
 
-  // Recovery (reset password)
-  const [recoveryDone, setRecoveryDone] = useState(false)
-  const [setPassError, setSetPassError] = useState<string | null>(null)
-  const [settingPass, setSettingPass] = useState(false)
-  const pwForm = useForm<{ password: string; password2: string }>({
-    resolver: zodResolver(passwordSchema),
-  })
-
   // A página é lazy-loaded — o hash do link de convite/recovery pode já estar sendo
   // processado pelo useAuth() do RootLayout antes deste componente montar. Enquanto
   // isso, sem esse estado, o form de login normal aparecia na tela até o usuário dar
   // F5 manualmente. Aqui seguramos a UI em "Entrando..." até a sessão chegar (ou até
-  // 8s, quando desistimos e mostramos o form com aviso de link expirado).
-  const [awaitingSession, setAwaitingSession] = useState(hasAuthToken && !isRecoveryFlow)
+  // 8s, quando desistimos e mostramos o form com aviso de link expirado). Recovery
+  // (type=recovery) segue o mesmo caminho — a troca de senha acontece depois, no
+  // dashboard, via ProfileDialog em modo recovery (useAuthStore.hashRecoveryFlow).
+  const [awaitingSession, setAwaitingSession] = useState(hasAuthToken)
   const [linkExpired, setLinkExpired] = useState(false)
   const sessionArrivedRef = useRef(false)
 
@@ -85,7 +71,7 @@ export default function Login() {
   }, [session])
 
   useEffect(() => {
-    if (!hasAuthToken || isRecoveryFlow) return
+    if (!hasAuthToken) return
     const timer = setTimeout(() => {
       if (!sessionArrivedRef.current) {
         setAwaitingSession(false)
@@ -112,28 +98,6 @@ export default function Login() {
     }
   }
 
-  async function handleSetPassword(data: { password: string; password2: string }) {
-    setSetPassError(null)
-    setSettingPass(true)
-    try {
-      const { error } = await supabase.auth.updateUser({ password: data.password })
-      if (error) throw error
-      setRecoveryDone(true)
-    } catch (err) {
-      setSetPassError(err instanceof Error ? err.message : 'Erro ao definir senha.')
-    } finally {
-      setSettingPass(false)
-    }
-  }
-
-  // Detecta PASSWORD_RECOVERY via evento Supabase (hash pode ser limpo antes do render)
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') setIsRecoveryFlow(true)
-    })
-    return () => subscription.unsubscribe()
-  }, [])
-
   const explicitFrom = (location.state as { from?: { pathname: string } })?.from?.pathname
 
   // Session exists but profile didn't load → show error
@@ -148,7 +112,6 @@ export default function Login() {
   useEffect(() => {
     if (!session || !profile) return
     if (rejectingRef.current) return
-    if (isRecoveryFlow && !recoveryDone) return
 
     if (FRANCHISE_ROLES.includes(profile.role)) {
       rejectingRef.current = true
@@ -214,64 +177,8 @@ export default function Login() {
           </Card>
         )}
 
-        {/* ── RECOVERY: definir nova senha ── */}
-        {!awaitingSession && isRecoveryFlow && !recoveryDone && (
-          <Card className="lm-animate w-full max-w-md border-white/5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]" style={{ background: 'rgba(20,21,28,0.85)' }}>
-            <CardHeader className="items-center text-center space-y-3 pb-5 pt-7">
-              <div className="login-logo mb-1"><TunerLogo style={{ width: 280, height: 'auto' }} /></div>
-              <div>
-                <CardTitle className="text-xl font-bold text-white tracking-tight">Redefinir Senha</CardTitle>
-                <CardDescription className="text-slate-400 text-sm mt-1">Crie uma nova senha para sua conta.</CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={pwForm.handleSubmit(handleSetPassword)} className="grid gap-5">
-                <div className="grid gap-2">
-                  <Label className="text-slate-300 text-xs font-medium uppercase tracking-wider">Nova senha</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
-                    <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...pwForm.register('password')}
-                      className="pl-10 pr-10 h-11 border-white/5 text-white placeholder:text-slate-600 rounded-xl" style={{ background: '#0B0C10' }} />
-                    <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-md text-slate-500 hover:text-slate-300 transition-colors" onClick={() => setShowPassword(v => !v)}>
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                  {pwForm.formState.errors.password && <p className="text-xs text-red-400">{pwForm.formState.errors.password.message}</p>}
-                </div>
-                <div className="grid gap-2">
-                  <Label className="text-slate-300 text-xs font-medium uppercase tracking-wider">Confirmar senha</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
-                    <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...pwForm.register('password2')}
-                      className="pl-10 h-11 border-white/5 text-white placeholder:text-slate-600 rounded-xl" style={{ background: '#0B0C10' }} />
-                  </div>
-                  {pwForm.formState.errors.password2 && <p className="text-xs text-red-400">{pwForm.formState.errors.password2.message}</p>}
-                </div>
-                {setPassError && <div className="rounded-xl px-4 py-3 text-sm text-red-400" style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)' }}>{setPassError}</div>}
-                <Button type="submit" disabled={settingPass} className="w-full h-11 rounded-xl text-white font-bold border-0" style={{ background: 'var(--pm-accent-gradient)' }}>
-                  {settingPass ? 'Salvando...' : 'Salvar nova senha'}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* ── RECOVERY: senha salva ── */}
-        {!awaitingSession && isRecoveryFlow && recoveryDone && (
-          <Card className="lm-animate w-full max-w-md border-white/5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]" style={{ background: 'rgba(20,21,28,0.85)' }}>
-            <CardContent className="pt-10 pb-8 text-center space-y-4">
-              <div className="login-logo flex justify-center mb-4"><TunerLogo style={{ width: 280, height: 'auto' }} /></div>
-              <p className="text-green-400 font-bold text-lg">Senha redefinida com sucesso!</p>
-              <Button className="w-full h-11 rounded-xl text-white font-bold border-0" style={{ background: 'var(--pm-accent-gradient)' }}
-                onClick={() => { window.location.href = '/appinjediesel' }}>
-                Fazer login <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
         {/* ── ESQUECI SENHA ── */}
-        {!awaitingSession && !isRecoveryFlow && forgotMode && (
+        {!awaitingSession && forgotMode && (
           <Card className="lm-animate w-full max-w-md border-white/5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]" style={{ background: 'rgba(20,21,28,0.85)' }}>
             <CardHeader className="items-center text-center space-y-3 pb-5 pt-7">
               <div className="login-logo mb-1"><TunerLogo style={{ width: 280, height: 'auto' }} /></div>
@@ -308,7 +215,7 @@ export default function Login() {
           </Card>
         )}
 
-        {!awaitingSession && !isRecoveryFlow && !forgotMode && (rejected ? (
+        {!awaitingSession && !forgotMode && (rejected ? (
           /* ── ACESSO NEGADO ── */
           <div className="lm-animate w-full max-w-md">
             <Card

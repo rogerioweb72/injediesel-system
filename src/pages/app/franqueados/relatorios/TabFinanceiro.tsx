@@ -50,6 +50,12 @@ export function TabFinanceiro({ unitId, period, months }: { unitId: string; peri
     </div>
   )
 
+  if (ecuJobs.length === 0 && orders.length === 0 && entries.length === 0 && comms.length === 0) return (
+    <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-8 text-center">
+      <p className="text-sm text-zinc-500">Ainda sem dados.</p>
+    </div>
+  )
+
   return (
     <div className="space-y-5">
       {/* Receita */}

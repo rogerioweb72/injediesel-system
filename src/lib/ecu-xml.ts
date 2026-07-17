@@ -65,7 +65,7 @@ function triggerDownload(content: string, filename: string, mime = 'application/
 export function downloadEcuXml(rows: EcuCatalogRow[], categories: EcuCategory[]) {
   const xml = buildEcuXml(rows, categories)
   const date = new Date().toISOString().slice(0, 10)
-  triggerDownload(xml, `promax-catalogo-ecu-${date}.xml`)
+  triggerDownload(xml, `injediesel-catalogo-ecu-${date}.xml`)
 }
 
 export function downloadEcuXmlTemplate() {
@@ -132,7 +132,7 @@ export function downloadEcuXmlTemplate() {
     </registro>
   </categoria>
 </catalogo-ecu>`
-  triggerDownload(xml, 'promax-modelo-importacao-ecu.xml')
+  triggerDownload(xml, 'injediesel-modelo-importacao-ecu.xml')
 }
 
 // ─── Shared ParseResult ────────────────────────────────────────────────────────
@@ -172,7 +172,7 @@ export function buildEcuCsv(rows: EcuCatalogRow[]): string {
 
 export function downloadEcuCsv(rows: EcuCatalogRow[]) {
   const date = new Date().toISOString().slice(0, 10)
-  triggerDownload(buildEcuCsv(rows), `promax-catalogo-ecu-${date}.csv`, 'text/csv; charset=utf-8')
+  triggerDownload(buildEcuCsv(rows), `injediesel-catalogo-ecu-${date}.csv`, 'text/csv; charset=utf-8')
 }
 
 export function downloadEcuCsvTemplate() {
@@ -182,7 +182,7 @@ export function downloadEcuCsvTemplate() {
     ',Pickups,Amarok,Volkswagen,3.0 V6 TDI 224cv,2018/2023,KESS V2,OBD,,+66CV +14KG,224,290,,,780,1050,Atenção: cabo especial 226,true,true,',
     ',Máquinas,ESCAVADEIRA,Caterpillar,CATERPILLAR 315D,,KESS,FAMILIA 358(ID),226/246,,,,,,3500,,Verificar versão de firmware,true,true,',
   ]
-  triggerDownload([header, ...sample].join('\n'), 'promax-modelo-importacao-ecu.csv', 'text/csv; charset=utf-8')
+  triggerDownload([header, ...sample].join('\n'), 'injediesel-modelo-importacao-ecu.csv', 'text/csv; charset=utf-8')
 }
 
 export function parseEcuCsv(csvText: string): ParseResult {

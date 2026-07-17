@@ -39,6 +39,11 @@ export interface ServiceTypeMetric {
   count: number
 }
 
+export interface RevenuePoint {
+  name: string
+  value: number
+}
+
 export interface DashboardMetrics {
   totalJobs: number
   totalRevenue: number
@@ -51,6 +56,7 @@ export interface DashboardMetrics {
   bottomUnits: UnitMetric[]
   serviceTypeRanking: ServiceTypeMetric[]
   statusVolume: { status: string; count: number }[]
+  revenueEvolution: RevenuePoint[]
 }
 
 function periodStart(period: DashboardPeriod): Date | null {
@@ -149,7 +155,20 @@ export function useMatrixDashboard(
 
       const pendingJobs = allJobs.filter(j => j.status === 'recebido').length
 
-      return { totalJobs, totalRevenue, todayJobs, weekJobs, activeUnits, stateRanking, topUnits, bottomUnits, serviceTypeRanking, statusVolume, pendingJobs }
+      // Revenue evolution — real dado, agrupado por dia dentro do período selecionado
+      const dayMap = new Map<string, number>()
+      for (const j of activeJobs) {
+        const key = j.created_at.slice(0, 10) // YYYY-MM-DD
+        dayMap.set(key, (dayMap.get(key) ?? 0) + (j.amount_charged_to_customer ?? 0))
+      }
+      const revenueEvolution: RevenuePoint[] = [...dayMap.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, value]) => ({
+          name: new Date(`${key}T00:00:00`).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+          value,
+        }))
+
+      return { totalJobs, totalRevenue, todayJobs, weekJobs, activeUnits, stateRanking, topUnits, bottomUnits, serviceTypeRanking, statusVolume, pendingJobs, revenueEvolution }
     },
   })
 }

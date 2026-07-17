@@ -30,13 +30,6 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
-const passwordSchema = z.object({
-  password:  z.string().min(6, 'Mínimo 6 caracteres'),
-  password2: z.string().min(6, 'Mínimo 6 caracteres'),
-}).refine(d => d.password === d.password2, {
-  message: 'As senhas não coincidem', path: ['password2'],
-})
-
 export default function LoginParceiro() {
   const { session, profile } = useAuthStore()
   useProfile()
@@ -46,9 +39,6 @@ export default function LoginParceiro() {
   // Capture hash before supabase-js clears it
   const isInviteFlow = useRef(window.location.hash.includes('type=invite')).current
   const hasAuthToken = useRef(window.location.hash.includes('access_token=')).current
-  const [isRecoveryFlow, setIsRecoveryFlow] = useState(
-    window.location.hash.includes('type=recovery')
-  )
 
   useEffect(() => {
     if (isInviteFlow) useAuthStore.getState().setHashInviteFlow(true)
@@ -57,29 +47,23 @@ export default function LoginParceiro() {
   const [showPassword, setShowPassword] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
   const [matrixRejected, setMatrixRejected] = useState(false)
-  const [recoveryDone, setRecoveryDone] = useState(false)
-  const [setPassError, setSetPassError] = useState<string | null>(null)
-  const [settingPass, setSettingPass]   = useState(false)
+
+  // Forgot password
+  const [forgotMode, setForgotMode] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotSent, setForgotSent] = useState(false)
+  const [forgotLoading, setForgotLoading] = useState(false)
 
   // A página é lazy-loaded — o hash do link de convite/recovery pode já estar sendo
   // processado pelo useAuth() do RootLayout antes deste componente montar. Enquanto
   // isso, sem esse estado, o form de login normal aparecia na tela até o usuário dar
   // F5 manualmente. Aqui seguramos a UI em "Entrando..." até a sessão chegar (ou até
-  // 8s, quando desistimos e mostramos o form com aviso de link expirado).
-  const [awaitingSession, setAwaitingSession] = useState(hasAuthToken && !isRecoveryFlow)
+  // 8s, quando desistimos e mostramos o form com aviso de link expirado). Recovery
+  // (type=recovery) segue o mesmo caminho — a troca de senha acontece depois, no
+  // dashboard, via ProfileDialog em modo recovery (useAuthStore.hashRecoveryFlow).
+  const [awaitingSession, setAwaitingSession] = useState(hasAuthToken)
   const [linkExpired, setLinkExpired] = useState(false)
   const sessionArrivedRef = useRef(false)
-
-  const pwForm = useForm<{ password: string; password2: string }>({
-    resolver: zodResolver(passwordSchema),
-  })
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') setIsRecoveryFlow(true)
-    })
-    return () => subscription.unsubscribe()
-  }, [])
 
   useEffect(() => {
     if (session) {
@@ -89,7 +73,7 @@ export default function LoginParceiro() {
   }, [session])
 
   useEffect(() => {
-    if (!hasAuthToken || isRecoveryFlow) return
+    if (!hasAuthToken) return
     const timer = setTimeout(() => {
       if (!sessionArrivedRef.current) {
         setAwaitingSession(false)
@@ -100,9 +84,24 @@ export default function LoginParceiro() {
     // eslint-disable-next-line react-hooks/exhaustive-deps, react-x/exhaustive-deps
   }, [])
 
+  async function handleForgotPassword() {
+    if (!forgotEmail) return
+    setForgotLoading(true)
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: `${window.location.origin}/login`,
+      })
+      if (error) throw error
+      setForgotSent(true)
+    } catch (err) {
+      setServerError(translateError(err))
+    } finally {
+      setForgotLoading(false)
+    }
+  }
+
   useEffect(() => {
     if (!session || !profile) return
-    if (isRecoveryFlow && !recoveryDone) return
 
     if (!FRANCHISE_ROLES.includes(profile.role)) {
       supabase.auth.signOut()
@@ -122,20 +121,6 @@ export default function LoginParceiro() {
     const agentSlug = toSlug(profile.name ?? profile.email)
     navigate(`/${unitSlug}/${agentSlug}/dashboard`, { replace: true })
   }, [session, profile, myUnit, unitLoading, navigate])
-
-  async function handleSetPassword(data: { password: string; password2: string }) {
-    setSetPassError(null)
-    setSettingPass(true)
-    try {
-      const { error } = await supabase.auth.updateUser({ password: data.password })
-      if (error) throw error
-      setRecoveryDone(true)
-    } catch (err) {
-      setSetPassError(translateError(err))
-    } finally {
-      setSettingPass(false)
-    }
-  }
 
   const { signIn } = useSignIn()
   const { isThrottled, cooldownLeft } = useLoginThrottle()
@@ -210,64 +195,46 @@ export default function LoginParceiro() {
           </Card>
         )}
 
-        {/* ── RECOVERY: redefinir senha ── */}
-        {!awaitingSession && isRecoveryFlow && !recoveryDone && (
+        {/* ── ESQUECI SENHA ── */}
+        {!awaitingSession && forgotMode && (
           <Card className="lp-animate w-full max-w-md border-white/5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]" style={{ background: 'rgba(20,21,28,0.85)' }}>
             <CardHeader className="items-center text-center space-y-3 pb-5 pt-7">
               <div className="login-logo mb-1"><TunerLogo style={{ width: 156, height: 'auto' }} /></div>
-              <div>
-                <CardTitle className="text-xl font-bold text-white tracking-tight">Redefinir Senha</CardTitle>
-                <CardDescription className="text-slate-400 text-sm mt-1">Crie uma nova senha para sua conta.</CardDescription>
-              </div>
+              <CardTitle className="text-xl font-bold text-white tracking-tight">Recuperar Senha</CardTitle>
+              <CardDescription className="text-slate-400 text-sm">Digite seu e-mail para receber o link de redefinição.</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={pwForm.handleSubmit(handleSetPassword)} className="grid gap-5">
-                <div className="grid gap-2">
-                  <Label className="text-slate-300 text-xs font-medium uppercase tracking-wider">Nova senha</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
-                    <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...pwForm.register('password')}
-                      className="pl-10 pr-10 h-11 border-white/5 text-white placeholder:text-slate-600 rounded-xl" style={{ background: '#0B0C10' }} />
-                    <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-md text-slate-500 hover:text-slate-300 transition-colors" onClick={() => setShowPassword(v => !v)}>
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                  {pwForm.formState.errors.password && <p className="text-xs text-red-400">{pwForm.formState.errors.password.message}</p>}
+              {forgotSent ? (
+                <div className="text-center space-y-4 py-4">
+                  <p className="text-green-400 font-semibold">E-mail enviado!</p>
+                  <p className="text-slate-400 text-sm">Verifique sua caixa de entrada e clique no link recebido.</p>
+                  <Button variant="ghost" className="text-slate-400 hover:text-white" onClick={() => { setForgotMode(false); setForgotSent(false) }}>← Voltar</Button>
                 </div>
-                <div className="grid gap-2">
-                  <Label className="text-slate-300 text-xs font-medium uppercase tracking-wider">Confirmar senha</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
-                    <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...pwForm.register('password2')}
-                      className="pl-10 h-11 border-white/5 text-white placeholder:text-slate-600 rounded-xl" style={{ background: '#0B0C10' }} />
+              ) : (
+                <div className="grid gap-5">
+                  <div className="grid gap-2">
+                    <Label className="text-slate-300 text-xs font-medium uppercase tracking-wider">E-mail</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+                      <Input type="email" placeholder="sua-unidade@injediesel.com" value={forgotEmail}
+                        onChange={e => setForgotEmail(e.target.value)}
+                        className="pl-10 h-11 border-white/5 text-white placeholder:text-slate-600 rounded-xl" style={{ background: '#0B0C10' }} />
+                    </div>
                   </div>
-                  {pwForm.formState.errors.password2 && <p className="text-xs text-red-400">{pwForm.formState.errors.password2.message}</p>}
+                  {serverError && <div className="rounded-xl px-4 py-3 text-sm text-red-400" style={{ background: 'rgba(177,40,37,0.08)', border: '1px solid rgba(177,40,37,0.2)' }}>{serverError}</div>}
+                  <Button disabled={forgotLoading || !forgotEmail} onClick={handleForgotPassword}
+                    className="w-full h-11 rounded-xl text-white font-bold border-0" style={{ background: 'var(--pm-accent-gradient)' }}>
+                    {forgotLoading ? 'Enviando...' : 'Enviar link de recuperação'}
+                  </Button>
+                  <Button variant="ghost" className="text-slate-400 hover:text-white text-sm" onClick={() => { setForgotMode(false); setServerError(null) }}>← Voltar ao login</Button>
                 </div>
-                {setPassError && <div className="rounded-xl px-4 py-3 text-sm text-red-400" style={{ background: 'rgba(177,40,37,0.08)', border: '1px solid rgba(177,40,37,0.2)' }}>{setPassError}</div>}
-                <Button type="submit" disabled={settingPass} className="w-full h-11 rounded-xl text-white font-bold border-0" style={{ background: 'var(--pm-accent-gradient)' }}>
-                  {settingPass ? 'Salvando...' : 'Salvar nova senha'}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* ── RECOVERY: senha salva ── */}
-        {!awaitingSession && isRecoveryFlow && recoveryDone && (
-          <Card className="lp-animate w-full max-w-md border-white/5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]" style={{ background: 'rgba(20,21,28,0.85)' }}>
-            <CardContent className="pt-10 pb-8 text-center space-y-4">
-              <div className="login-logo flex justify-center mb-4"><TunerLogo style={{ width: 140, height: 'auto' }} /></div>
-              <p className="text-green-400 font-bold text-lg">Senha redefinida com sucesso!</p>
-              <Button className="w-full h-11 rounded-xl text-white font-bold border-0" style={{ background: 'var(--pm-accent-gradient)' }}
-                onClick={() => { window.location.href = '/login' }}>
-                Fazer login <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              )}
             </CardContent>
           </Card>
         )}
 
         {/* ── LOGIN NORMAL ── */}
-        {!awaitingSession && (matrixRejected ? (
+        {!awaitingSession && !forgotMode && (matrixRejected ? (
           <div className="lp-animate w-full max-w-md">
             <Card
               className="border-red-900/40 backdrop-blur-xl shadow-[0_8px_40px_rgba(0,0,0,0.6)]"
@@ -414,7 +381,8 @@ export default function LoginParceiro() {
                   />
                   <span className="text-slate-500 text-[11px]">Lembrar dados</span>
                 </label>
-                <button type="button" className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors">
+                <button type="button" className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors"
+                  onClick={() => { setForgotMode(true); setServerError(null) }}>
                   Esqueci minha senha
                 </button>
               </div>

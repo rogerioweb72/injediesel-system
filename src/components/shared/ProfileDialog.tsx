@@ -15,9 +15,10 @@ interface ProfileDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   forced?: boolean
+  recoveryMode?: boolean
 }
 
-export function ProfileDialog({ open, onOpenChange, forced = false }: ProfileDialogProps) {
+export function ProfileDialog({ open, onOpenChange, forced = false, recoveryMode = false }: ProfileDialogProps) {
   const { profile } = useProfile()
   const queryClient = useQueryClient()
   const [name, setName] = useState(profile?.name ?? '')
@@ -34,7 +35,7 @@ export function ProfileDialog({ open, onOpenChange, forced = false }: ProfileDia
   }
 
   async function handleSave() {
-    if (forced) {
+    if (forced || recoveryMode) {
       if (!password || password.length < 6) {
         toast.error('Senha deve ter pelo menos 6 caracteres')
         return
@@ -71,9 +72,14 @@ export function ProfileDialog({ open, onOpenChange, forced = false }: ProfileDia
         )
         if (error) throw error
         if (forced) useAuthStore.getState().setHashInviteFlow(false)
+        if (recoveryMode) useAuthStore.getState().setHashRecoveryFlow(false)
       }
 
-      toast.success(forced ? 'Senha definida com sucesso' : 'Perfil atualizado com sucesso')
+      toast.success(
+        forced ? 'Senha definida com sucesso'
+          : recoveryMode ? 'Senha redefinida com sucesso'
+          : 'Perfil atualizado com sucesso'
+      )
       handleOpenChange(false)
     } catch (err: unknown) {
       toast.error(translateError(err))
@@ -100,23 +106,27 @@ export function ProfileDialog({ open, onOpenChange, forced = false }: ProfileDia
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Meu Perfil</DialogTitle>
+          <DialogTitle>{recoveryMode ? 'Redefinir senha' : 'Meu Perfil'}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          <div className="space-y-1">
-            <Label>Nome completo</Label>
-            <Input
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Seu nome"
-            />
-          </div>
+          {!recoveryMode && (
+            <div className="space-y-1">
+              <Label>Nome completo</Label>
+              <Input
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="Seu nome"
+              />
+            </div>
+          )}
 
-          <div className="border-t border-white/[0.06] pt-4 space-y-3">
-            <p className="text-xs text-muted-foreground">
-              Deixe em branco para manter a senha atual
-            </p>
+          <div className={recoveryMode ? 'space-y-3' : 'border-t border-white/[0.06] pt-4 space-y-3'}>
+            {!recoveryMode && (
+              <p className="text-xs text-muted-foreground">
+                Deixe em branco para manter a senha atual
+              </p>
+            )}
             <div className="space-y-1">
               <Label>Nova senha</Label>
               <Input
@@ -125,6 +135,7 @@ export function ProfileDialog({ open, onOpenChange, forced = false }: ProfileDia
                 onChange={e => setPassword(e.target.value)}
                 placeholder="Mínimo 6 caracteres"
                 autoComplete="new-password"
+                autoFocus={recoveryMode}
               />
             </div>
             <div className="space-y-1">
@@ -146,10 +157,10 @@ export function ProfileDialog({ open, onOpenChange, forced = false }: ProfileDia
           </Button>
           <Button
             onClick={handleSave}
-            disabled={saving || !name}
+            disabled={saving || (recoveryMode ? (!password || !confirmPassword) : !name)}
             style={{ background: 'var(--pm-accent-gradient)' }}
           >
-            {saving ? 'Salvando...' : 'Salvar'}
+            {saving ? 'Salvando...' : recoveryMode ? 'Salvar nova senha' : 'Salvar'}
           </Button>
         </DialogFooter>
       </DialogContent>

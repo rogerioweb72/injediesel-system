@@ -49,8 +49,12 @@ export function useAuth() {
     // Using both simultaneously causes a double fetchProfile race that flickers loading=true/false
     // and makes AuthGuard redirect to /login mid-navigation.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
         if (cancelledRef.current) return
+        // Subscrito no root (não lazy) — chega antes de qualquer página lazy montar,
+        // evitando a corrida em que o hash type=recovery já foi processado/limpo
+        // pelo supabase-js antes da página de login conseguir ler window.location.hash.
+        if (event === 'PASSWORD_RECOVERY') useAuthStore.getState().setHashRecoveryFlow(true)
         setSession(session)
         if (session) {
           // Skip if profile is already loaded (mock mode pre-populates, or token refresh events)

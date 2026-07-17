@@ -14,16 +14,6 @@ import { useMatrixDashboard, type DashboardPeriod } from '@/hooks/useMatrixDashb
 import { useNewFranchiseJobsCount } from '@/hooks/useNotifications'
 import { formatCurrency } from '@/lib/utils'
 
-// Monthly revenue evolution — swap this array for a real API hook when available
-const MOCK_REVENUE_EVOLUTION = [
-  { name: 'Jan', value: 85000 },
-  { name: 'Fev', value: 92000 },
-  { name: 'Mar', value: 110000 },
-  { name: 'Abr', value: 105000 },
-  { name: 'Mai', value: 125000 },
-  { name: 'Jun', value: 144391 },
-]
-
 const PIE_COLORS = ['#2563EB', '#3B82F6', '#60A5FA', '#93C5FD', '#10B981', '#9CA3AF', '#F59E0B', '#A78BFA']
 
 const PERIODS: { value: DashboardPeriod; label: string }[] = [
@@ -144,33 +134,39 @@ export default function Dashboard() {
       {/* Charts row */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 mb-8">
 
-        {/* Area chart — revenue evolution (swap MOCK_REVENUE_EVOLUTION for API data) */}
+        {/* Area chart — revenue evolution, dado real por dia no período selecionado */}
         <div className="xl:col-span-2 bg-[#16171E] border border-gray-800/70 rounded-2xl p-6">
           <div className="flex justify-between items-center mb-6">
             <div>
               <h3 className="text-lg font-semibold text-white">Evolução de Receita</h3>
-              <p className="text-sm text-gray-500">Últimos 6 meses</p>
+              <p className="text-sm text-gray-500">Por dia — {PERIODS.find(p => p.value === period)?.label}</p>
             </div>
             <button className="p-2 bg-[#1C1D26] hover:bg-gray-700 rounded-lg border border-gray-700/50 transition-colors">
               <Download size={15} className="text-gray-400" />
             </button>
           </div>
-          <div className="h-[260px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={MOCK_REVENUE_EVOLUTION} margin={{ top: 10, right: 8, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="gradRevenue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#2563EB" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#2A2A35" />
-                <XAxis dataKey="name" stroke="#6B7280" tick={{ fill: '#6B7280', fontSize: 12 }} axisLine={false} tickLine={false} />
-                <YAxis stroke="#6B7280" tick={{ fill: '#6B7280', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={v => `R$${v / 1000}k`} />
-                <Tooltip content={<AreaTooltip />} />
-                <Area type="monotone" dataKey="value" stroke="#2563EB" strokeWidth={2.5} fillOpacity={1} fill="url(#gradRevenue)" />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="h-[260px] flex items-center justify-center">
+            {isLoading ? (
+              <div className="w-full h-full rounded bg-gray-800/40 animate-pulse" />
+            ) : (metrics?.revenueEvolution ?? []).length === 0 ? (
+              <p className="text-sm text-gray-500">Ainda sem dados.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={metrics!.revenueEvolution} margin={{ top: 10, right: 8, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="gradRevenue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor="#2563EB" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#2A2A35" />
+                  <XAxis dataKey="name" stroke="#6B7280" tick={{ fill: '#6B7280', fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <YAxis stroke="#6B7280" tick={{ fill: '#6B7280', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={v => `R$${v / 1000}k`} />
+                  <Tooltip content={<AreaTooltip />} />
+                  <Area type="monotone" dataKey="value" stroke="#2563EB" strokeWidth={2.5} fillOpacity={1} fill="url(#gradRevenue)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 

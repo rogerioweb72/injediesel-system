@@ -3,7 +3,9 @@
 // Issues a short-lived R2 presigned URL ONLY after verifying:
 //   1. User is authenticated + active
 //   2. User has RLS-level access to the job that owns this file
-//   3. scan_status = 'clean' (backend enforcement — UI gate is not enough)
+//   3. scan_status = 'clean' or 'skipped' (backend enforcement — UI gate is not enough)
+//      'skipped' = no antivirus verdict (VIRUSTOTAL_API_KEY absent — test mode),
+//      but still passed the extension/magic-byte gate in scan-ecu-file.
 //   4. sha256_hex is set (scan fully completed, not just started)
 // Download is logged to audit_events for traceability.
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
@@ -68,8 +70,9 @@ serve(async (req) => {
     )
   }
 
-  // scan_status must be 'clean' at this point
-  if (file.scan_status !== 'clean') {
+  // scan_status must be 'clean' (verified by antivirus) or 'skipped' (no antivirus
+  // configured — test mode; still passed extension/magic-byte checks) at this point.
+  if (file.scan_status !== 'clean' && file.scan_status !== 'skipped') {
     return new Response(
       JSON.stringify({ error: 'Arquivo não aprovado para download' }),
       { status: 403, headers: CORS },

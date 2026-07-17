@@ -638,7 +638,7 @@ export default function PdvPage() {
                 </div>
                 <div className="flex flex-col items-end gap-2 shrink-0">
                   <span className="font-semibold text-white text-sm">
-                    {Math.abs(p.ecu_jobs?.amount_charged_to_customer ?? p.amount).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    {Math.abs(p.amount).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                   </span>
                   <button onClick={() => setSelectedEcu(p)}
                     className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium"

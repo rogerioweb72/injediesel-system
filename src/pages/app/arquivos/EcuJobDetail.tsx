@@ -342,10 +342,11 @@ export default function EcuJobDetail() {
 
   async function handleSendToFinance() {
     if (!job) return
+    if (!job.amount_charged_by_matrix) return
     await sendToFinance.mutateAsync({
       jobId: job.id,
       unitId: job.unit_id,
-      amount: job.amount_charged_to_customer ?? 0,
+      amount: job.amount_charged_by_matrix,
       serviceType: job.service_type,
       customerName: job.customers?.name ?? 'Cliente',
     })
@@ -741,7 +742,7 @@ export default function EcuJobDetail() {
               )}
 
               {/* Botão Enviar para o Financeiro — qualquer status, enquanto não enviado */}
-              {!financialEntry && job.amount_charged_to_customer ? (
+              {!financialEntry && job.amount_charged_by_matrix ? (
                 <button
                   onClick={handleSendToFinance}
                   disabled={sendToFinance.isPending}
@@ -755,9 +756,9 @@ export default function EcuJobDetail() {
                   )}
                   Enviar para o Financeiro
                 </button>
-              ) : !financialEntry && !job.amount_charged_to_customer ? (
+              ) : !financialEntry && !job.amount_charged_by_matrix ? (
                 <p className="text-xs text-center" style={{ color: 'hsl(var(--pm-gray-500))' }}>
-                  Preencha o valor cobrado do cliente para enviar ao financeiro.
+                  Informe o valor cobrado pela matriz antes de enviar ao financeiro.
                 </p>
               ) : null}
             </div>

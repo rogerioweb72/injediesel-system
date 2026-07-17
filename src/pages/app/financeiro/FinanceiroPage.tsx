@@ -411,7 +411,7 @@ export default function FinanceiroPage() {
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-2 shrink-0">
-                      <span className="font-semibold text-white">{fmtBRL(p.ecu_jobs?.amount_charged_to_customer ?? p.amount)}</span>
+                      <span className="font-semibold text-white">{fmtBRL(p.amount)}</span>
                       <button onClick={() => setSelected(p)}
                         className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium"
                         style={{ background: '#2563EB', color: '#fff' }}>

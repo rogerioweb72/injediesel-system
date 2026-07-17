@@ -30,7 +30,7 @@ export function EcuPaymentSheet({ payment, maxDiscountPct, onClose }: Props) {
   const [discountPct, setDiscountPct] = useState(0)
   const registerPayment = useRegisterPayment()
 
-  const grossAmount = payment.ecu_jobs?.amount_charged_to_customer ?? payment.amount
+  const grossAmount = payment.amount
   const discountAmount = Number((grossAmount * (discountPct / 100)).toFixed(2))
   const netAmount = Number((grossAmount - discountAmount).toFixed(2))
   const discountExceeded = discountPct > maxDiscountPct

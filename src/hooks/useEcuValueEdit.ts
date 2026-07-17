@@ -36,8 +36,8 @@ export function usePendingValueEdits() {
         .select(`
           id, arquivo_id, valor_anterior, valor_novo, motivo, status, solicitado_em,
           aprovado_em, motivo_recusa,
-          solicitado_profile:profiles!solicitado_por(name),
-          ecu_jobs(id, service_type, franchise_units(name, city, state))
+          solicitado_profile:profiles!historico_edicoes_valor_solicitado_por_fkey(name),
+          ecu_jobs!historico_edicoes_valor_arquivo_id_fkey(id, service_type, franchise_units(name, city, state))
         `)
         .eq('status', 'AGUARDANDO_APROVACAO')
         .order('solicitado_em', { ascending: true })
@@ -60,8 +60,8 @@ export function useJobValueEditHistory(jobId: string) {
         .select(`
           id, valor_anterior, valor_novo, motivo, status, solicitado_em,
           aprovado_em, motivo_recusa,
-          solicitado_profile:profiles!solicitado_por(name),
-          aprovado_profile:profiles!aprovado_por(name)
+          solicitado_profile:profiles!historico_edicoes_valor_solicitado_por_fkey(name),
+          aprovado_profile:profiles!historico_edicoes_valor_aprovado_por_fkey(name)
         `)
         .eq('arquivo_id', jobId)
         .order('solicitado_em', { ascending: false })

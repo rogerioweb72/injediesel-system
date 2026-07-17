@@ -17,6 +17,7 @@ import { TunerLogo } from '@/components/branding/TunerLogo'
 import { usePageHeaderContext } from '@/contexts/PageHeaderContext'
 import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
 import { ProfileDialog } from '@/components/shared/ProfileDialog'
+import { useMustSetPassword } from '@/hooks/useMustSetPassword'
 
 const EXACT_TITLES: Record<string, string> = {
   '/matriz/dashboard':        'Command Center',
@@ -70,6 +71,7 @@ export function TopBar({ sidebarExpanded, isMobile = false, onMobileMenuToggle }
   const navigate = useNavigate()
   const [profileOpen, setProfileOpen] = useState(false)
   const [lancamentoOpen, setLancamentoOpen] = useState(false)
+  const mustSetPassword = useMustSetPassword()
   const { signOut: logout } = useSignOut()
   const { data: myUnit } = useMyUnit()
 
@@ -265,7 +267,11 @@ export function TopBar({ sidebarExpanded, isMobile = false, onMobileMenuToggle }
         </DropdownMenu>
       </div>
 
-      <ProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
+      <ProfileDialog
+        open={profileOpen || mustSetPassword}
+        onOpenChange={mustSetPassword ? () => {} : setProfileOpen}
+        forced={mustSetPassword}
+      />
     </header>
 
     {/* Mobile: título/saudação abaixo da barra fixa — rola com a página */}

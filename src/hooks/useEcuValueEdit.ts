@@ -22,6 +22,7 @@ export interface HistoricoEdicaoValor {
     id: string
     service_type: string
     franchise_units: { name: string; city: string | null; state: string | null } | null
+    financial_entries: { status: 'pendente' | 'pago' }[] | null
   } | null
 }
 
@@ -37,7 +38,7 @@ export function usePendingValueEdits() {
           id, arquivo_id, valor_anterior, valor_novo, motivo, status, solicitado_em,
           aprovado_em, motivo_recusa,
           solicitado_profile:profiles!historico_edicoes_valor_solicitado_por_fkey(name),
-          ecu_jobs!historico_edicoes_valor_arquivo_id_fkey(id, service_type, franchise_units(name, city, state))
+          ecu_jobs!historico_edicoes_valor_arquivo_id_fkey(id, service_type, franchise_units(name, city, state), financial_entries(status))
         `)
         .eq('status', 'AGUARDANDO_APROVACAO')
         .order('solicitado_em', { ascending: true })
@@ -146,13 +147,39 @@ export function useApproveValueEdit() {
         .update({ status: 'APROVADO', aprovado_por: user!.id, aprovado_em: new Date().toISOString() })
         .eq('id', historicoId)
       if (errH) throw errH
+
+      // Propaga pro caixa: cobrança ainda pendente acompanha o valor aprovado.
+      // Cobrança já paga é lançamento imutável — não mexe, só avisa.
+      const { data: entry, error: errFind } = await sb()
+        .from('financial_entries')
+        .select('id, status')
+        .eq('ecu_job_id', jobId)
+        .maybeSingle()
+      if (errFind) throw errFind
+
+      if (!entry || entry.status !== 'pendente') {
+        return { alreadyPaid: entry?.status === 'pago' }
+      }
+
+      const { error: errFin } = await sb()
+        .from('financial_entries')
+        .update({ amount: valorNovo })
+        .eq('id', entry.id)
+      if (errFin) throw errFin
+      return { alreadyPaid: false }
     },
-    onSuccess: (_v, vars) => {
+    onSuccess: (result, vars) => {
       qc.invalidateQueries({ queryKey: ['ecu-job', vars.jobId] })
       qc.invalidateQueries({ queryKey: ['pending-value-edits'] })
       qc.invalidateQueries({ queryKey: ['value-edit-history', vars.jobId] })
       qc.invalidateQueries({ queryKey: ['saldo-franquias'] })
-      toast.success('Alteração aprovada. Novo valor aplicado.')
+      qc.invalidateQueries({ queryKey: ['ecu-job-financial-entry', vars.jobId] })
+      qc.invalidateQueries({ queryKey: ['caixa-pendentes'] })
+      if (result?.alreadyPaid) {
+        toast.warning('Alteração aprovada, mas a cobrança já foi quitada com o valor anterior — ajuste manual necessário no caixa.')
+      } else {
+        toast.success('Alteração aprovada. Novo valor aplicado.')
+      }
     },
     onError: () => toast.error('Erro ao aprovar edição'),
   })

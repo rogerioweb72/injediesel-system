@@ -241,6 +241,7 @@ export default function FinanceiroPage() {
                 {pendingEdits.map((edit) => {
                   const unit = edit.ecu_jobs?.franchise_units
                   const diff = edit.valor_novo - edit.valor_anterior
+                  const jaQuitada = edit.ecu_jobs?.financial_entries?.some((fe) => fe.status === 'pago') ?? false
                   return (
                     <div key={edit.id} className="rounded-xl p-4 space-y-3"
                       style={{ background: 'hsl(var(--pm-gray-900))', border: '1px solid rgba(251,146,60,0.2)' }}>
@@ -270,6 +271,13 @@ export default function FinanceiroPage() {
                       <p className="text-xs px-3 py-2 rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', color: 'hsl(var(--pm-gray-400))' }}>
                         {edit.motivo}
                       </p>
+                      {jaQuitada && (
+                        <p className="text-xs px-3 py-2 rounded-lg flex items-center gap-1.5"
+                          style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', color: '#F87171' }}>
+                          <AlertTriangle size={12} />
+                          Cobrança já quitada com o valor anterior — ajuste manual necessário
+                        </p>
+                      )}
                       <p className="text-[11px]" style={{ color: 'hsl(var(--pm-gray-600))' }}>
                         Solicitado em {new Date(edit.solicitado_em).toLocaleString('pt-BR')}
                       </p>

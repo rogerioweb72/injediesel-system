@@ -220,6 +220,7 @@ export interface OpenEcuJob {
   created_at: string
   unit_id: string | null
   amount_charged_to_customer: number | null
+  amount_charged_by_matrix: number | null
   customers: { name: string } | null
   assigned_profile: { name: string } | null
   creator_profile: { name: string } | null
@@ -235,6 +236,7 @@ export function useOpenEcuJobs(unitId: string | null | undefined) {
         .from('ecu_jobs')
         .select(`
           id, service_type, status, created_at, unit_id, amount_charged_to_customer,
+          amount_charged_by_matrix,
           customers(name),
           assigned_profile:profiles!assigned_to(name),
           creator_profile:profiles!created_by(name)

@@ -269,7 +269,7 @@ export default function EcuJobDetail() {
   const uploadFile   = useUploadEcuFile()
   const downloadFile = useDownloadEcuFile()
   const { isMatrixUser, isFranchiseUser } = useProfile()
-  const { data: editHistory = [] } = useJobValueEditHistory(isMatrixUser() ? (id ?? '') : '')
+  const { data: editHistory = [], isError: editHistoryError } = useJobValueEditHistory(isMatrixUser() ? (id ?? '') : '')
   const markAsSeen   = useMarkJobAsSeen(id)
   const { data: financialEntry } = useEcuJobFinancialEntry(job?.id ?? '')
   const sendToFinance = useSendToFinance()
@@ -629,6 +629,13 @@ export default function EcuJobDetail() {
                 <Upload size={16} />
                 {uploadFile.isPending || updateStatus.isPending ? 'Enviando...' : 'Enviar Arquivo Pronto'}
               </button>
+            )}
+
+            {/* Erro ao carregar histórico de edições — antes ficava mascarado como lista vazia */}
+            {isMatrixUser() && editHistoryError && (
+              <p className="text-xs mt-4" style={{ color: '#F87171' }}>
+                Erro ao carregar histórico de edições de valor deste job.
+              </p>
             )}
 
             {/* Histórico de edições de valor — apenas matriz */}

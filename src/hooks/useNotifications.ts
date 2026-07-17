@@ -94,6 +94,24 @@ export function useOverdueEcuJobsCount() {
   })
 }
 
+export function useNewFranchiseJobsCount() {
+  const { isMatrixUser } = useProfile()
+  return useQuery({
+    queryKey: ['new-franchise-jobs-count'],
+    enabled: isMatrixUser(),
+    refetchInterval: 30_000,
+    queryFn: async () => {
+      const { count, error } = await (supabase as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .from('ecu_jobs')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'recebido')
+        .not('unit_id', 'is', null)
+      if (error) throw error
+      return (count as number) ?? 0
+    },
+  })
+}
+
 export function useNotifications(prefix: string) {
   const { isFranchiseUser, isMatrixUser } = useProfile()
   const isFranchise = isFranchiseUser()

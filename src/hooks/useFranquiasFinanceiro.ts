@@ -39,6 +39,7 @@ export interface CobrancaEcuItem {
   customers: { name: string } | null
   vehicles: { brand: string; model: string } | null
   vehicle_info: { marca?: string; modelo?: string } | null
+  financeiro_pagamentos: { forma_pagamento: string | null } | null
 }
 
 // ── Saldo por unidade (polling 60s) ───────────────────────────────────────────
@@ -103,6 +104,7 @@ interface PayJobsPayload {
   unitNome: string
   jobIds: string[]
   totalValor: number
+  formaPagamento: string
   observacao?: string
 }
 
@@ -111,15 +113,16 @@ export function usePayFranchiseJobs() {
   const user = useAuthStore((s) => s.user)
 
   return useMutation({
-    mutationFn: async ({ unitId, jobIds, totalValor, observacao }: PayJobsPayload) => {
+    mutationFn: async ({ unitId, jobIds, totalValor, formaPagamento, observacao }: PayJobsPayload) => {
       const { data: pagamento, error: errPag } = await sb()
         .from('financeiro_pagamentos')
         .insert({
-          unit_id:       unitId,
-          realizado_por: user!.id,
-          total_valor:   totalValor,
-          qtd_arquivos:  jobIds.length,
-          observacao:    observacao ?? null,
+          unit_id:         unitId,
+          realizado_por:   user!.id,
+          total_valor:     totalValor,
+          qtd_arquivos:    jobIds.length,
+          forma_pagamento: formaPagamento,
+          observacao:      observacao ?? null,
         })
         .select('id')
         .single()
@@ -162,7 +165,7 @@ export function useFranchiseJobHistory(
     queryFn: async () => {
       let query = sb()
         .from('ecu_jobs')
-        .select('id, service_type, created_at, amount_charged_by_matrix, matrix_payment_status, matrix_paid_at, customers(name), vehicles(brand, model), vehicle_info')
+        .select('id, service_type, created_at, amount_charged_by_matrix, matrix_payment_status, matrix_paid_at, customers(name), vehicles(brand, model), vehicle_info, financeiro_pagamentos!matrix_payment_id(forma_pagamento)')
         .eq('unit_id', unitId)
         .not('amount_charged_by_matrix', 'is', null)
         .order('created_at', { ascending: false })

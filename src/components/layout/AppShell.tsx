@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
-import { AlertTriangle } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { AlertTriangle, FileClock } from 'lucide-react'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
 import { ImpersonationBanner } from './ImpersonationBanner'
@@ -7,6 +8,7 @@ import { PageHeaderProvider } from '@/contexts/PageHeaderContext'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from '@/components/ui/sonner'
 import { useMyUnit } from '@/hooks/useMyUnit'
+import { useNewFranchiseJobsCount } from '@/hooks/useNotifications'
 
 export type SidebarMode = 'collapsed' | 'pinned'
 
@@ -43,6 +45,35 @@ function UnitBlockedBanner() {
         <strong>UNIDADE BLOQUEADA PELA MATRIZ</strong>
         {unit.contract_blocked_reason ? ` — ${unit.contract_blocked_reason}` : ''}
         {' '}· Envio de arquivos suspenso. Contate a Matriz para regularização.
+      </p>
+    </div>
+  )
+}
+
+function NewFranchiseJobsFooter() {
+  const navigate = useNavigate()
+  const { data: count = 0 } = useNewFranchiseJobsCount()
+
+  if (count === 0) return null
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => navigate('/matriz/arquivos')}
+      style={{
+        background: 'hsl(var(--pm-gray-900))',
+        borderTop: '1px solid rgba(96,165,250,0.25)',
+        padding: '6px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        cursor: 'pointer',
+      }}
+    >
+      <FileClock size={13} color="#60A5FA" style={{ flexShrink: 0 }} />
+      <p style={{ fontSize: '12px', color: '#60A5FA' }}>
+        {count} arquivo{count === 1 ? '' : 's'} novo{count === 1 ? '' : 's'} de franquia aguardando processamento
       </p>
     </div>
   )
@@ -109,6 +140,7 @@ export function AppShell({ children }: AppShellProps) {
           <main className="flex-1 pm-page pm-animate-fade-in">
             {children}
           </main>
+          <NewFranchiseJobsFooter />
         </div>
       </div>
       </TooltipProvider>

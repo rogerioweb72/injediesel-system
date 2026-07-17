@@ -114,13 +114,16 @@ export function useEcuJob(id: string) {
       if (error) throw error
       return data as EcuJob
     },
-    // Fallback pro scan de antivírus (assíncrono, termina em segundos): enquanto
-    // houver arquivo com scan_status pending, revalida a cada 5s. Realtime
-    // (useEcuJobFilesRealtime) cobre o caso feliz; isso cobre a lacuna/fallback.
+    // Fallback pro scan de antivírus (assíncrono, termina em segundos) e pra
+    // Realtime que não chegue (ex.: outra sessão fez upload e este snapshot
+    // ainda não sabe do arquivo novo — checar só "tem pending no cache" não
+    // pega esse caso, porque o cache pode nem saber que o arquivo existe).
+    // Por isso poll enquanto o job não estiver num status terminal.
     refetchInterval: (query) => {
-      const data = query.state.data as EcuJob | undefined
-      const hasPendingScan = data?.ecu_job_files?.some((f) => f.scan_status === 'pending')
-      return hasPendingScan ? 5000 : false
+      const data = query.state.data
+      if (!data) return false
+      const terminal = data.status === 'concluido' || data.status === 'cancelado'
+      return terminal ? false : 5000
     },
   })
 }

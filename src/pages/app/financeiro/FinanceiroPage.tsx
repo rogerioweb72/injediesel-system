@@ -131,7 +131,7 @@ export default function FinanceiroPage() {
   const [selected, setSelected]   = useState<PendingPayment | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
 
-  const { data: pendingEdits = [] } = usePendingValueEdits()
+  const { data: pendingEdits = [], isError: pendingEditsError } = usePendingValueEdits()
   const approveEdit = useApproveValueEdit()
   const rejectEdit  = useRejectValueEdit()
 
@@ -216,6 +216,15 @@ export default function FinanceiroPage() {
         </div>
 
         <TabsContent value="em-aberto" className="space-y-6 mt-0">
+          {/* Erro ao carregar edições pendentes — antes ficava mascarado como lista vazia */}
+          {pendingEditsError && (
+            <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm"
+              style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', color: '#F87171' }}>
+              <AlertTriangle size={14} />
+              Erro ao carregar edições de valor pendentes. Pode haver edições aguardando aprovação não exibidas aqui — avise o suporte técnico.
+            </div>
+          )}
+
           {/* Edições de Valor Pendentes */}
           {pendingEdits.length > 0 && (
             <section>
@@ -313,6 +322,7 @@ export default function FinanceiroPage() {
                   const isOverdue = ageH >= 12
                   const techName  = job.assigned_profile?.name ?? job.creator_profile?.name ?? '—'
                   const ageLabel  = ageD > 0 ? `${ageD}d ${ageH % 24}h` : ageH > 0 ? `${ageH}h` : '< 1h'
+                  const jobValue  = job.unit_id ? job.amount_charged_by_matrix : job.amount_charged_to_customer
                   return (
                     <div key={job.id}
                       className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors"
@@ -331,6 +341,11 @@ export default function FinanceiroPage() {
                           {isOverdue
                             ? <span style={{ color: '#FBBF24' }}> · ⚠ {ageLabel} em aberto</span>
                             : <span> · {ageLabel}</span>}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-xs font-semibold" style={{ color: jobValue != null ? 'hsl(var(--pm-gray-300))' : 'hsl(var(--pm-gray-600))' }}>
+                          {jobValue != null ? fmtBRL(jobValue) : 'sem valor'}
                         </p>
                       </div>
                       <EcuStatusBadge status={job.status as FileStatus} />

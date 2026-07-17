@@ -53,6 +53,7 @@ function FranchiseCard({ saldo, searchQ }: { saldo: SaldoFranquia; searchQ: stri
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [payOpen, setPayOpen] = useState(false)
   const [obs, setObs] = useState('')
+  const [formaPagamento, setFormaPagamento] = useState('')
 
   const { data: jobs = [], isLoading } = useFranchiseOpenJobs(expanded ? saldo.unit_id : '')
   const pay = usePayFranchiseJobs()
@@ -77,16 +78,19 @@ function FranchiseCard({ saldo, searchQ }: { saldo: SaldoFranquia; searchQ: stri
   }
 
   async function handlePay() {
+    if (!formaPagamento) return
     await pay.mutateAsync({
       unitId: saldo.unit_id,
       unitNome: saldo.nome,
       jobIds: [...selected],
       totalValor: selectedTotal,
+      formaPagamento,
       observacao: obs.trim() || undefined,
     })
     setPayOpen(false)
     setSelected(new Set())
     setObs('')
+    setFormaPagamento('')
   }
 
   const nomeCompleto = `${saldo.nome} ${saldo.cidade ?? ''} ${saldo.uf ?? ''}`.toLowerCase()
@@ -223,6 +227,19 @@ function FranchiseCard({ saldo, searchQ }: { saldo: SaldoFranquia; searchQ: stri
               </div>
             </div>
             <div className="space-y-1">
+              <label className="text-xs" style={{ color: 'hsl(var(--pm-gray-500))' }}>Forma de pagamento</label>
+              <select value={formaPagamento} onChange={(e) => setFormaPagamento(e.target.value)}
+                className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1"
+                style={{ background: 'hsl(var(--pm-gray-800))', border: '1px solid rgba(255,255,255,0.08)', color: 'hsl(var(--pm-gray-200))' }}
+              >
+                <option value="" disabled>Selecione...</option>
+                <option value="PIX">PIX</option>
+                <option value="Boleto">Boleto</option>
+                <option value="Cartão">Cartão</option>
+                <option value="Dinheiro">Dinheiro</option>
+              </select>
+            </div>
+            <div className="space-y-1">
               <label className="text-xs" style={{ color: 'hsl(var(--pm-gray-500))' }}>Observação (opcional)</label>
               <textarea value={obs} onChange={(e) => setObs(e.target.value)} rows={2}
                 placeholder="Ex: Pix ref. maio/2026"
@@ -232,7 +249,7 @@ function FranchiseCard({ saldo, searchQ }: { saldo: SaldoFranquia; searchQ: stri
             </div>
             <div className="flex justify-end gap-3 pt-1">
               <Button variant="ghost" onClick={() => setPayOpen(false)} disabled={pay.isPending}>Cancelar</Button>
-              <Button onClick={handlePay} disabled={pay.isPending}
+              <Button onClick={handlePay} disabled={pay.isPending || !formaPagamento}
                 style={{ background: 'hsl(var(--pm-red-500))' }}
                 className="text-white border-0 min-w-[100px]">
                 {pay.isPending ? <Loader2 size={14} className="animate-spin" /> : 'Confirmar'}

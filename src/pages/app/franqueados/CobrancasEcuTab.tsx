@@ -16,7 +16,7 @@ function fmtDate(iso: string) {
 
 
 function exportCSV(items: CobrancaEcuItem[], unitName: string) {
-  const header = 'Arquivo,Tipo,Cliente,Veículo,Data Envio,Valor,Status,Pago em'
+  const header = 'Arquivo,Tipo,Cliente,Veículo,Data Envio,Valor,Status,Pago em,Forma'
   const rows = items.map((item) => {
     const veiculo = item.vehicles
       ? `${item.vehicles.brand} ${item.vehicles.model}`
@@ -30,6 +30,7 @@ function exportCSV(items: CobrancaEcuItem[], unitName: string) {
       (item.amount_charged_by_matrix ?? 0).toFixed(2).replace('.', ','),
       item.matrix_payment_status === 'pago' ? 'Pago' : 'Em Aberto',
       item.matrix_paid_at ? fmtDate(item.matrix_paid_at) : '—',
+      item.financeiro_pagamentos?.forma_pagamento ?? '—',
     ].join(',')
   })
   const csv = [header, ...rows].join('\n')
@@ -128,7 +129,7 @@ export default function CobrancasEcuTab({ unitId, unitName }: Props) {
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  {['Arquivo', 'Tipo', 'Veículo', 'Data Envio', 'Valor', 'Status', 'Pago em'].map((h) => (
+                  {['Arquivo', 'Tipo', 'Veículo', 'Data Envio', 'Valor', 'Status', 'Pago em', 'Forma'].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider"
                       style={{ color: 'hsl(var(--pm-gray-600))' }}>{h}</th>
                   ))}
@@ -149,6 +150,9 @@ export default function CobrancasEcuTab({ unitId, unitName }: Props) {
                       <td className="px-4 py-3"><BadgeStatusFinanceiro status={item.matrix_payment_status} /></td>
                       <td className="px-4 py-3 text-xs" style={{ color: 'hsl(var(--pm-gray-500))' }}>
                         {item.matrix_paid_at ? fmtDate(item.matrix_paid_at) : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-xs" style={{ color: 'hsl(var(--pm-gray-500))' }}>
+                        {item.financeiro_pagamentos?.forma_pagamento ?? '—'}
                       </td>
                     </tr>
                   )

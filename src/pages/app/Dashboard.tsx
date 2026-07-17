@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
 import { useMatrixDashboard, type DashboardPeriod } from '@/hooks/useMatrixDashboard'
+import { useNewFranchiseJobsCount } from '@/hooks/useNotifications'
 import { formatCurrency } from '@/lib/utils'
 
 // Monthly revenue evolution — swap this array for a real API hook when available
@@ -38,6 +39,7 @@ export default function Dashboard() {
   const [period, setPeriod] = useState<DashboardPeriod>('month')
 
   const { data: metrics, isLoading } = useMatrixDashboard(period)
+  const { data: newFranchiseJobs = 0 } = useNewFranchiseJobsCount()
 
   const pieData = (metrics?.serviceTypeRanking ?? []).map((s, i) => ({
     name: s.serviceType,
@@ -98,6 +100,20 @@ export default function Dashboard() {
           ))}
         </div>
       </div>
+
+      {/* Alerta: novos jobs de franquia aguardando */}
+      {newFranchiseJobs > 0 && (
+        <button
+          onClick={() => navigate(`${prefix}/arquivos`)}
+          className="w-full flex items-center gap-2.5 px-4 py-3 rounded-xl mb-8 text-left transition-colors hover:bg-blue-500/[0.08]"
+          style={{ background: 'rgba(96,165,250,0.06)', border: '1px solid rgba(96,165,250,0.25)' }}
+        >
+          <Clock size={15} style={{ color: '#60A5FA', flexShrink: 0 }} />
+          <p className="text-sm" style={{ color: '#60A5FA' }}>
+            <strong>{newFranchiseJobs}</strong> arquivo{newFranchiseJobs === 1 ? '' : 's'} novo{newFranchiseJobs === 1 ? '' : 's'} de franquia aguardando processamento
+          </p>
+        </button>
+      )}
 
       {/* KPI grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">

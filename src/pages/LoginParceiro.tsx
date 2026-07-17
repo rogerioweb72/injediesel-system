@@ -4,7 +4,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Eye, EyeOff, Lock, Mail, ArrowRight, CheckCircle2, ShieldAlert } from 'lucide-react'
+import { Eye, EyeOff, Lock, Mail, ArrowRight, ShieldAlert } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -49,10 +49,13 @@ export default function LoginParceiro() {
     window.location.hash.includes('type=recovery')
   )
 
+  useEffect(() => {
+    if (isInviteFlow) useAuthStore.getState().setHashInviteFlow(true)
+  }, [isInviteFlow])
+
   const [showPassword, setShowPassword] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
   const [matrixRejected, setMatrixRejected] = useState(false)
-  const [inviteDone, setInviteDone]   = useState(false)
   const [recoveryDone, setRecoveryDone] = useState(false)
   const [setPassError, setSetPassError] = useState<string | null>(null)
   const [settingPass, setSettingPass]   = useState(false)
@@ -70,7 +73,6 @@ export default function LoginParceiro() {
 
   useEffect(() => {
     if (!session || !profile) return
-    if (isInviteFlow   && !inviteDone)   return
     if (isRecoveryFlow && !recoveryDone) return
 
     if (!FRANCHISE_ROLES.includes(profile.role)) {
@@ -98,8 +100,7 @@ export default function LoginParceiro() {
     try {
       const { error } = await supabase.auth.updateUser({ password: data.password })
       if (error) throw error
-      if (isRecoveryFlow) setRecoveryDone(true)
-      else setInviteDone(true)
+      setRecoveryDone(true)
     } catch (err) {
       setSetPassError(translateError(err))
     } finally {
@@ -225,89 +226,8 @@ export default function LoginParceiro() {
           </Card>
         )}
 
-        {/* ── CONVITE: definir senha ── */}
-        {isInviteFlow && !inviteDone && session && (
-          <Card
-            className="lp-animate w-full max-w-md border-white/5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
-            style={{ background: 'rgba(20,21,28,0.85)' }}
-          >
-            <CardHeader className="items-center text-center space-y-3 pb-5 pt-7">
-              <div className="login-logo mb-1">
-                <TunerLogo style={{ width: 156, height: 'auto' }} />
-              </div>
-              <div>
-                <CardTitle className="text-xl font-bold text-white tracking-tight">
-                  Bem-vindo(a)! Defina sua senha
-                </CardTitle>
-                <CardDescription className="text-slate-400 text-sm mt-1">
-                  Crie uma senha para acessar o sistema.
-                </CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={pwForm.handleSubmit(handleSetPassword)} className="grid gap-5">
-                <div className="grid gap-2">
-                  <Label className="text-slate-300 text-xs font-medium uppercase tracking-wider">Nova senha</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
-                    <Input
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="••••••••"
-                      {...pwForm.register('password')}
-                      className="pl-10 pr-10 h-11 border-white/5 text-white placeholder:text-slate-600 rounded-xl"
-                      style={{ background: '#0B0C10' }}
-                    />
-                    <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-md text-slate-500 hover:text-slate-300 transition-colors"
-                      onClick={() => setShowPassword(v => !v)}>
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                  {pwForm.formState.errors.password && <p className="text-xs text-red-400">{pwForm.formState.errors.password.message}</p>}
-                </div>
-                <div className="grid gap-2">
-                  <Label className="text-slate-300 text-xs font-medium uppercase tracking-wider">Confirmar senha</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
-                    <Input
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="••••••••"
-                      {...pwForm.register('password2')}
-                      className="pl-10 h-11 border-white/5 text-white placeholder:text-slate-600 rounded-xl"
-                      style={{ background: '#0B0C10' }}
-                    />
-                  </div>
-                  {pwForm.formState.errors.password2 && <p className="text-xs text-red-400">{pwForm.formState.errors.password2.message}</p>}
-                </div>
-                {setPassError && (
-                  <div className="rounded-xl px-4 py-3 text-sm text-red-400" style={{ background: 'rgba(177,40,37,0.08)', border: '1px solid rgba(177,40,37,0.2)' }}>
-                    {setPassError}
-                  </div>
-                )}
-                <Button
-                  type="submit"
-                  disabled={settingPass}
-                  className="w-full h-11 rounded-xl text-white font-bold mt-1 border-0"
-                  style={{ background: 'var(--pm-accent-gradient)' }}
-                >
-                  {settingPass ? (
-                    <span className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Salvando...
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4" /> Definir senha e entrar
-                    </span>
-                  )}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        )}
-
         {/* ── LOGIN NORMAL ── */}
-        {(!isInviteFlow || inviteDone || !session) && (
-        matrixRejected ? (
+        {matrixRejected ? (
           <div className="lp-animate w-full max-w-md">
             <Card
               className="border-red-900/40 backdrop-blur-xl shadow-[0_8px_40px_rgba(0,0,0,0.6)]"
@@ -494,7 +414,7 @@ export default function LoginParceiro() {
             </Link>
           </CardFooter>
         </Card>
-        ))}
+        )}
       </div>
     </section>
   )

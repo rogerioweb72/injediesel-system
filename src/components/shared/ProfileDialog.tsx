@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { supabase } from '@/lib/supabase'
 import { useProfile } from '@/hooks/useProfile'
+import { useAuthStore } from '@/stores/auth'
 import { toast } from 'sonner'
 import { translateError } from '@/lib/errors'
 import { useQueryClient } from '@tanstack/react-query'
@@ -12,9 +13,10 @@ import { useQueryClient } from '@tanstack/react-query'
 interface ProfileDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  forced?: boolean
 }
 
-export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
+export function ProfileDialog({ open, onOpenChange, forced = false }: ProfileDialogProps) {
   const { profile } = useProfile()
   const queryClient = useQueryClient()
   const [name, setName] = useState(profile?.name ?? '')
@@ -31,13 +33,24 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
   }
 
   async function handleSave() {
-    if (password && password !== confirmPassword) {
-      toast.error('As senhas não coincidem')
-      return
-    }
-    if (password && password.length < 6) {
-      toast.error('Senha deve ter pelo menos 6 caracteres')
-      return
+    if (forced) {
+      if (!password || password.length < 6) {
+        toast.error('Senha deve ter pelo menos 6 caracteres')
+        return
+      }
+      if (password !== confirmPassword) {
+        toast.error('As senhas não coincidem')
+        return
+      }
+    } else {
+      if (password && password !== confirmPassword) {
+        toast.error('As senhas não coincidem')
+        return
+      }
+      if (password && password.length < 6) {
+        toast.error('Senha deve ter pelo menos 6 caracteres')
+        return
+      }
     }
 
     setSaving(true)
@@ -52,17 +65,34 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
       }
 
       if (password) {
-        const { error } = await supabase.auth.updateUser({ password })
+        const { error } = await supabase.auth.updateUser(
+          forced ? { password, data: { must_set_password: false } } : { password }
+        )
         if (error) throw error
+        if (forced) useAuthStore.getState().setHashInviteFlow(false)
       }
 
-      toast.success('Perfil atualizado com sucesso')
+      toast.success(forced ? 'Senha definida com sucesso' : 'Perfil atualizado com sucesso')
       handleOpenChange(false)
     } catch (err: unknown) {
       toast.error(translateError(err))
     } finally {
       setSaving(false)
     }
+  }
+
+  if (forced) {
+    if (!open) return null
+    return (
+      <ForcedPasswordCard
+        password={password}
+        setPassword={setPassword}
+        confirmPassword={confirmPassword}
+        setConfirmPassword={setConfirmPassword}
+        saving={saving}
+        onSave={handleSave}
+      />
+    )
   }
 
   return (
@@ -123,5 +153,91 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  )
+}
+
+interface ForcedPasswordCardProps {
+  password: string
+  setPassword: (v: string) => void
+  confirmPassword: string
+  setConfirmPassword: (v: string) => void
+  saving: boolean
+  onSave: () => void
+}
+
+function ForcedPasswordCard({ password, setPassword, confirmPassword, setConfirmPassword, saving, onSave }: ForcedPasswordCardProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    containerRef.current?.querySelector<HTMLElement>('input')?.focus()
+  }, [])
+
+  function trapFocus(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (e.key !== 'Tab' || !containerRef.current) return
+    const focusable = Array.from(
+      containerRef.current.querySelectorAll<HTMLElement>('input, button, [tabindex]:not([tabindex="-1"])')
+    ).filter(el => !el.hasAttribute('disabled'))
+    if (focusable.length === 0) return
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault()
+      last.focus()
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault()
+      first.focus()
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.85)' }}>
+      <div
+        ref={containerRef}
+        onKeyDown={trapFocus}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="forced-password-title"
+        className="w-full max-w-sm rounded-lg border p-6 shadow-lg space-y-4"
+        style={{ background: '#141416', borderColor: 'rgba(255,255,255,0.08)' }}
+      >
+        <div className="space-y-1">
+          <h2 id="forced-password-title" className="text-lg font-semibold leading-none tracking-tight">Primeiro acesso</h2>
+          <p className="text-sm text-muted-foreground">Defina sua senha para continuar.</p>
+        </div>
+
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label>Nova senha</Label>
+            <Input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Mínimo 6 caracteres"
+              autoComplete="new-password"
+              autoFocus
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Confirmar nova senha</Label>
+            <Input
+              type="password"
+              value={confirmPassword}
+              onChange={e => setConfirmPassword(e.target.value)}
+              placeholder="Repita a senha"
+              autoComplete="new-password"
+            />
+          </div>
+        </div>
+
+        <Button
+          onClick={onSave}
+          disabled={saving || !password || !confirmPassword}
+          className="w-full"
+          style={{ background: 'var(--pm-accent-gradient)' }}
+        >
+          {saving ? 'Salvando...' : 'Definir senha e continuar'}
+        </Button>
+      </div>
+    </div>
   )
 }

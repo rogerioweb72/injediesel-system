@@ -104,7 +104,11 @@ async function vtSubmitFile(fileBytes: Uint8Array, fileName: string): Promise<st
 }
 
 async function logAudit(action: string, payload: Record<string, unknown>) {
-  await adminClient.from('audit_events').insert({ actor_id: null, action, payload }).catch(() => null)
+  try {
+    await adminClient.from('audit_events').insert({ actor_id: null, action, payload })
+  } catch (err) {
+    console.error('logAudit failed:', err)
+  }
 }
 
 async function blockFile(

@@ -109,7 +109,7 @@ serve(async (req) => {
       file_name:  file.file_name,
       sha256_hex: file.sha256_hex,
     },
-  }).catch(() => null)
+  }).then(undefined, (err) => console.error('audit log failed:', err))
 
   return new Response(
     JSON.stringify({ downloadUrl, expiresIn: DOWNLOAD_EXPIRY_SECONDS }),

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 import { useWizard } from './WizardContext'
 import { useCreateFranchiseUnit, useUpdateFranchiseUnit, uploadLogo, type FranchiseUnit } from '@/hooks/useFranchiseUnits'
+import { useInviteFranchisee } from '@/hooks/useInviteFranchisee'
 
 const STATUS_LABEL: Record<string, string> = {
   em_implantacao: 'Em Implantação',
@@ -36,6 +37,7 @@ export function ConfirmSummaryDialog({ open, onOpenChange, isEdit, unit, logoFil
   const prefix = useRoutePrefix()
   const create = useCreateFranchiseUnit()
   const update = useUpdateFranchiseUnit()
+  const invite = useInviteFranchisee()
   const [submitting, setSubmitting] = useState(false)
 
   const values = getValues()
@@ -105,7 +107,25 @@ export function ConfirmSummaryDialog({ open, onOpenChange, isEdit, unit, logoFil
           const logo_url = await uploadLogo(created.id, logoFile)
           await update.mutateAsync({ id: created.id, logo_url })
         }
-        toast.success('Unidade criada com sucesso')
+
+        let inviteOk = false
+        try {
+          await invite.mutateAsync({
+            email: values.responsavel_legal_email,
+            name: values.responsavel_legal_nome,
+            unit_id: created.id,
+            role: 'franchise_manager',
+          })
+          inviteOk = true
+        } catch (inviteErr) {
+          console.error('Falha ao enviar convite automático:', inviteErr)
+        }
+
+        if (inviteOk) {
+          toast.success(`Unidade criada e convite enviado para ${values.responsavel_legal_email}`)
+        } else {
+          toast.warning('Unidade criada, mas o convite falhou — reenvie pelo botão no topo da página')
+        }
         onSuccess()
         navigate(`${prefix}/franqueados/${created.id}`)
       }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -189,15 +190,15 @@ function ForcedPasswordCard({ password, setPassword, confirmPassword, setConfirm
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.85)' }}>
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto p-4" style={{ background: 'rgba(0,0,0,0.85)' }}>
       <div
         ref={containerRef}
         onKeyDown={trapFocus}
         role="dialog"
         aria-modal="true"
         aria-labelledby="forced-password-title"
-        className="w-full max-w-sm rounded-lg border p-6 shadow-lg space-y-4"
+        className="my-auto w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-lg border p-6 shadow-lg space-y-4"
         style={{ background: '#141416', borderColor: 'rgba(255,255,255,0.08)' }}
       >
         <div className="space-y-1">
@@ -238,6 +239,7 @@ function ForcedPasswordCard({ password, setPassword, confirmPassword, setConfirm
           {saving ? 'Salvando...' : 'Definir senha e continuar'}
         </Button>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

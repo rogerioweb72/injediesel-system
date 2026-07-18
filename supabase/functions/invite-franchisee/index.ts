@@ -123,14 +123,19 @@ serve(async (req) => {
     })
   }
 
-  // Create profile if not exists
-  await adminClient.from('profiles').upsert({
+  // Create profile if not exists (profile já existe via trigger handle_new_user;
+  // este upsert só enriquece email/name/role — falha aqui é logada, não fatal)
+  const { error: profileErr } = await adminClient.from('profiles').upsert({
     id:     invited.user.id,
     email,
     name:   name || email.split('@')[0],
     role,
     active: true,
-  }, { onConflict: 'id', ignoreDuplicates: true })
+  }, { onConflict: 'id', ignoreDuplicates: false })
+
+  if (profileErr) {
+    console.error('profile upsert falhou (não fatal):', profileErr.message)
+  }
 
   // Associate user with unit
   const { error: roleErr } = await adminClient.from('user_unit_roles').upsert({
@@ -143,7 +148,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: roleErr.message }), { status: 500, headers: CORS })
   }
 
-  return new Response(JSON.stringify({ ok: true, user_id: invited.user.id }), {
+  return new Response(JSON.stringify({ ok: true, user_id: invited.user.id, profile_warning: profileErr?.message ?? null }), {
     status: 200,
     headers: { ...CORS, 'Content-Type': 'application/json' },
   })

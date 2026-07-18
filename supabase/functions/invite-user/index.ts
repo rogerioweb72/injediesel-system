@@ -142,15 +142,22 @@ serve(async (req) => {
   }, { onConflict: 'id', ignoreDuplicates: false })
 
   if (profileErr) {
-    return new Response(JSON.stringify({ error: profileErr.message }), { status: 500, headers: CORS })
+    // Não fatal: o profile já existe via trigger handle_new_user (id/name/role básicos).
+    // Este upsert só enriquece (email/commission/permissions) — falha aqui não pode
+    // impedir o vínculo de unidade abaixo, senão o convite de franquia fica órfão.
+    console.error('profile upsert falhou (não fatal):', profileErr.message)
   }
 
   if (isFranchiseRole && unit_id) {
-    await adminClient.from('user_unit_roles').upsert({
+    const { error: roleErr } = await adminClient.from('user_unit_roles').upsert({
       user_id: userId,
       unit_id,
       role,
     }, { onConflict: 'user_id,unit_id' })
+
+    if (roleErr) {
+      return new Response(JSON.stringify({ error: roleErr.message }), { status: 500, headers: CORS })
+    }
   }
 
   if (isOrphanedAccount) {
@@ -182,13 +189,13 @@ serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ ok: true, user_id: userId, email_sent: emailSent }), {
+    return new Response(JSON.stringify({ ok: true, user_id: userId, email_sent: emailSent, profile_warning: profileErr?.message ?? null }), {
       status: 200,
       headers: { ...CORS, 'Content-Type': 'application/json' },
     })
   }
 
-  return new Response(JSON.stringify({ ok: true, user_id: userId }), {
+  return new Response(JSON.stringify({ ok: true, user_id: userId, profile_warning: profileErr?.message ?? null }), {
     status: 200,
     headers: { ...CORS, 'Content-Type': 'application/json' },
   })

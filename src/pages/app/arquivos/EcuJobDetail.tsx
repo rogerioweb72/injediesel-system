@@ -311,19 +311,7 @@ export default function EcuJobDetail() {
     const file = e.target.files?.[0]
     if (!file || !job) return
     e.target.value = ''
-    const fileType = job.status === 'concluido' || job.status === 'aguardando_cliente'
-      ? 'entrega'
-      : 'original'
-    if (fileType === 'entrega') {
-      if (missingMatrixPriceToConclude) {
-        toast.error('Informe o valor cobrado pela matriz antes de concluir o job.')
-        return
-      }
-      setPendingDeliveryFile(file)
-      setDeliveryConfirmOpen(true)
-    } else {
-      await uploadFile.mutateAsync({ jobId: job.id, file, fileType: 'original' })
-    }
+    await uploadFile.mutateAsync({ jobId: job.id, file, fileType: 'entrega' })
   }
 
   async function handleDeliveryConfirm() {

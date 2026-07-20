@@ -34,7 +34,7 @@ function json(data: unknown, status: number, env: Env): Response {
 async function verifyToken(
   authHeader: string | null,
   env: Env
-): Promise<string | null> {
+): Promise<{ userId: string; token: string } | null> {
   if (!authHeader?.startsWith('Bearer ')) return null
   const token = authHeader.slice(7)
   try {
@@ -46,7 +46,7 @@ async function verifyToken(
     })
     if (!res.ok) return null
     const user = await res.json<{ id?: string }>()
-    return user?.id ?? null
+    return user?.id ? { userId: user.id, token } : null
   } catch {
     return null
   }
@@ -57,14 +57,14 @@ async function verifyToken(
 // -----------------------------------------------------------------
 const MATRIX_ADMIN_ROLES = ['company_admin', 'operations_admin']
 
-async function isMatrixAdmin(userId: string, env: Env): Promise<boolean> {
+async function isMatrixAdmin(userId: string, token: string, env: Env): Promise<boolean> {
   try {
     const res = await fetch(
       `${env.SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=role`,
       {
         headers: {
           apikey: env.SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${env.SUPABASE_ANON_KEY}`,
+          Authorization: `Bearer ${token}`,
           Accept: 'application/json',
         },
       }
@@ -95,8 +95,9 @@ function getEcuBucket(env: Env, name: string): R2Bucket | null {
 // Key is scoped to the user's own folder, preventing cross-user access
 // -----------------------------------------------------------------
 async function handleEcuUpload(request: Request, env: Env): Promise<Response> {
-  const userId = await verifyToken(request.headers.get('Authorization'), env)
-  if (!userId) return json({ error: 'Unauthorized' }, 401, env)
+  const auth = await verifyToken(request.headers.get('Authorization'), env)
+  if (!auth) return json({ error: 'Unauthorized' }, 401, env)
+  const { userId } = auth
 
   let formData: FormData
   try { formData = await request.formData() }
@@ -128,8 +129,9 @@ async function handleEcuUpload(request: Request, env: Env): Promise<Response> {
 // user's own scope OR jobs/ (shared between matrix and franchisee)
 // -----------------------------------------------------------------
 async function handleEcuDownload(request: Request, env: Env): Promise<Response> {
-  const userId = await verifyToken(request.headers.get('Authorization'), env)
-  if (!userId) return json({ error: 'Unauthorized' }, 401, env)
+  const auth = await verifyToken(request.headers.get('Authorization'), env)
+  if (!auth) return json({ error: 'Unauthorized' }, 401, env)
+  const { userId } = auth
 
   const body   = await request.json<{ r2Key: string; bucket: string }>()
   const bucket = getEcuBucket(env, body.bucket ?? 'originals')
@@ -156,10 +158,11 @@ async function handleEcuDownload(request: Request, env: Env): Promise<Response> 
 // MKT Upload — matrix admin only (company_admin | operations_admin)
 // -----------------------------------------------------------------
 async function handleMktUpload(request: Request, env: Env): Promise<Response> {
-  const userId = await verifyToken(request.headers.get('Authorization'), env)
-  if (!userId) return json({ error: 'Unauthorized' }, 401, env)
+  const auth = await verifyToken(request.headers.get('Authorization'), env)
+  if (!auth) return json({ error: 'Unauthorized' }, 401, env)
+  const { userId, token } = auth
 
-  const admin = await isMatrixAdmin(userId, env)
+  const admin = await isMatrixAdmin(userId, token, env)
   if (!admin) return json({ error: 'Forbidden: somente administradores da matriz podem fazer upload' }, 403, env)
 
   let formData: FormData
@@ -190,8 +193,8 @@ async function handleMktUpload(request: Request, env: Env): Promise<Response> {
 // MKT Download — any authenticated user (franchisee or matrix)
 // -----------------------------------------------------------------
 async function handleMktDownload(request: Request, env: Env): Promise<Response> {
-  const userId = await verifyToken(request.headers.get('Authorization'), env)
-  if (!userId) return json({ error: 'Unauthorized' }, 401, env)
+  const auth = await verifyToken(request.headers.get('Authorization'), env)
+  if (!auth) return json({ error: 'Unauthorized' }, 401, env)
 
   const body = await request.json<{ r2Key: string; fileName?: string }>()
   if (!body.r2Key) return json({ error: 'r2Key obrigatório' }, 400, env)
@@ -214,10 +217,11 @@ async function handleMktDownload(request: Request, env: Env): Promise<Response> 
 // MKT Delete — matrix admin only
 // -----------------------------------------------------------------
 async function handleMktDelete(request: Request, env: Env): Promise<Response> {
-  const userId = await verifyToken(request.headers.get('Authorization'), env)
-  if (!userId) return json({ error: 'Unauthorized' }, 401, env)
+  const auth = await verifyToken(request.headers.get('Authorization'), env)
+  if (!auth) return json({ error: 'Unauthorized' }, 401, env)
+  const { userId, token } = auth
 
-  const admin = await isMatrixAdmin(userId, env)
+  const admin = await isMatrixAdmin(userId, token, env)
   if (!admin) return json({ error: 'Forbidden' }, 403, env)
 
   const body = await request.json<{ r2Key: string }>()
@@ -258,10 +262,11 @@ async function checkFirmwareAcceptance(
 // Firmware Image Upload — matrix admin only, bucket FIRMWARE/imgs/
 // -----------------------------------------------------------------
 async function handleFirmwareImgUpload(request: Request, env: Env): Promise<Response> {
-  const userId = await verifyToken(request.headers.get('Authorization'), env)
-  if (!userId) return json({ error: 'Unauthorized' }, 401, env)
+  const auth = await verifyToken(request.headers.get('Authorization'), env)
+  if (!auth) return json({ error: 'Unauthorized' }, 401, env)
+  const { userId, token } = auth
 
-  const admin = await isMatrixAdmin(userId, env)
+  const admin = await isMatrixAdmin(userId, token, env)
   if (!admin) return json({ error: 'Forbidden' }, 403, env)
 
   let formData: FormData
@@ -286,10 +291,11 @@ async function handleFirmwareImgUpload(request: Request, env: Env): Promise<Resp
 // Firmware File Upload — matrix admin only, bucket FIRMWARE/files/
 // -----------------------------------------------------------------
 async function handleFirmwareFileUpload(request: Request, env: Env): Promise<Response> {
-  const userId = await verifyToken(request.headers.get('Authorization'), env)
-  if (!userId) return json({ error: 'Unauthorized' }, 401, env)
+  const auth = await verifyToken(request.headers.get('Authorization'), env)
+  if (!auth) return json({ error: 'Unauthorized' }, 401, env)
+  const { userId, token } = auth
 
-  const admin = await isMatrixAdmin(userId, env)
+  const admin = await isMatrixAdmin(userId, token, env)
   if (!admin) return json({ error: 'Forbidden' }, 403, env)
 
   let formData: FormData
@@ -314,8 +320,9 @@ async function handleFirmwareFileUpload(request: Request, env: Env): Promise<Res
 // Firmware Download — autenticado; exige aceite registrado na tabela
 // -----------------------------------------------------------------
 async function handleFirmwareDownload(request: Request, env: Env): Promise<Response> {
-  const userId = await verifyToken(request.headers.get('Authorization'), env)
-  if (!userId) return json({ error: 'Unauthorized' }, 401, env)
+  const auth = await verifyToken(request.headers.get('Authorization'), env)
+  if (!auth) return json({ error: 'Unauthorized' }, 401, env)
+  const { userId } = auth
 
   const body = await request.json<{ r2Key: string; updateId: string; fileName?: string }>()
   if (!body.r2Key || !body.updateId) {

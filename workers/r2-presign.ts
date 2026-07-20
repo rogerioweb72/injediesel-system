@@ -55,7 +55,7 @@ async function verifyToken(
 // -----------------------------------------------------------------
 // Role check: query profiles table for matrix admin roles
 // -----------------------------------------------------------------
-const MATRIX_ADMIN_ROLES = ['company_admin', 'operations_admin']
+const MATRIX_ADMIN_ROLES = ['system_ti', 'company_admin', 'operations_admin']
 
 async function isMatrixAdmin(userId: string, token: string, env: Env): Promise<boolean> {
   try {

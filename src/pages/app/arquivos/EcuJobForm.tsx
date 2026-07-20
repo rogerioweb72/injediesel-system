@@ -27,15 +27,9 @@ import { useEcuCatalogList } from '@/hooks/useEcuCatalog'
 import { cn } from '@/lib/utils'
 
 const SERVICE_TYPES = [
-  'Remapeamento Estágio 1',
-  'Remapeamento Estágio 2',
-  'Remapeamento Estágio 3',
-  'Remoção DPF/FAP',
-  'Remoção EGR',
-  'Remoção AdBlue',
-  'Ajuste de Injeção',
-  'Correção de Marcha Lenta',
-  'Outro',
+  'Remap',
+  'Análise',
+  'Arquivo Original',
 ]
 
 const SERVICE_TAGS = ['Performance', 'Emissões', 'Diagnóstico', 'Codificação', 'Transmissão', 'Especial'] as const
@@ -52,7 +46,6 @@ const schema = z.object({
   customer_id:              z.string().min(1, 'Selecione um cliente'),
   vehicle_id:               z.string().nullable(),
   service_type:             z.string().min(1, 'Selecione o tipo de serviço'),
-  service_type_custom:      z.string().optional(),
   service_tags:             z.array(z.string()).default([]),
   problem_description:      z.string().nullable(),
   lgpd_accepted:            z.boolean().refine(v => v === true, 'Confirme o aceite presencial do cliente antes de enviar'),
@@ -79,9 +72,6 @@ const schema = z.object({
   }
   if (data.vehicle_categoria && !data.vehicle_modelo?.trim()) {
     ctx.addIssue({ code: 'custom', path: ['vehicle_modelo'], message: 'Informe o modelo ou nome do veículo' })
-  }
-  if (data.service_type === 'Outro' && !data.service_type_custom?.trim()) {
-    ctx.addIssue({ code: 'custom', path: ['service_type_custom'], message: 'Informe o título do serviço personalizado' })
   }
 })
 
@@ -343,7 +333,7 @@ export default function EcuJobForm() {
       resolver: zodResolver(schema) as any,
       defaultValues: {
         customer_id: '', vehicle_id: null,
-        service_type: '', service_type_custom: '', service_tags: [],
+        service_type: '', service_tags: [],
         problem_description: null,
         lgpd_accepted: false,
         seller_id: '',
@@ -356,7 +346,6 @@ export default function EcuJobForm() {
 
   const customerId         = watch('customer_id')
   const serviceType        = watch('service_type')
-  const serviceTypeCustom  = watch('service_type_custom') ?? ''
   const serviceTags        = watch('service_tags')
   const vehicleCategoria = watch('vehicle_categoria')
   const vehicleMarca    = watch('vehicle_marca') ?? ''
@@ -452,15 +441,11 @@ export default function EcuJobForm() {
     setUploading(true)
     setUploadProgress(10)
     try {
-      const finalServiceType = values.service_type === 'Outro' && values.service_type_custom?.trim()
-        ? `Outro — ${values.service_type_custom.trim()}`
-        : values.service_type
-
       const job = await createJob.mutateAsync({
         customer_id: values.customer_id,
         vehicle_id:  values.vehicle_id || null,
         unit_id:     myUnit?.unit_id ?? null,
-        service_type: finalServiceType,
+        service_type: values.service_type,
         service_tags: values.service_tags,
         priority: 'normal',
         problem_description: values.problem_description || null,
@@ -792,10 +777,7 @@ export default function EcuJobForm() {
           <div className="space-y-1">
             <Label>Tipo de Serviço <span className="text-red-400">*</span></Label>
             <div key={`svc-${flashKey}`}>
-              <Select value={serviceType} onValueChange={(v) => {
-                setValue('service_type', v)
-                if (v !== 'Outro') setValue('service_type_custom', '')
-              }}>
+              <Select value={serviceType} onValueChange={(v) => setValue('service_type', v)}>
                 <SelectTrigger className={cn(fieldErr('service_type') && 'border-red-500')}>
                   <SelectValue placeholder="Selecione o serviço..." />
                 </SelectTrigger>
@@ -805,26 +787,6 @@ export default function EcuJobForm() {
               </Select>
             </div>
             {errors.service_type && <p className="text-xs text-red-400">{errors.service_type.message}</p>}
-
-            {serviceType === 'Outro' && (
-              <div className="pt-1 space-y-1">
-                <Input
-                  key={`stc-${flashKey}`}
-                  placeholder="Título curto do serviço (ex: Ajuste de limiter, Launch control...)"
-                  value={serviceTypeCustom}
-                  onChange={e => setValue('service_type_custom', e.target.value)}
-                  className={cn(
-                    (errors as Record<string, { message?: string }>).service_type_custom && 'border-red-500 field-error-blink'
-                  )}
-                  maxLength={80}
-                />
-                {(errors as Record<string, { message?: string }>).service_type_custom && (
-                  <p className="text-xs text-red-400">
-                    {(errors as Record<string, { message?: string }>).service_type_custom?.message}
-                  </p>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Tags */}

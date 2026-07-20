@@ -4,8 +4,9 @@ import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
 import {
   ArrowLeft, Upload, FileText, Clock, Pencil,
   ChevronRight, AlertCircle, AlertTriangle, MessageSquarePlus, X, CheckCircle,
-  CreditCard, CheckCircle2, Loader2, ShieldAlert, ShieldCheck,
+  CreditCard, CheckCircle2, Loader2, ShieldAlert, ShieldCheck, ArrowUp, ArrowDown,
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -581,13 +582,19 @@ export default function EcuJobDetail() {
               </div>
             ) : (
               <div className="pm-card p-0 divide-y divide-[hsl(var(--pm-gray-700))]">
-                {files.map((f) => (
-                  <div key={f.id} className="flex items-center gap-3 p-3">
-                    <FileText size={18} className="text-muted-foreground shrink-0" />
+                {files.map((f) => {
+                  const isModificado = f.file_type === 'entrega'
+                  return (
+                  <div key={f.id} className={cn('flex items-center gap-3 p-3', isModificado && 'bg-green-500/[0.06]')}>
+                    {isModificado ? (
+                      <ArrowDown size={18} className="text-green-600 shrink-0" />
+                    ) : (
+                      <ArrowUp size={18} className="text-red-500 shrink-0" />
+                    )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-foreground truncate">{f.file_name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {f.file_type === 'original' ? 'Original' : 'Entrega'} · {formatBytes(f.size_bytes)} · {formatDateTime(f.created_at)}
+                        {isModificado ? 'Modificado' : 'Original'} · {formatBytes(f.size_bytes)} · {formatDateTime(f.created_at)}
                       </p>
                     </div>
                     {(f.scan_status === 'infected' || f.scan_status === 'blocked') ? (
@@ -614,7 +621,8 @@ export default function EcuJobDetail() {
                       </Button>
                     )}
                   </div>
-                ))}
+                  )
+                })}
               </div>
             )}
 

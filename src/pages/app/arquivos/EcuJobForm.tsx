@@ -36,7 +36,7 @@ const SERVICE_TAGS = ['Potência', 'EGR', 'DPF', 'AdBlue', 'Pops and Bangs', 'Po
 const VEHICLE_CATEGORIES = ['Carro/SUV', 'Pickup', 'Truck', 'Agrícola', 'Máquina Pesada', 'Moto', 'Náutica']
 // Categorias bloqueadas para contrato linha_leve
 const LEVE_BLOCKED = new Set(['Truck', 'Agrícola', 'Máquina Pesada'])
-const VEHICLE_TRANSMISSIONS = ['Manual', 'Automático', 'CVT', 'DCT', 'AMT']
+const VEHICLE_TRANSMISSIONS = ['Automático', 'Manual']
 const PLATE_CATEGORIES = new Set(['Carro/SUV', 'Pickup', 'Truck', 'Moto'])
 const PLATE_REGEX = /^[A-Z]{3}-?(?:\d{4}|\d[A-Z]\d{2})$/i
 const ACCEPTED_EXTENSIONS = '.bin,.hex,.ori,.kfg,.bck,.eprom,.zip,.rar'
@@ -59,7 +59,7 @@ const schema = z.object({
   vehicle_marca:      z.string().optional(),
   vehicle_modelo:     z.string().optional(),
   vehicle_motor:      z.string().optional(),
-  vehicle_transmissao: z.string().optional(),
+  vehicle_transmissao: z.string().min(1, 'Selecione a transmissão'),
   vehicle_ano:        z.string().optional(),
   vehicle_horas_km:   z.string().optional(),
 }).superRefine((data, ctx) => {
@@ -747,18 +747,29 @@ export default function EcuJobForm() {
                 )}
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">Transmissão</Label>
-                <Select
-                  value={watch('vehicle_transmissao') ?? ''}
-                  onValueChange={(v) => setValue('vehicle_transmissao', v)}
-                >
-                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                  <SelectContent>
-                    {VEHICLE_TRANSMISSIONS.map((t) => (
-                      <SelectItem key={t} value={t}>{t}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label className="text-xs">
+                  Transmissão <span className="text-red-400">*</span>
+                </Label>
+                <div key={`trans-${flashKey}`}>
+                  <Select
+                    value={watch('vehicle_transmissao') ?? ''}
+                    onValueChange={(v) => setValue('vehicle_transmissao', v)}
+                  >
+                    <SelectTrigger className={cn(fieldErr('vehicle_transmissao') && 'border-red-500')}>
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {VEHICLE_TRANSMISSIONS.map((t) => (
+                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {(errors as Record<string, { message?: string }>).vehicle_transmissao && (
+                  <p className="text-xs text-red-400">
+                    {(errors as Record<string, { message?: string }>).vehicle_transmissao?.message}
+                  </p>
+                )}
               </div>
 
               {/* Ano + Horas/Km */}

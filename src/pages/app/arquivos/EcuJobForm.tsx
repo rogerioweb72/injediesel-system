@@ -32,7 +32,7 @@ const SERVICE_TYPES = [
   'Arquivo Original',
 ]
 
-const SERVICE_TAGS = ['Performance', 'Emissões', 'Diagnóstico', 'Codificação', 'Transmissão', 'Especial'] as const
+const SERVICE_TAGS = ['Potência', 'EGR', 'DPF', 'AdBlue', 'Pops and Bangs', 'Pops and Flames', 'Hard Cut', 'Full Smoke', 'Lup Tuner'] as const
 const VEHICLE_CATEGORIES = ['Carro/SUV', 'Pickup', 'Truck', 'Agrícola', 'Máquina Pesada', 'Moto', 'Náutica']
 // Categorias bloqueadas para contrato linha_leve
 const LEVE_BLOCKED = new Set(['Truck', 'Agrícola', 'Máquina Pesada'])

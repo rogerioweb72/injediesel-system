@@ -49,6 +49,17 @@ export function ConfirmSummaryDialog({ open, onOpenChange, isEdit, unit, logoFil
         ? values.cidades_atendidas_txt.split(',').map(s => s.trim()).filter(Boolean)
         : null
 
+      const toIntOrNull = (v: unknown): number | null => {
+        if (v === null || v === undefined || v === '') return null
+        const n = Number(v)
+        return Number.isNaN(n) ? null : n
+      }
+      const toNumOrNull = (v: unknown): number | null => {
+        if (v === null || v === undefined || v === '') return null
+        const n = Number(v)
+        return Number.isNaN(n) ? null : n
+      }
+
       const payload = {
         name: values.name,
         status: values.status,
@@ -68,7 +79,7 @@ export function ConfirmSummaryDialog({ open, onOpenChange, isEdit, unit, logoFil
         city: values.city || null,
         state: values.state || null,
         address: [values.logradouro, values.numero, values.bairro].filter(Boolean).join(', ') || null,
-        raio_atendimento_km: values.raio_atendimento_km ?? null,
+        raio_atendimento_km: toNumOrNull(values.raio_atendimento_km),
         cidades_atendidas: cidades,
         perimetro_exclusivo: values.perimetro_exclusivo,
         responsavel_legal_nome: values.responsavel_legal_nome || null,
@@ -83,7 +94,7 @@ export function ConfirmSummaryDialog({ open, onOpenChange, isEdit, unit, logoFil
         contract_type: values.contract_type,
         contract_start_date: values.contract_start_date || null,
         contract_end_date: values.contract_end_date || null,
-        limite_colaboradores: values.limite_colaboradores ?? null,
+        limite_colaboradores: toIntOrNull(values.limite_colaboradores),
         observacoes_internas: values.observacoes_internas || null,
         active: values.status === 'ativa',
         commission_rate: unit?.commission_rate ?? 0,

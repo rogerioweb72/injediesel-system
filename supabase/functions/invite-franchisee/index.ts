@@ -11,7 +11,7 @@ serve(async (req) => {
   const serviceKey  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
   const auth = await requireAuth(req, 'role, active').catch(() => null)
-  if (!auth || !['company_admin', 'system_ti'].includes(auth.profile.role as string)) {
+  if (!auth || !['company_admin', 'system_ti', 'operations_admin'].includes(auth.profile.role as string)) {
     return new Response(JSON.stringify({ error: 'Forbidden: apenas company_admin pode convidar franqueados' }), {
       status: 403, headers: CORS,
     })

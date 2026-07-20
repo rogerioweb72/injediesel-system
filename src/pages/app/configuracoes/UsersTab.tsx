@@ -194,11 +194,14 @@ const COL_KEYS: (keyof PermissionEntry)[] = ['can_view', 'can_create', 'can_edit
 function PermMatrix({
   permissions,
   onChange,
+  disabled,
 }: {
   permissions: PermissionEntry[]
   onChange: (updated: PermissionEntry[]) => void
+  disabled?: boolean
 }) {
   const toggle = (module: RbacModule, key: keyof PermissionEntry) => {
+    if (disabled) return
     onChange(
       permissions.map((e) =>
         e.module === module ? { ...e, [key]: !e[key] } : e,
@@ -240,7 +243,8 @@ function PermMatrix({
                     <button
                       type="button"
                       onClick={() => toggle(entry.module, key)}
-                      className="w-5 h-5 rounded flex items-center justify-center mx-auto transition-colors"
+                      disabled={disabled}
+                      className="w-5 h-5 rounded flex items-center justify-center mx-auto transition-colors disabled:cursor-not-allowed disabled:opacity-60"
                       style={{
                         background: entry[key] ? 'hsl(var(--pm-red-500)/0.2)' : 'rgba(255,255,255,0.04)',
                         border: `1px solid ${entry[key] ? 'hsl(var(--pm-red-500)/0.5)' : 'rgba(255,255,255,0.1)'}`,
@@ -279,7 +283,7 @@ function getRoleColor(role: UserRole): string {
 }
 
 export function UsersTab() {
-  const { isSystemTI } = useProfile()
+  const { isSystemTI, profile } = useProfile()
   const { data: myUnit } = useMyUnit()
   // Context determined by unit_id (URL-based routing), not by role
   const isFranchise = !!myUnit?.unit_id
@@ -291,6 +295,7 @@ export function UsersTab() {
 
   const [editUser, setEditUser]       = useState<Profile | null>(null)
   const [pendingToggle, setPendingToggle] = useState<Profile | null>(null)
+  const isEditingSelf = !!editUser && !!profile && editUser.id === profile.id
 
   // Create / invite state
   const [createOpen, setCreateOpen]           = useState(false)
@@ -605,7 +610,7 @@ export function UsersTab() {
                 <div className="space-y-4">
                   <div className="space-y-1">
                     <label className="text-xs text-muted-foreground">Cargo / Perfil</label>
-                    <Select value={editRole} onValueChange={(v) => handleRoleChange(v as UserRole)}>
+                    <Select value={editRole} onValueChange={(v) => handleRoleChange(v as UserRole)} disabled={isEditingSelf}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {rolesForSelector.filter((r) => getAccountTier(r) === 'franchise').length > 0 && <>
@@ -628,6 +633,11 @@ export function UsersTab() {
                         </>}
                       </SelectContent>
                     </Select>
+                    {isEditingSelf && (
+                      <p className="text-[11px]" style={{ color: 'hsl(var(--pm-red-500))' }}>
+                        Você não pode alterar seu próprio cargo
+                      </p>
+                    )}
                   </div>
 
                   <div className="rounded-xl p-3 space-y-3" style={{ background: 'hsl(var(--pm-gray-900))', border: '1px solid rgba(255,255,255,0.07)' }}>
@@ -635,13 +645,13 @@ export function UsersTab() {
                       <label className="text-xs font-medium flex items-center gap-1.5 text-foreground">
                         <Percent size={12} /> Direito a comissão
                       </label>
-                      <Switch checked={editHasCommission} onCheckedChange={setEditHasCommission} />
+                      <Switch checked={editHasCommission} onCheckedChange={setEditHasCommission} disabled={isEditingSelf} />
                     </div>
                     {editHasCommission && (
                       <div className="space-y-1">
                         <label className="text-[11px] text-muted-foreground">Percentual (%)</label>
                         <Input type="number" min={0} max={100} step={0.5} value={editCommission}
-                          onChange={(e) => setEditCommission(e.target.value)} placeholder="0" />
+                          onChange={(e) => setEditCommission(e.target.value)} placeholder="0" disabled={isEditingSelf} />
                         <p className="text-[11px] text-muted-foreground/60">Calculado sobre o valor líquido pago pelo cliente</p>
                       </div>
                     )}
@@ -688,15 +698,20 @@ export function UsersTab() {
                       <div className="px-4 pb-4 pt-3 space-y-3" style={{ background: 'hsl(var(--pm-gray-900))' }}>
                         <div className="flex items-center justify-between">
                           <p className="text-[11px]" style={{ color: 'hsl(var(--pm-gray-500))' }}>Personalize os acessos abaixo ou</p>
-                          <button type="button" onClick={resetPermissions}
-                            className="flex items-center gap-1 text-[11px] transition-colors"
+                          <button type="button" onClick={resetPermissions} disabled={isEditingSelf}
+                            className="flex items-center gap-1 text-[11px] transition-colors disabled:cursor-not-allowed disabled:opacity-60"
                             style={{ color: 'hsl(var(--pm-gray-500))' }}
-                            onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
+                            onMouseEnter={(e) => !isEditingSelf && (e.currentTarget.style.color = '#fff')}
                             onMouseLeave={(e) => (e.currentTarget.style.color = 'hsl(var(--pm-gray-500))')}>
                             <RotateCcw size={10} /> restaurar padrão
                           </button>
                         </div>
-                        <PermMatrix permissions={editPermissions} onChange={setEditPermissions} />
+                        {isEditingSelf && (
+                          <p className="text-[11px]" style={{ color: 'hsl(var(--pm-red-500))' }}>
+                            Você não pode alterar suas próprias permissões
+                          </p>
+                        )}
+                        <PermMatrix permissions={editPermissions} onChange={setEditPermissions} disabled={isEditingSelf} />
                       </div>
                     )}
                   </div>

@@ -35,8 +35,8 @@ serve(async (req) => {
   const isMatrixRole    = MATRIX_ROLES.includes(role)
   const callerRole      = callerProfile.role
 
-  const canManageMatrix    = ['company_admin', 'system_ti'].includes(callerRole)
-  const canManageFranchise = ['company_admin', 'system_ti', 'franchise_manager', 'unit_manager'].includes(callerRole)
+  const canManageMatrix    = ['company_admin', 'system_ti', 'operations_admin'].includes(callerRole)
+  const canManageFranchise = ['company_admin', 'system_ti', 'operations_admin', 'franchise_manager', 'unit_manager'].includes(callerRole)
 
   if (isFranchiseRole && !canManageFranchise) {
     return new Response(JSON.stringify({ error: 'Sem permissão para criar usuários de franquia' }), { status: 403, headers: CORS })

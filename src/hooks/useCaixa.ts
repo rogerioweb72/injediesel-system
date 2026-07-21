@@ -109,6 +109,26 @@ export function useRegisterPayment() {
         .eq('id', entryId)
       if (entryErr) throw entryErr
 
+      // 1b. Sincroniza o job — sem isso ecu_jobs.matrix_payment_status
+      // ficava travado em 'em_aberto' pra sempre, mesmo com a entry paga.
+      // Best-effort, não derruba a mutation: finance_admin/finance_staff
+      // (quem mais registra pagamento) não tem UPDATE em ecu_jobs via RLS
+      // (só company_admin/operations_admin/franquia da própria unidade
+      // têm — ecu_jobs_matrix_all / ecu_jobs_unit_member). O pagamento em
+      // si (financial_entries, linha acima) já foi gravado com sucesso;
+      // não faz sentido reportar falha pro usuário por causa do espelho.
+      // Trigger fn_sync_ecu_job_payment_status (migration 093, draft pra
+      // auditoria) é o mecanismo confiável — roda SECURITY DEFINER,
+      // cobre os papéis que essa call aqui não alcança.
+      const { error: jobErr } = await sb()
+        .from('ecu_jobs')
+        .update({
+          matrix_payment_status: 'pago',
+          matrix_paid_at: new Date().toISOString(),
+        })
+        .eq('id', jobId)
+      if (jobErr) console.warn('Sync ecu_jobs.matrix_payment_status falhou (RLS?) — trigger cobre:', jobErr)
+
       // 2. Cria/atualiza commission_entry se houver vendedor
       if (sellerId && commissionRate > 0) {
         const commissionAmount = Number((netAmount * (commissionRate / 100)).toFixed(2))
@@ -130,6 +150,11 @@ export function useRegisterPayment() {
     onSuccess: ({ entryId, jobId, sellerId, netAmount, discountPct }) => {
       qc.invalidateQueries({ queryKey: ['caixa-pendentes'] })
       qc.invalidateQueries({ queryKey: ['ecu-job-financial-entry', jobId] })
+      // Sem isso a tela do job/lista ficava com matrix_payment_status em
+      // cache velho até um Cmd+R — job já queria refetch no mount, mas só
+      // se stale, e staleTime é 5min (main.tsx).
+      qc.invalidateQueries({ queryKey: ['ecu-job', jobId] })
+      qc.invalidateQueries({ queryKey: ['ecu-jobs'] })
       if (sellerId) qc.invalidateQueries({ queryKey: ['commission-entries', sellerId] })
       log({
         entity: 'financial_entry',

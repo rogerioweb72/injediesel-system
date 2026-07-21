@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
 import {
   ArrowLeft, Upload, FileText, Clock, Pencil,
-  ChevronRight, AlertCircle, AlertTriangle, MessageSquarePlus, X, CheckCircle,
+  ChevronRight, AlertCircle, AlertTriangle, MessageSquarePlus, X,
   CreditCard, CheckCircle2, Loader2, ShieldAlert, ShieldCheck, ArrowUp, ArrowDown,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -34,16 +34,14 @@ const PRIORITY_COLORS: Record<string, string> = {
 }
 
 const STATUS_ACTION_LABELS: Partial<Record<FileStatus, string>> = {
-  em_triagem:         'Iniciar Triagem',
-  em_processamento:   'Iniciar Processamento',
-  aguardando_cliente: 'Aguardando Cliente',
-  concluido:          'Marcar Concluído',
-  cancelado:          'Cancelar Job',
+  em_processamento: 'Iniciar Processamento',
+  concluido:        'Marcar Concluído',
+  cancelado:        'Cancelar Job',
 }
 
 // Status pipeline visual (ordered)
 const STATUS_PIPELINE: FileStatus[] = [
-  'recebido', 'em_triagem', 'em_processamento', 'aguardando_cliente', 'concluido',
+  'recebido', 'em_processamento', 'concluido',
 ]
 
 function formatBytes(bytes: number) {
@@ -258,9 +256,6 @@ export default function EcuJobDetail() {
   const [matrixPrice, setMatrixPrice] = useState('')
   const [editingPrice, setEditingPrice] = useState(false)
   const [correcaoOpen, setCorrecaoOpen] = useState(false)
-  const [pendingDeliveryFile, setPendingDeliveryFile] = useState<File | null>(null)
-  const [deliveryConfirmOpen, setDeliveryConfirmOpen] = useState(false)
-  const [sentVisible, setSentVisible] = useState<'in' | 'out' | null>(null)
   const [valueEditOpen, setValueEditOpen] = useState(false)
 
   const { data: job, isLoading } = useEcuJob(id ?? '')
@@ -314,27 +309,11 @@ export default function EcuJobDetail() {
     await uploadFile.mutateAsync({ jobId: job.id, file, fileType: 'entrega' })
   }
 
-  async function handleDeliveryConfirm() {
-    if (!pendingDeliveryFile || !job) return
-    setDeliveryConfirmOpen(false)
-    try {
-      await uploadFile.mutateAsync({ jobId: job.id, file: pendingDeliveryFile, fileType: 'entrega' })
-      await updateStatus.mutateAsync({ id: job.id, status: 'concluido' })
-      setSentVisible('in')
-      setTimeout(() => setSentVisible('out'), 1800)
-      setTimeout(() => setSentVisible(null), 2400)
-    } catch {
-      toast.error('Erro ao enviar arquivo')
-    } finally {
-      setPendingDeliveryFile(null)
-    }
-  }
-
   async function handleDownloadFile(f: { id: string; r2_key: string; file_name: string }) {
     if (!job) return
     if (isMatrixUser() && job.status === 'recebido') {
       try {
-        await updateStatus.mutateAsync({ id: job.id, status: 'em_triagem' })
+        await updateStatus.mutateAsync({ id: job.id, status: 'em_processamento' })
       } catch {
         // non-blocking
       }
@@ -850,37 +829,6 @@ export default function EcuJobDetail() {
         />
       )}
 
-      {/* Delivery file confirmation modal */}
-      <Dialog open={deliveryConfirmOpen} onOpenChange={(v) => {
-        if (!v) { setDeliveryConfirmOpen(false); setPendingDeliveryFile(null) }
-      }}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Confirmar envio</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground py-2">
-            Ao enviar o arquivo o status mudará para{' '}
-            <span className="font-semibold text-foreground">Finalizado</span>.
-          </p>
-          <div className="flex justify-end gap-3 pt-2">
-            <Button
-              variant="ghost"
-              onClick={() => { setDeliveryConfirmOpen(false); setPendingDeliveryFile(null) }}
-              disabled={uploadFile.isPending || updateStatus.isPending}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleDeliveryConfirm}
-              disabled={uploadFile.isPending || updateStatus.isPending}
-              className="bg-green-600 hover:bg-green-500 text-white border-0 min-w-[96px]"
-            >
-              {uploadFile.isPending || updateStatus.isPending ? 'Enviando...' : 'OK Enviar'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Value edit modal */}
       {valueEditOpen && job.amount_charged_by_matrix != null && (
         <EcuValueEditModal
@@ -890,22 +838,6 @@ export default function EcuJobDetail() {
           jobCode={`#${job.id.slice(0, 8).toUpperCase()}`}
           valorAtual={job.amount_charged_by_matrix}
         />
-      )}
-
-      {/* Floating sent checkmark */}
-      {sentVisible && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
-          <div
-            className="flex flex-col items-center gap-3 bg-green-600/95 backdrop-blur-sm rounded-2xl px-12 py-8 shadow-2xl transition-all duration-500"
-            style={{
-              opacity: sentVisible === 'in' ? 1 : 0,
-              transform: sentVisible === 'in' ? 'scale(1)' : 'scale(0.88)',
-            }}
-          >
-            <CheckCircle size={64} className="text-white" strokeWidth={1.5} />
-            <span className="text-white font-bold text-2xl tracking-wide font-mono uppercase">enviado</span>
-          </div>
-        </div>
       )}
     </div>
   )

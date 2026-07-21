@@ -188,10 +188,8 @@ export function useCreateEcuJob() {
 }
 
 const NEXT_STATUS: Partial<Record<FileStatus, FileStatus[]>> = {
-  recebido:           ['em_triagem', 'cancelado'],
-  em_triagem:         ['em_processamento', 'cancelado'],
-  em_processamento:   ['aguardando_cliente', 'concluido', 'cancelado'],
-  aguardando_cliente: ['em_processamento', 'concluido', 'cancelado'],
+  recebido:         ['em_processamento', 'cancelado'],
+  em_processamento: ['concluido', 'cancelado'],
 }
 
 export { NEXT_STATUS }

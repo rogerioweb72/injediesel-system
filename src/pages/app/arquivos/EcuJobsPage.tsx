@@ -53,55 +53,58 @@ function StatusDot({ status, unseen }: { status: FileStatus; unseen?: boolean })
 }
 
 // ─── Elapsed time cell ─────────────────────────────────────────────────────────
-function ElapsedCell({ createdAt, status }: { createdAt: string; status: FileStatus }) {
+function formatDuration(ms: number): string {
+  if (ms < 60_000) return '< 1min'
+  const totalMin = Math.floor(ms / 60_000)
+  const d = Math.floor(totalMin / 1440)
+  const h = Math.floor((totalMin % 1440) / 60)
+  const m = totalMin % 60
+  if (d > 0) return `${d}d ${h}h${m > 0 ? ` ${m}min` : ''}`
+  if (h > 0) return `${h}h${m > 0 ? ` ${m}min` : ''}`
+  return `${m}min`
+}
+
+function ElapsedCell({ createdAt, updatedAt, status, firstEntregaAt }: {
+  createdAt: string
+  updatedAt: string
+  status: FileStatus
+  firstEntregaAt?: string | null
+}) {
   const [, setTick] = useState(0)
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 60_000)
     return () => clearInterval(id)
   }, [])
 
-  if (status === 'concluido' || status === 'cancelado') {
+  const isTerminal = status === 'concluido' || status === 'cancelado'
+
+  // Relógio congela na entrega do 1º arquivo 'entrega'. Sem entrega e job
+  // terminal (cancelado antes de entregar, por ex.), cai pra updated_at —
+  // sem isso um job cancelado ficaria "correndo" pra sempre até o refresh.
+  // eslint-disable-next-line react-hooks/purity
+  const endMs = firstEntregaAt
+    ? new Date(firstEntregaAt).getTime()
+    : isTerminal
+      ? new Date(updatedAt).getTime()
+      : Date.now()
+
+  const diffMs  = Math.max(0, endMs - new Date(createdAt).getTime())
+  const diffMin = Math.floor(diffMs / 60_000)
+
+  if (isTerminal) {
     return (
-      <span className="text-xs text-muted-foreground">
-        {new Date(createdAt).toLocaleDateString('pt-BR')}
+      <span className="text-xs font-mono whitespace-nowrap text-muted-foreground">
+        {formatDuration(diffMs)}
       </span>
     )
   }
 
-  // eslint-disable-next-line react-hooks/purity
-  const diffMs    = Date.now() - new Date(createdAt).getTime()
-  const diffMin   = Math.floor(diffMs / 60_000)
-  const diffH     = Math.floor(diffMin / 60)
-  const diffD     = Math.floor(diffH / 24)
-  const isWarning = diffH >= 12 && diffH < 24
-  const isLate    = diffH >= 24
-
-  let label: string
-  if (diffMin < 1) {
-    label = 'chegou há: < 1min'
-  } else if (diffMin < 60) {
-    label = `chegou há: ${diffMin}min`
-  } else if (diffH < 12) {
-    const m = diffMin % 60
-    label = `chegou há: ${diffH}h${m > 0 ? ` ${m}min` : ''}`
-  } else if (diffH < 24) {
-    const m = diffMin % 60
-    label = `⚠ em aberto: ${diffH}h${m > 0 ? ` ${m}min` : ''}`
-  } else {
-    const h = diffH % 24
-    const m = diffMin % 60
-    label = `atrasado!: ${diffD}D ${h}h${m > 0 ? ` ${m}min` : ''}`
-  }
+  const color = diffMin > 50 ? 'hsl(var(--pm-red-400))' : diffMin > 20 ? '#FBBF24' : '#4ADE80'
 
   return (
-    <span
-      className="text-xs font-mono whitespace-nowrap"
-      style={{
-        color: isLate ? 'hsl(var(--pm-red-400))' : isWarning ? '#FBBF24' : 'hsl(var(--pm-gray-400))',
-        fontWeight: isLate || isWarning ? 700 : 400,
-      }}
-    >
-      {label}
+    <span className="text-xs font-mono whitespace-nowrap inline-flex items-center gap-1.5">
+      <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: color }} />
+      <span style={{ color, fontWeight: diffMin > 50 ? 700 : 400 }}>{formatDuration(diffMs)}</span>
     </span>
   )
 }
@@ -236,7 +239,14 @@ function buildColumns(
     },
     {
       key: 'elapsed', header: 'Tempo',
-      cell: (r) => <ElapsedCell createdAt={r.created_at} status={r.status} />,
+      cell: (r) => (
+        <ElapsedCell
+          createdAt={r.created_at}
+          updatedAt={r.updated_at}
+          status={r.status}
+          firstEntregaAt={r.first_entrega_at}
+        />
+      ),
     },
     {
       key: 'financeiro', header: 'Financeiro',

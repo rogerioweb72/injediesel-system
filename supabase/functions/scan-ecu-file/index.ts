@@ -5,6 +5,15 @@
 //   Table: ecu_job_files | Event: INSERT
 //   URL: {SUPABASE_URL}/functions/v1/scan-ecu-file
 //   Secret: set WEBHOOK_SECRET env var and configure "HTTP Request Secret" in webhook settings
+//
+// Secrets de bucket: R2_BUCKET_ECU_ORIGINALS + R2_BUCKET_ECU_DELIVERED
+// (mesmos buckets físicos do Worker r2-presign.ts — ECU_ORIGINALS/
+// ECU_DELIVERED). R2_BUCKET_ECU (legado) fica como fallback se os novos
+// não estiverem configurados ainda.
+//
+// VIRUSTOTAL_API_KEY: opcional. Ausente = todo arquivo cai em 'skipped'
+// (download liberado, sem verificação real). Se a secret aparecer no
+// futuro, a análise real liga sozinha — sem mudança de código.
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { S3Client, GetObjectCommand, DeleteObjectCommand } from 'npm:@aws-sdk/client-s3'
@@ -12,7 +21,18 @@ import { PUBLIC_CORS } from '../_shared/cors.ts'
 
 const VT_KEY = Deno.env.get('VIRUSTOTAL_API_KEY') ?? ''
 const VT_BASE = 'https://www.virustotal.com/api/v3'
-const BUCKET  = Deno.env.get('R2_BUCKET_ECU')!
+
+// Originais e entregas vivem em buckets R2 físicos diferentes (mesma
+// separação do Worker r2-presign.ts: ECU_ORIGINALS/ECU_DELIVERED).
+// R2_BUCKET_ECU é fallback de compat — mantém funcionando se os secrets
+// novos ainda não foram configurados, ou se file_type não vier no payload.
+const LEGACY_BUCKET     = Deno.env.get('R2_BUCKET_ECU') ?? ''
+const BUCKET_ORIGINALS  = Deno.env.get('R2_BUCKET_ECU_ORIGINALS') || LEGACY_BUCKET
+const BUCKET_DELIVERED  = Deno.env.get('R2_BUCKET_ECU_DELIVERED') || LEGACY_BUCKET
+
+function resolveBucket(fileType: string | undefined): string {
+  return fileType === 'entrega' ? BUCKET_DELIVERED : BUCKET_ORIGINALS
+}
 
 // ── Policy constants ───────────────────────────────────────────────────────────
 const MAX_BYTES = 50 * 1024 * 1024 // 50 MB — ECU files are never this large in practice
@@ -43,8 +63,8 @@ async function sha256Hex(data: Uint8Array): Promise<string> {
   return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
-async function downloadFromR2(r2Key: string): Promise<Uint8Array> {
-  const { Body } = await s3.send(new GetObjectCommand({ Bucket: BUCKET, Key: r2Key }))
+async function downloadFromR2(bucket: string, r2Key: string): Promise<Uint8Array> {
+  const { Body } = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: r2Key }))
   if (!Body) throw new Error('Empty R2 body')
   const chunks: Uint8Array[] = []
   for await (const chunk of Body as AsyncIterable<Uint8Array>) chunks.push(chunk)
@@ -55,8 +75,8 @@ async function downloadFromR2(r2Key: string): Promise<Uint8Array> {
   return merged
 }
 
-async function deleteFromR2(r2Key: string) {
-  await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: r2Key }))
+async function deleteFromR2(bucket: string, r2Key: string) {
+  await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: r2Key }))
 }
 
 function getExtension(fileName: string): string {
@@ -113,17 +133,26 @@ async function logAudit(action: string, payload: Record<string, unknown>) {
 }
 
 async function blockFile(
+  bucket: string,
   fileId: string,
   r2Key: string,
   reason: string,
   extra: Record<string, unknown> = {},
 ) {
-  await deleteFromR2(r2Key).catch(() => null)
+  await deleteFromR2(bucket, r2Key).catch(() => null)
   await adminClient.from('ecu_job_files').update({
     scan_status:     'blocked',
     scan_checked_at: new Date().toISOString(),
   }).eq('id', fileId)
   await logAudit('scan_error', { file_id: fileId, r2_key: r2Key, reason, ...extra })
+}
+
+async function markScanError(fileId: string, reason: string) {
+  await adminClient.from('ecu_job_files').update({
+    scan_status:     'error',
+    scan_checked_at: new Date().toISOString(),
+  }).eq('id', fileId)
+  await logAudit('scan_error', { file_id: fileId, reason })
 }
 
 // ── Main handler ───────────────────────────────────────────────────────────────
@@ -146,6 +175,9 @@ serve(async (req) => {
       r2_key: string
       file_name: string
       size_bytes: number
+      // Database Webhook manda a linha inteira (inclui file_type). Payload
+      // manual/legado pode não mandar — resolveBucket() cai no fallback.
+      file_type?: string
     }
   }
   try { payload = await req.json() } catch {
@@ -157,10 +189,12 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: 'Missing record fields' }), { status: 400 })
   }
 
+  const bucket = resolveBucket(record.file_type)
+
   // ── 1. Extension whitelist ─────────────────────────────────────────────────
   const ext = getExtension(record.file_name)
   if (!ALLOWED_EXTENSIONS.has(ext)) {
-    await blockFile(record.id, record.r2_key, 'blocked_extension', { ext, file_name: record.file_name })
+    await blockFile(bucket, record.id, record.r2_key, 'blocked_extension', { ext, file_name: record.file_name })
     return new Response(JSON.stringify({ status: 'blocked', reason: 'extension_not_allowed' }), {
       headers: { 'Content-Type': 'application/json' },
     })
@@ -168,7 +202,7 @@ serve(async (req) => {
 
   // ── 2. Size limit (before download) ───────────────────────────────────────
   if ((record.size_bytes ?? 0) > MAX_BYTES) {
-    await blockFile(record.id, record.r2_key, 'blocked_size', { size_bytes: record.size_bytes })
+    await blockFile(bucket, record.id, record.r2_key, 'blocked_size', { size_bytes: record.size_bytes })
     return new Response(JSON.stringify({ status: 'blocked', reason: 'file_too_large' }), {
       headers: { 'Content-Type': 'application/json' },
     })
@@ -183,7 +217,7 @@ serve(async (req) => {
     .gt('created_at', since24h)
 
   if ((jobFileCount ?? 0) > RATE_LIMIT_PER_JOB_24H) {
-    await blockFile(record.id, record.r2_key, 'rate_limited', { job_id: record.job_id, count: jobFileCount })
+    await blockFile(bucket, record.id, record.r2_key, 'rate_limited', { job_id: record.job_id, count: jobFileCount })
     return new Response(JSON.stringify({ status: 'blocked', reason: 'rate_limit_exceeded' }), {
       headers: { 'Content-Type': 'application/json' },
     })
@@ -191,11 +225,11 @@ serve(async (req) => {
 
   try {
     // ── 4. Download from R2 ──────────────────────────────────────────────────
-    const fileBytes = await downloadFromR2(record.r2_key)
+    const fileBytes = await downloadFromR2(bucket, record.r2_key)
 
     // ── 5. Magic bytes check ─────────────────────────────────────────────────
     if (hasDangerousHeader(fileBytes)) {
-      await blockFile(record.id, record.r2_key, 'blocked_magic_bytes', { file_name: record.file_name })
+      await blockFile(bucket, record.id, record.r2_key, 'blocked_magic_bytes', { file_name: record.file_name })
       return new Response(JSON.stringify({ status: 'blocked', reason: 'dangerous_file_header' }), {
         headers: { 'Content-Type': 'application/json' },
       })
@@ -216,7 +250,7 @@ serve(async (req) => {
 
     if (knownFile) {
       if (knownFile.scan_status === 'infected') {
-        await deleteFromR2(record.r2_key)
+        await deleteFromR2(bucket, record.r2_key)
         await adminClient.from('ecu_job_files').update({
           scan_status:     'infected',
           sha256_hex:      hash,
@@ -267,7 +301,7 @@ serve(async (req) => {
     }
 
     if (status === 'infected') {
-      await deleteFromR2(record.r2_key)
+      await deleteFromR2(bucket, record.r2_key)
       await logAudit('malware_detected', {
         file_id:   record.id,
         job_id:    record.job_id,
@@ -289,8 +323,13 @@ serve(async (req) => {
     })
   } catch (err) {
     const isRateLimit = String(err).includes('VT_RATE_LIMITED')
-    if (!isRateLimit) {
-      await logAudit('scan_error', { file_id: record?.id, error: String(err) })
+    // 'pending' só faz sentido enquanto genuinamente aguarda algo (análise VT
+    // em curso). Qualquer exceção aqui — download falhou, hash falhou, VT
+    // rate limitou — não tem nada em curso pra aguardar. Marca 'error' em vez
+    // de deixar o arquivo preso em 'pending' pra sempre (era o bug: webhook
+    // nunca reagenda sozinho, então "pending" nesse ponto nunca resolvia).
+    if (record?.id) {
+      await markScanError(record.id, isRateLimit ? 'vt_rate_limited' : `scan_exception: ${String(err)}`)
     }
     return new Response(
       JSON.stringify({ error: String(err), retryable: true }),

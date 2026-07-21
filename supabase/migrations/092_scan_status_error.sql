@@ -1,0 +1,21 @@
+-- ============================================================
+-- 092_scan_status_error.sql (21/07/2026)
+--
+-- Adiciona 'error' ao enum scan_status (public.scan_status:
+-- pending, clean, infected, blocked, skipped).
+--
+-- Por quê: scan-ecu-file deixava o arquivo em 'pending' pra
+-- sempre quando o download do R2 falhava, hash falhava, ou VT
+-- rate-limitava (catch do handler, era updateless). Sem nada que
+-- reagenda um webhook de INSERT, esse 'pending' nunca resolvia
+-- sozinho — bug raiz do scan preso. Agora o catch grava 'error'
+-- explicitamente (scan-ecu-file/index.ts, markScanError()).
+--
+-- 'error' != 'blocked': blocked é decisão de política (extensão
+-- proibida, malware, rate limit de upload) — o arquivo foi
+-- avaliado e rejeitado. error é falha operacional da própria
+-- checagem (R2 fora do ar, bucket errado, VT indisponível) — o
+-- arquivo não foi avaliado, só a tentativa de avaliar falhou.
+-- ============================================================
+
+ALTER TYPE public.scan_status ADD VALUE IF NOT EXISTS 'error';

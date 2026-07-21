@@ -1,4 +1,7 @@
 // supabase/functions/poll-ecu-scans/index.ts
+// Secrets de bucket: R2_BUCKET_ECU_ORIGINALS + R2_BUCKET_ECU_DELIVERED,
+// mesmo esquema do scan-ecu-file/index.ts (R2_BUCKET_ECU como fallback).
+//
 // Called by Supabase Cron (pg_cron extension) every 2 minutes:
 //   SELECT cron.schedule('poll-ecu-scans', '*/2 * * * *',
 //     $$SELECT net.http_post(
@@ -13,7 +16,16 @@ import { PUBLIC_CORS } from '../_shared/cors.ts'
 
 const VT_KEY  = Deno.env.get('VIRUSTOTAL_API_KEY') ?? ''
 const VT_BASE = 'https://www.virustotal.com/api/v3'
-const BUCKET  = Deno.env.get('R2_BUCKET_ECU')!
+
+// Mesma separação de bucket físico do scan-ecu-file/index.ts — mantém
+// consistente pra deletar arquivo infectado do bucket certo.
+const LEGACY_BUCKET    = Deno.env.get('R2_BUCKET_ECU') ?? ''
+const BUCKET_ORIGINALS = Deno.env.get('R2_BUCKET_ECU_ORIGINALS') || LEGACY_BUCKET
+const BUCKET_DELIVERED = Deno.env.get('R2_BUCKET_ECU_DELIVERED') || LEGACY_BUCKET
+
+function resolveBucket(fileType: string | undefined): string {
+  return fileType === 'entrega' ? BUCKET_DELIVERED : BUCKET_ORIGINALS
+}
 
 const adminClient = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -34,6 +46,7 @@ interface PendingFile {
   job_id:           string
   r2_key:           string
   file_name:        string
+  file_type:        string
   scan_analysis_id: string
   created_at:       string
 }
@@ -46,19 +59,22 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 })
   }
 
+  let clean = 0, infected = 0, stillPending = 0
+
   const { data: pending } = await adminClient
     .from('ecu_job_files')
-    .select('id, job_id, r2_key, file_name, scan_analysis_id, created_at')
+    .select('id, job_id, r2_key, file_name, file_type, scan_analysis_id, created_at')
     .eq('scan_status', 'pending')
     .not('scan_analysis_id', 'is', null)
     .order('created_at', { ascending: true })
     .limit(20)  // VT free tier: 4 req/min → process in small batches
 
-  if (!pending?.length) return new Response(JSON.stringify({ processed: 0 }))
-
-  let clean = 0, infected = 0, stillPending = 0
-
-  for (const file of pending as PendingFile[]) {
+  // Antes: `if (!pending?.length) return ...` aqui — saía ANTES de chegar no
+  // bloco de auto-block abaixo. Sem VIRUSTOTAL_API_KEY, essa query nunca tem
+  // resultado (nenhum arquivo ganha scan_analysis_id), então a function
+  // sempre voltava aqui e o auto-block virava código morto. Auto-block
+  // agora roda sempre, independente de ter algo pra pollar.
+  for (const file of (pending ?? []) as PendingFile[]) {
     try {
       const res = await fetch(`${VT_BASE}/analyses/${file.scan_analysis_id}`, {
         headers: { 'x-apikey': VT_KEY },
@@ -78,7 +94,7 @@ serve(async (req) => {
       const newStatus   = isMalicious ? 'infected' : 'clean'
 
       if (isMalicious) {
-        await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: file.r2_key }))
+        await s3.send(new DeleteObjectCommand({ Bucket: resolveBucket(file.file_type), Key: file.r2_key }))
         await adminClient.from('audit_events').insert({
           actor_id: null,
           action:   'malware_detected',

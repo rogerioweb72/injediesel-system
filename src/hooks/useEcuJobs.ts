@@ -54,6 +54,8 @@ export interface EcuJob {
   matrix_paid_at: string | null
   edicao_valor_pendente: boolean
   edicao_valor_historico_id: string | null
+  is_complex_file: boolean
+  contact_finance: boolean
   service_tags: string[]
   vehicle_info: {
     categoria?: string
@@ -258,6 +260,24 @@ export function useAssignEcuJob() {
     onSuccess: ({ id }) => {
       qc.invalidateQueries({ queryKey: ['ecu-job', id] })
       log({ entity: 'ecu_job', entityId: id, action: 'assigned' })
+    },
+  })
+}
+
+export function useUpdateEcuJobFlags() {
+  const qc = useQueryClient()
+  const { log } = useAuditLog()
+  return useMutation({
+    mutationFn: async ({ id, field, value }: { id: string; field: 'is_complex_file' | 'contact_finance'; value: boolean }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
+        .from('ecu_jobs').update({ [field]: value, updated_at: new Date().toISOString() }).eq('id', id)
+      if (error) throw error
+      return { id, field, value }
+    },
+    onSuccess: ({ id, field, value }) => {
+      qc.invalidateQueries({ queryKey: ['ecu-job', id] })
+      log({ entity: 'ecu_job', entityId: id, action: 'flag_changed', metadata: { field, value } })
     },
   })
 }

@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { PageHeader } from '@/components/shared/PageHeader'
 import { EcuStatusBadge, STATUS_LABELS } from '@/components/shared/EcuStatusBadge'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
-import { useEcuJob, useUpdateEcuJobStatus, useSetMatrixPrice, NEXT_STATUS, useEcuJobFinancialEntry, useSendToFinance, type EcuJob } from '@/hooks/useEcuJobs'
+import { useEcuJob, useUpdateEcuJobStatus, useSetMatrixPrice, useUpdateEcuJobFlags, NEXT_STATUS, useEcuJobFinancialEntry, useSendToFinance, type EcuJob } from '@/hooks/useEcuJobs'
 import { useUploadEcuFile, useDownloadEcuFile, useEcuJobFilesRealtime } from '@/hooks/useEcuFiles'
 import { useCreateSupportTicket } from '@/hooks/useSupportTickets'
 import { useMyUnit } from '@/hooks/useMyUnit'
@@ -261,6 +261,7 @@ export default function EcuJobDetail() {
   const { data: job, isLoading } = useEcuJob(id ?? '')
   useEcuJobFilesRealtime(id ?? '')
   const updateStatus = useUpdateEcuJobStatus()
+  const updateFlags  = useUpdateEcuJobFlags()
   const setPrice     = useSetMatrixPrice()
   const uploadFile   = useUploadEcuFile()
   const downloadFile = useDownloadEcuFile()
@@ -351,6 +352,17 @@ export default function EcuJobDetail() {
         }
       />
 
+      {/* Alerta: contatar financeiro */}
+      {job.contact_finance && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl mb-4"
+          style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)' }}>
+          <AlertTriangle size={16} style={{ color: '#F87171', flexShrink: 0 }} />
+          <p className="text-sm font-semibold" style={{ color: '#F87171' }}>
+            CONTATAR FINANCEIRO — este job requer atenção do financeiro
+          </p>
+        </div>
+      )}
+
       {/* Alerta: arquivo em aberto >12h */}
       {(() => {
         const ageH = (Date.now() - new Date(job.created_at).getTime()) / (1000 * 60 * 60)
@@ -378,7 +390,12 @@ export default function EcuJobDetail() {
           <div className="pm-card grid grid-cols-2 gap-4">
             <div>
               <p className="text-xs text-muted-foreground">Status</p>
-              <EcuStatusBadge status={job.status} />
+              <div className="flex items-center gap-2 flex-wrap">
+                <EcuStatusBadge status={job.status} />
+                {job.is_complex_file && (
+                  <span className="pm-badge pm-badge--warning">Arquivo Complexo</span>
+                )}
+              </div>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Prioridade</p>
@@ -675,41 +692,79 @@ export default function EcuJobDetail() {
           </div>
 
           {/* Próximas Ações (matriz ou franchise cancelar) */}
-          {nextStatuses.length > 0 && (
-            <div className="pm-card space-y-3">
+          {(nextStatuses.length > 0 || isMatrixUser()) && (
+            <div className="pm-card space-y-4">
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 Próximas Ações
               </p>
-              {nextStatuses.map((next) => {
-                const blocked = next === 'concluido' && missingMatrixPriceToConclude
-                return (
+
+              {nextStatuses.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70">
+                    Status
+                  </p>
+                  {nextStatuses.map((next) => {
+                    const blocked = next === 'concluido' && missingMatrixPriceToConclude
+                    return (
+                      <Button
+                        key={next}
+                        className="w-full justify-between"
+                        variant={next === 'cancelado' ? 'ghost' : 'outline'}
+                        disabled={blocked}
+                        title={blocked ? 'Informe o valor cobrado pela matriz antes de concluir' : undefined}
+                        onClick={() => {
+                          if (blocked) {
+                            toast.error('Informe o valor cobrado pela matriz antes de concluir o job.')
+                            return
+                          }
+                          setConfirmStatus(next)
+                        }}
+                      >
+                        <span className={next === 'cancelado' ? 'text-red-400' : ''}>
+                          {STATUS_ACTION_LABELS[next] ?? STATUS_LABELS[next]}
+                        </span>
+                        {blocked && <ShieldAlert size={14} className="text-amber-400" />}
+                        {!blocked && next !== 'cancelado' && <ChevronRight size={14} />}
+                        {next === 'cancelado' && <AlertCircle size={14} className="text-red-400" />}
+                      </Button>
+                    )
+                  })}
+                  {missingMatrixPriceToConclude && nextStatuses.includes('concluido') && (
+                    <p className="text-xs" style={{ color: '#FB923C' }}>
+                      Informe o valor cobrado pela matriz para poder concluir este job.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {isMatrixUser() && (
+                <div className={cn('space-y-2', nextStatuses.length > 0 && 'pt-3 border-t border-white/[0.06]')}>
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70">
+                    Tags
+                  </p>
                   <Button
-                    key={next}
                     className="w-full justify-between"
-                    variant={next === 'cancelado' ? 'ghost' : 'outline'}
-                    disabled={blocked}
-                    title={blocked ? 'Informe o valor cobrado pela matriz antes de concluir' : undefined}
-                    onClick={() => {
-                      if (blocked) {
-                        toast.error('Informe o valor cobrado pela matriz antes de concluir o job.')
-                        return
-                      }
-                      setConfirmStatus(next)
-                    }}
+                    variant="outline"
+                    disabled={updateFlags.isPending}
+                    onClick={() => updateFlags.mutate({ id: job.id, field: 'is_complex_file', value: !job.is_complex_file })}
                   >
-                    <span className={next === 'cancelado' ? 'text-red-400' : ''}>
-                      {STATUS_ACTION_LABELS[next] ?? STATUS_LABELS[next]}
-                    </span>
-                    {blocked && <ShieldAlert size={14} className="text-amber-400" />}
-                    {!blocked && next !== 'cancelado' && <ChevronRight size={14} />}
-                    {next === 'cancelado' && <AlertCircle size={14} className="text-red-400" />}
+                    <span className={job.is_complex_file ? 'text-amber-400' : ''}>Arquivo Complexo</span>
+                    {job.is_complex_file
+                      ? <CheckCircle2 size={14} className="text-amber-400" />
+                      : <span className="h-3 w-3 rounded-full border border-white/20" />}
                   </Button>
-                )
-              })}
-              {missingMatrixPriceToConclude && nextStatuses.includes('concluido') && (
-                <p className="text-xs" style={{ color: '#FB923C' }}>
-                  Informe o valor cobrado pela matriz para poder concluir este job.
-                </p>
+                  <Button
+                    className="w-full justify-between"
+                    variant="outline"
+                    disabled={updateFlags.isPending}
+                    onClick={() => updateFlags.mutate({ id: job.id, field: 'contact_finance', value: !job.contact_finance })}
+                  >
+                    <span className={job.contact_finance ? 'text-red-400' : ''}>Contatar Financeiro</span>
+                    {job.contact_finance
+                      ? <AlertCircle size={14} className="text-red-400" />
+                      : <span className="h-3 w-3 rounded-full border border-white/20" />}
+                  </Button>
+                </div>
               )}
             </div>
           )}

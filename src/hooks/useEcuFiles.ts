@@ -109,29 +109,12 @@ export function useUploadEcuFile() {
 
       qc.invalidateQueries({ queryKey: ['ecu-job', jobId] })
 
-      // Trigger antivirus scan — replaces Database Webhook when not configured.
-      // Second invalidate after scan so UI updates scan_status immediately.
-      fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/scan-ecu-file`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            record: {
-              id:         data.id,
-              job_id:     jobId,
-              r2_key:     r2Key,
-              file_name:  file.name,
-              size_bytes: file.size,
-            },
-          }),
-        },
-      )
-        .then(() => qc.invalidateQueries({ queryKey: ['ecu-job', jobId] }))
-        .catch(() => null)
+      // Scan de antivírus dispara via Database Webhook (Dashboard → Database
+      // → Webhooks, INSERT em ecu_job_files) — não mais daqui. O fetch
+      // fire-and-forget que existia aqui mandava Authorization: Bearer com o
+      // JWT do usuário, mas scan-ecu-file exige o WEBHOOK_SECRET nesse
+      // header — todo upload tomava 403 silencioso (erro sempre engolido,
+      // .catch(() => null)) e o arquivo nunca era escaneado.
       return data
     },
   })

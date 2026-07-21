@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { PageHeader } from '@/components/shared/PageHeader'
 import { EcuStatusBadge, STATUS_LABELS } from '@/components/shared/EcuStatusBadge'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
-import { useEcuJob, useUpdateEcuJobStatus, useSetMatrixPrice, useUpdateEcuJobFlags, NEXT_STATUS, useEcuJobFinancialEntry, useSendToFinance, type EcuJob } from '@/hooks/useEcuJobs'
+import { useEcuJob, useUpdateEcuJobStatus, useSetMatrixPrice, useUpdateEcuJobFlags, useUpdateServiceNotes, NEXT_STATUS, useEcuJobFinancialEntry, useSendToFinance, type EcuJob } from '@/hooks/useEcuJobs'
 import { useUploadEcuFile, useDownloadEcuFile, useEcuJobFilesRealtime } from '@/hooks/useEcuFiles'
 import { useCreateSupportTicket } from '@/hooks/useSupportTickets'
 import { useMyUnit } from '@/hooks/useMyUnit'
@@ -257,11 +257,14 @@ export default function EcuJobDetail() {
   const [editingPrice, setEditingPrice] = useState(false)
   const [correcaoOpen, setCorrecaoOpen] = useState(false)
   const [valueEditOpen, setValueEditOpen] = useState(false)
+  const [editingNotes, setEditingNotes] = useState(false)
+  const [notesDraft, setNotesDraft] = useState('')
 
   const { data: job, isLoading } = useEcuJob(id ?? '')
   useEcuJobFilesRealtime(id ?? '')
   const updateStatus = useUpdateEcuJobStatus()
   const updateFlags  = useUpdateEcuJobFlags()
+  const updateNotes  = useUpdateServiceNotes()
   const setPrice     = useSetMatrixPrice()
   const uploadFile   = useUploadEcuFile()
   const downloadFile = useDownloadEcuFile()
@@ -288,6 +291,11 @@ export default function EcuJobDetail() {
     'company_admin', 'finance_admin', 'finance_staff',
     'operations_admin', 'franchise_manager', 'unit_manager',
   )
+  // Só quem tem UPDATE de verdade em ecu_jobs via RLS (ecu_jobs_matrix_all,
+  // 021_multitenant_rbac.sql) — finance_admin/seller/auditor só têm SELECT,
+  // mostrar o textarea pra eles resultaria no mesmo 42501 silencioso de
+  // sempre. Read-only pra esses, igual franquia.
+  const canEditServiceNotes = hasRole('company_admin', 'operations_admin', 'support_agent')
   const allNextStatuses = NEXT_STATUS[job.status] ?? []
   const nextStatuses = isFranchise
     ? (job.status === 'recebido' ? (['cancelado'] as typeof allNextStatuses) : [])
@@ -413,6 +421,39 @@ export default function EcuJobDetail() {
               <span className={`text-sm font-medium ${PRIORITY_COLORS[job.priority]}`}>
                 {job.priority.charAt(0).toUpperCase() + job.priority.slice(1)}
               </span>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Cliente</p>
+              {job.customers?.name ? (
+                <button
+                  type="button"
+                  onClick={() => navigate(`${prefix}/clientes/${job.customer_id}/editar`)}
+                  className="text-sm text-foreground hover:text-[hsl(var(--pm-red-400))] hover:underline text-left"
+                >
+                  {job.customers.name}
+                </button>
+              ) : (
+                <p className="text-sm text-foreground">—</p>
+              )}
+              {franqueadoUnit && isMatrixUser() && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`${prefix}/franqueados/${job.unit_id}`)}
+                  className="block text-xs text-muted-foreground hover:text-[hsl(var(--pm-red-400))] hover:underline text-left mt-0.5"
+                >
+                  {franqueadoUnit.name}
+                </button>
+              )}
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Cidade</p>
+              <p className="text-sm text-foreground">
+                {franqueadoUnit?.city
+                  ? `${franqueadoUnit.city}${franqueadoUnit.state ? `/${franqueadoUnit.state}` : ''}`
+                  : job.customers?.address?.cidade
+                    ? `${job.customers.address.cidade}${job.customers.address.estado ? `/${job.customers.address.estado}` : ''}`
+                    : '—'}
+              </p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Serviço</p>
@@ -543,6 +584,59 @@ export default function EcuJobDetail() {
             </div>
           </div>
 
+          {/* Observações do Serviço */}
+          {(isMatrixUser() || !!job.service_notes?.trim()) && (
+            <div className="pm-card space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                  Observações do Serviço
+                </p>
+                {canEditServiceNotes && !editingNotes && (
+                  <button
+                    type="button"
+                    onClick={() => { setNotesDraft(job.service_notes ?? ''); setEditingNotes(true) }}
+                    className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+                  >
+                    {job.service_notes ? 'Editar' : 'Adicionar'}
+                  </button>
+                )}
+              </div>
+
+              {editingNotes ? (
+                <div className="space-y-2">
+                  <Textarea
+                    value={notesDraft}
+                    onChange={(e) => setNotesDraft(e.target.value)}
+                    rows={4}
+                    placeholder="Dicas, dados do serviço, orientações pra quem for atender esse job..."
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => setEditingNotes(false)} disabled={updateNotes.isPending}>
+                      Cancelar
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={updateNotes.isPending}
+                      style={{ background: 'var(--pm-accent-gradient)' }}
+                      onClick={async () => {
+                        await updateNotes.mutateAsync({ id: job.id, notes: notesDraft })
+                        setEditingNotes(false)
+                      }}
+                    >
+                      {updateNotes.isPending ? 'Salvando...' : 'Salvar'}
+                    </Button>
+                  </div>
+                </div>
+              ) : job.service_notes ? (
+                <p className="text-sm text-foreground whitespace-pre-wrap">{job.service_notes}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">
+                  {canEditServiceNotes ? 'Nenhuma observação registrada — clique em Adicionar.' : 'Nenhuma observação registrada.'}
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Arquivos */}
           <div>
             <div className="flex items-center justify-between mb-3">
@@ -597,6 +691,15 @@ export default function EcuJobDetail() {
                         <ShieldAlert size={14} />
                         {f.scan_status === 'blocked' ? 'Bloqueado' : 'Infectado'}
                       </Button>
+                    ) : f.scan_status === 'error' ? (
+                      <Button
+                        size="sm" disabled
+                        className="bg-amber-700/70 text-white border-0 gap-1.5 cursor-not-allowed opacity-90"
+                        title="Falha ao verificar o arquivo — tente reenviar"
+                      >
+                        <ShieldAlert size={14} />
+                        Erro na verificação
+                      </Button>
                     ) : f.scan_status === 'pending' ? (
                       <Button size="sm" disabled className="opacity-60 gap-1.5 cursor-not-allowed">
                         <Loader2 size={14} className="animate-spin" />
@@ -606,13 +709,18 @@ export default function EcuJobDetail() {
                       <Button
                         size="sm"
                         disabled={f.r2_key.startsWith('mock/') || downloadFile.isPending}
-                        className={f.r2_key.startsWith('mock/')
-                          ? 'opacity-40 cursor-not-allowed'
-                          : 'bg-green-600 hover:bg-green-500 text-white border-0 gap-1.5'}
+                        className={cn(
+                          f.r2_key.startsWith('mock/')
+                            ? 'opacity-40 cursor-not-allowed'
+                            : f.scan_status === 'skipped'
+                              ? 'bg-amber-600 hover:bg-amber-500 text-white border-0 gap-1.5'
+                              : 'bg-green-600 hover:bg-green-500 text-white border-0 gap-1.5',
+                        )}
+                        title={f.scan_status === 'skipped' ? 'Arquivo sem verificação antivírus' : undefined}
                         onClick={() => handleDownloadFile(f)}
                       >
-                        <ShieldCheck size={14} />
-                        Baixar
+                        {f.scan_status === 'skipped' ? <ShieldAlert size={14} /> : <ShieldCheck size={14} />}
+                        {f.scan_status === 'skipped' ? 'Baixar (sem verificação)' : 'Baixar'}
                       </Button>
                     )}
                   </div>

@@ -7,7 +7,7 @@ import type { FileStatus, PriorityLevel } from '@/types/app'
 
 const sb = () => supabase as any // eslint-disable-line @typescript-eslint/no-explicit-any
 
-export type EcuFileScanStatus = 'pending' | 'clean' | 'infected' | 'blocked' | 'skipped'
+export type EcuFileScanStatus = 'pending' | 'clean' | 'infected' | 'blocked' | 'skipped' | 'error'
 
 export interface EcuJobFile {
   id: string
@@ -57,6 +57,11 @@ export interface EcuJob {
   edicao_valor_historico_id: string | null
   is_complex_file: boolean
   contact_finance: boolean
+  // Timestamp do primeiro ecu_job_files com file_type='entrega' — vem da
+  // RPC search_ecu_jobs (migration 090), não existe como coluna real.
+  // Congela o semáforo de tempo da listagem na hora da entrega.
+  first_entrega_at?: string | null
+  service_notes: string | null
   service_tags: string[]
   vehicle_info: {
     categoria?: string
@@ -69,7 +74,7 @@ export interface EcuJob {
     horas_km?: string
   } | null
   // joined
-  customers?: { name: string; email: string | null }
+  customers?: { name: string; email: string | null; address: { cidade?: string; estado?: string } | null }
   vehicles?: { brand: string; model: string; plate: string | null } | null
   franchise_units?: { name: string; city: string | null; state: string | null } | null
   creator_profile?: { name: string | null } | null
@@ -113,7 +118,7 @@ export function useEcuJob(id: string) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from('ecu_jobs')
-        .select('*, customers(name, email), vehicles(brand, model, plate), franchise_units(name, city, state), creator_profile:profiles!created_by(name), seller:profiles!seller_id(id,name), ecu_job_files(*), ecu_job_events(*)')
+        .select('*, customers(name, email, address), vehicles(brand, model, plate), franchise_units(name, city, state), creator_profile:profiles!created_by(name), seller:profiles!seller_id(id,name), ecu_job_files(*), ecu_job_events(*)')
         .eq('id', id)
         .single()
       if (error) throw error
@@ -281,6 +286,25 @@ export function useUpdateEcuJobFlags() {
     onSuccess: ({ id, field, value }) => {
       qc.invalidateQueries({ queryKey: ['ecu-job', id] })
       log({ entity: 'ecu_job', entityId: id, action: 'flag_changed', metadata: { field, value } })
+    },
+  })
+}
+
+export function useUpdateServiceNotes() {
+  const qc = useQueryClient()
+  const { log } = useAuditLog()
+  return useMutation({
+    mutationFn: async ({ id, notes }: { id: string; notes: string }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
+        .from('ecu_jobs').update({ service_notes: notes || null, updated_at: new Date().toISOString() }).eq('id', id)
+      if (error) throw error
+      return { id }
+    },
+    onSuccess: ({ id }) => {
+      qc.invalidateQueries({ queryKey: ['ecu-job', id] })
+      qc.invalidateQueries({ queryKey: ['ecu-jobs'] })
+      log({ entity: 'ecu_job', entityId: id, action: 'service_notes_updated' })
     },
   })
 }

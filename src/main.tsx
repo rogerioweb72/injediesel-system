@@ -11,11 +11,22 @@ import { AppRouter } from '@/router'
 
 initSentry()
 
-// PostgREST / Supabase error codes que indicam falha de auth ou RLS
-const AUTH_ERROR_CODES = new Set(['PGRST301', 'PGRST302', '42501'])
+// PostgREST / Supabase error codes que indicam falha de sessão (JWT expirado etc.)
+const AUTH_ERROR_CODES = new Set(['PGRST301', 'PGRST302'])
+
+// 42501 (Postgres) = insufficient_privilege — RLS negou a ação com sessão
+// válida. Não é problema de sessão, é falta de permissão: nunca deve passar
+// por handleAuthError (que faz syncProfile pensando em JWT/deactivated/role).
+const RLS_DENIED_CODE = '42501'
+
+function isRlsDenied(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false
+  return (error as Record<string, unknown>).code === RLS_DENIED_CODE
+}
 
 function isAuthError(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false
+  if (isRlsDenied(error)) return false
   const e = error as Record<string, unknown>
   if (typeof e.code === 'string' && AUTH_ERROR_CODES.has(e.code)) return true
   if (typeof e.status === 'number' && (e.status === 401 || e.status === 403)) return true
@@ -49,10 +60,11 @@ async function handleAuthError() {
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError(error, query) {
-      if (isAuthError(error)) {
-        if ((error as unknown as Record<string, unknown>).code === '42501') {
-          logSecurityEvent('rls_violation', { error: String((error as unknown as Record<string, unknown>).message) })
-        }
+      if (isRlsDenied(error)) {
+        logSecurityEvent('rls_violation', { error: String((error as unknown as Record<string, unknown>).message) })
+        toast.error('Você não tem permissão para executar esta ação.')
+        Sentry.captureException(error, { extra: { queryKey: query.queryKey } })
+      } else if (isAuthError(error)) {
         handleAuthError()
       } else {
         Sentry.captureException(error, { extra: { queryKey: query.queryKey } })
@@ -61,10 +73,11 @@ const queryClient = new QueryClient({
   }),
   mutationCache: new MutationCache({
     onError(error, _vars, _ctx, mutation) {
-      if (isAuthError(error)) {
-        if ((error as unknown as Record<string, unknown>).code === '42501') {
-          logSecurityEvent('rls_violation', { error: String((error as unknown as Record<string, unknown>).message) })
-        }
+      if (isRlsDenied(error)) {
+        logSecurityEvent('rls_violation', { error: String((error as unknown as Record<string, unknown>).message) })
+        toast.error('Você não tem permissão para executar esta ação.')
+        Sentry.captureException(error, { extra: { mutationKey: mutation.options.mutationKey } })
+      } else if (isAuthError(error)) {
         handleAuthError()
       } else {
         Sentry.captureException(error, { extra: { mutationKey: mutation.options.mutationKey } })

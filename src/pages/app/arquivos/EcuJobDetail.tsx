@@ -265,7 +265,7 @@ export default function EcuJobDetail() {
   const setPrice     = useSetMatrixPrice()
   const uploadFile   = useUploadEcuFile()
   const downloadFile = useDownloadEcuFile()
-  const { isMatrixUser, isFranchiseUser } = useProfile()
+  const { isMatrixUser, isFranchiseUser, hasRole } = useProfile()
   const { data: editHistory = [], isError: editHistoryError } = useJobValueEditHistory(isMatrixUser() ? (id ?? '') : '')
   const markAsSeen   = useMarkJobAsSeen(id)
   const { data: financialEntry } = useEcuJobFinancialEntry(job?.id ?? '')
@@ -279,9 +279,15 @@ export default function EcuJobDetail() {
   if (isLoading || !job) return <div className="pm-skeleton h-96 w-full rounded" />
 
   const isFranchise = isFranchiseUser()
-  // Matriz precisa ver/acionar o financeiro tanto no job direto quanto no de franquia
-  // (era só isMatrixUser() && unit_id === null — escondia o botão em job de franquia).
-  const canSendToFinance = isFranchise || isMatrixUser()
+  // Alinhado 1:1 com a RLS financial_admin_write (migration 089) — só quem
+  // tem INSERT liberado em financial_entries vê o botão. isMatrixUser()/
+  // isFranchise sozinhos eram amplos demais (incluíam support_agent, seller,
+  // auditor, unit_operator etc., que RLS sempre negou — botão clicável e
+  // sem efeito).
+  const canSendToFinance = hasRole(
+    'company_admin', 'finance_admin', 'finance_staff',
+    'operations_admin', 'franchise_manager', 'unit_manager',
+  )
   const allNextStatuses = NEXT_STATUS[job.status] ?? []
   const nextStatuses = isFranchise
     ? (job.status === 'recebido' ? (['cancelado'] as typeof allNextStatuses) : [])
@@ -325,13 +331,18 @@ export default function EcuJobDetail() {
   async function handleSendToFinance() {
     if (!job) return
     if (!chargeAmount) return
-    await sendToFinance.mutateAsync({
-      jobId: job.id,
-      unitId: job.unit_id,
-      amount: chargeAmount,
-      serviceType: job.service_type,
-      customerName: job.customers?.name ?? 'Cliente',
-    })
+    try {
+      await sendToFinance.mutateAsync({
+        jobId: job.id,
+        unitId: job.unit_id,
+        amount: chargeAmount,
+        serviceType: job.service_type,
+        customerName: job.customers?.name ?? 'Cliente',
+      })
+    } catch {
+      // toast já disparado no onError de useSendToFinance — catch aqui só
+      // evita unhandled rejection (onClick não é awaited por ninguém)
+    }
   }
 
   const franqueadoUnit = job.franchise_units as { name: string; city: string | null; state: string | null } | null

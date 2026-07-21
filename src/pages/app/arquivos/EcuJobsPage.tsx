@@ -15,6 +15,7 @@ import { useEcuJobs, useUpdateEcuJobStatus, type EcuJob } from '@/hooks/useEcuJo
 import { BadgeStatusFinanceiro } from '@/components/shared/BadgeStatusFinanceiro'
 import { useProfile } from '@/hooks/useProfile'
 import { useUnseenJobs } from '@/hooks/useUnseenJobs'
+import { formatCurrency } from '@/lib/utils'
 import type { FileStatus, PriorityLevel } from '@/types/app'
 
 // ─── Status dot indicator ──────────────────────────────────────────────────────
@@ -239,9 +240,17 @@ function buildColumns(
     },
     {
       key: 'financeiro', header: 'Financeiro',
-      cell: (r) => r.amount_charged_by_matrix != null
-        ? <BadgeStatusFinanceiro status={r.matrix_payment_status} />
-        : null,
+      cell: (r) => {
+        const isFranchiseJob = r.unit_id !== null
+        const amount = isFranchiseJob ? r.amount_charged_by_matrix : r.amount_charged_to_customer
+        if (amount == null) return null
+        return (
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-mono text-foreground">{formatCurrency(amount)}</span>
+            <BadgeStatusFinanceiro status={r.matrix_payment_status} />
+          </div>
+        )
+      },
     },
   )
 
@@ -312,7 +321,7 @@ export default function EcuJobsPage() {
         onPageChange={setPage}
         onSearch={(v) => { setQ(v); setPage(0) }}
         searchValue={q}
-        searchPlaceholder="Buscar por tipo de serviço..."
+        searchPlaceholder="Buscar por cliente, CPF, placa ou serviço..."
         onRowClick={(r) => navigate(`${prefix}/arquivos/${r.id}`)}
         emptyTitle="Nenhum job ECU"
         emptyDescription="Clique em Novo Arquivo para registrar o primeiro."

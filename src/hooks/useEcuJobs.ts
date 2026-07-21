@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { useAuditLog } from '@/hooks/useAuditLog'
 import { useAuthStore } from '@/stores/auth'
@@ -87,17 +88,19 @@ export function useEcuJobs({ q = '', status = '', page = 0, pageSize = 20 }: Lis
   return useQuery({
     queryKey: ['ecu-jobs', q, status, page, pageSize],
     queryFn: async () => {
+      // Busca unificada (cliente, CPF, placa, serviço) via RPC — join com
+      // customers não dá pra combinar com OR direto no client (PostgREST
+      // não permite OR entre coluna de tabela relacionada e coluna base).
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let query = (supabase as any)
-        .from('ecu_jobs')
-        .select('*, customers(name, email), vehicles(brand, model, plate), franchise_units(name, city, state), creator_profile:profiles!created_by(name)', { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(page * pageSize, (page + 1) * pageSize - 1)
-      if (q) query = query.ilike('service_type', `%${q}%`)
-      if (status) query = query.eq('status', status)
-      const { data, error, count } = await query
+      const { data, error } = await (supabase as any).rpc('search_ecu_jobs', {
+        p_query: q,
+        p_status: status || null,
+        p_page: page,
+        p_page_size: pageSize,
+      })
       if (error) throw error
-      return { data: data as EcuJob[], total: (count as number) ?? 0 }
+      const rows = (data ?? []) as { data: EcuJob; total_count: number }[]
+      return { data: rows.map((r) => r.data), total: rows[0]?.total_count ?? 0 }
     },
   })
 }
@@ -354,6 +357,11 @@ export function useSendToFinance() {
         action: 'sent_to_finance',
         metadata: { amount: variables.amount },
       })
+    },
+    onError: () => {
+      // Toast específico desta ação — o handler global (main.tsx) também
+      // captura RLS/Sentry, mas aqui a mensagem é contextual pro usuário.
+      toast.error('Erro ao enviar para o financeiro. Verifique sua permissão ou tente novamente.')
     },
   })
 }

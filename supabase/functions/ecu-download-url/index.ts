@@ -17,6 +17,17 @@ import { requireAuth } from '../_shared/auth.ts'
 
 const DOWNLOAD_EXPIRY_SECONDS = 300 // 5 min — enough to initiate, too short to share
 
+// Mesma separação de bucket físico do scan-ecu-file/index.ts — originais e
+// entregas vivem em buckets R2 diferentes (Worker r2-presign.ts:
+// ECU_ORIGINALS/ECU_DELIVERED). R2_BUCKET_ECU (legado) fica como fallback.
+const LEGACY_BUCKET    = Deno.env.get('R2_BUCKET_ECU') ?? ''
+const BUCKET_ORIGINALS = Deno.env.get('R2_BUCKET_ECU_ORIGINALS') || LEGACY_BUCKET
+const BUCKET_DELIVERED = Deno.env.get('R2_BUCKET_ECU_DELIVERED') || LEGACY_BUCKET
+
+function resolveBucket(fileType: string | undefined): string {
+  return fileType === 'entrega' ? BUCKET_DELIVERED : BUCKET_ORIGINALS
+}
+
 const adminClient = createClient(
   Deno.env.get('SUPABASE_URL')!,
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
@@ -93,7 +104,7 @@ serve(async (req) => {
   try {
     downloadUrl = await getSignedUrl(
       s3,
-      new GetObjectCommand({ Bucket: Deno.env.get('R2_BUCKET_ECU')!, Key: file.r2_key }),
+      new GetObjectCommand({ Bucket: resolveBucket(file.file_type), Key: file.r2_key }),
       { expiresIn: DOWNLOAD_EXPIRY_SECONDS },
     )
   } catch {

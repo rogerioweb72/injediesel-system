@@ -9,6 +9,8 @@ interface JobRow {
   status: string
   created_at: string
   amount_charged_to_customer: number | null
+  amount_charged_by_matrix: number | null
+  franchise_margin_amount: number | null
   unit_id: string | null
   franchise_units: {
     id: string
@@ -47,6 +49,9 @@ export interface RevenuePoint {
 export interface DashboardMetrics {
   totalJobs: number
   totalRevenue: number
+  franchiseGrossRevenue: number
+  matrixRevenue: number
+  franchiseMargin: number
   todayJobs: number
   weekJobs: number
   pendingJobs: number
@@ -86,7 +91,7 @@ export function useMatrixDashboard(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from('ecu_jobs')
-        .select('id, service_type, status, created_at, amount_charged_to_customer, unit_id, franchise_units(id, name, city, state, active)')
+        .select('id, service_type, status, created_at, amount_charged_to_customer, amount_charged_by_matrix, franchise_margin_amount, unit_id, franchise_units(id, name, city, state, active)')
         .neq('status', 'cancelado')
 
       if (error) throw error
@@ -112,6 +117,14 @@ export function useMatrixDashboard(
       const totalJobs    = activeJobs.length
       const totalRevenue = activeJobs.reduce((s, j) => s + (j.amount_charged_to_customer ?? 0), 0)
       const activeUnits  = new Set(activeJobs.map(j => j.unit_id).filter(Boolean)).size
+
+      // Franquia vende ao cliente final (amount_charged_to_customer) e paga a
+      // matriz (amount_charged_by_matrix) — só faz sentido pra job de
+      // franquia (unit_id != null); job direto matriz->cliente não tem repasse.
+      const franchiseJobs = activeJobs.filter(j => j.unit_id != null)
+      const franchiseGrossRevenue = franchiseJobs.reduce((s, j) => s + (j.amount_charged_to_customer ?? 0), 0)
+      const matrixRevenue         = activeJobs.reduce((s, j) => s + (j.amount_charged_by_matrix ?? 0), 0)
+      const franchiseMargin       = activeJobs.reduce((s, j) => s + (j.franchise_margin_amount ?? 0), 0)
 
       // State ranking
       const stateMap = new Map<string, { count: number; revenue: number }>()
@@ -168,7 +181,11 @@ export function useMatrixDashboard(
           value,
         }))
 
-      return { totalJobs, totalRevenue, todayJobs, weekJobs, activeUnits, stateRanking, topUnits, bottomUnits, serviceTypeRanking, statusVolume, pendingJobs, revenueEvolution }
+      return {
+        totalJobs, totalRevenue, franchiseGrossRevenue, matrixRevenue, franchiseMargin,
+        todayJobs, weekJobs, activeUnits, stateRanking, topUnits, bottomUnits,
+        serviceTypeRanking, statusVolume, pendingJobs, revenueEvolution,
+      }
     },
   })
 }

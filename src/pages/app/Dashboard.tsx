@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   FileText, Users, ShoppingCart, TrendingUp, Download,
   CheckCircle, Clock, MapPin, Award, AlertTriangle,
+  Store, Wallet, Percent,
 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -128,6 +129,29 @@ export default function Dashboard() {
           title="Últimos 7 Dias"
           value={isLoading ? '…' : String(metrics?.weekJobs ?? 0)}
           icon={<CheckCircle size={18} className="text-blue-400" />}
+        />
+      </div>
+
+      {/* KPI grid — financeiro matriz x franquia */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 mb-8">
+        <KpiCard
+          title="Venda Bruta Franquias"
+          value={isLoading ? '…' : formatCurrency(metrics?.franchiseGrossRevenue ?? 0)}
+          subtitle="cobrado do cliente final pelas franquias"
+          icon={<Store size={18} className="text-blue-400" />}
+        />
+        <KpiCard
+          title="Receita da Matriz"
+          value={isLoading ? '…' : formatCurrency(metrics?.matrixRevenue ?? 0)}
+          subtitle="repassado pelas franquias à matriz"
+          icon={<Wallet size={18} className="text-green-400" />}
+          highlight
+        />
+        <KpiCard
+          title="Margem das Franquias"
+          value={isLoading ? '…' : formatCurrency(metrics?.franchiseMargin ?? 0)}
+          subtitle="venda bruta − repasse à matriz"
+          icon={<Percent size={18} className="text-yellow-500" />}
         />
       </div>
 

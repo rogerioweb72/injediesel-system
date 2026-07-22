@@ -7,6 +7,7 @@ import {
   CreditCard, CheckCircle2, Loader2, ShieldAlert, ShieldCheck, ArrowUp, ArrowDown,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ECU_ACCEPTED_EXTENSIONS } from '@/lib/ecuFileTypes'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -24,8 +25,6 @@ import { EcuValueEditModal } from '@/pages/app/arquivos/EcuValueEditModal'
 import { useJobValueEditHistory } from '@/hooks/useEcuValueEdit'
 import { toast } from 'sonner'
 import type { FileStatus } from '@/types/app'
-
-const ACCEPTED_EXTENSIONS = '.bin,.ori,.kfg,.bck,.eprom,.zip,.rar'
 
 const PRIORITY_COLORS: Record<string, string> = {
   normal: 'text-muted-foreground',
@@ -222,7 +221,7 @@ function TicketCorrecaoModal({ open, onClose, job }: {
               <label className="flex flex-col items-center justify-center h-16 rounded border-2 border-dashed border-[hsl(var(--pm-gray-700))] cursor-pointer hover:border-[hsl(var(--pm-red-500))] transition-colors">
                 <Upload size={15} className="text-muted-foreground mb-1" />
                 <span className="text-[11px] text-muted-foreground">Clique para selecionar</span>
-                <input type="file" className="hidden" accept={ACCEPTED_EXTENSIONS}
+                <input type="file" className="hidden" accept={ECU_ACCEPTED_EXTENSIONS}
                   onChange={e => { const f = e.target.files?.[0]; if (f) setFile(f); e.target.value = '' }}
                 />
               </label>
@@ -659,7 +658,7 @@ export default function EcuJobDetail() {
             {isMatrixUser() && (
               <input
                 ref={matrixFileRef} type="file" className="hidden"
-                accept={ACCEPTED_EXTENSIONS}
+                accept={ECU_ACCEPTED_EXTENSIONS}
                 onChange={handleMatrixFileSelect}
               />
             )}

@@ -25,6 +25,7 @@ import { useBrasilAPI } from '@/hooks/useBrasilAPI'
 import { useEcuCategories } from '@/hooks/useEcuCategories'
 import { useEcuCatalogList } from '@/hooks/useEcuCatalog'
 import { cn } from '@/lib/utils'
+import { ECU_ACCEPTED_EXTENSIONS, isEcuFileExtensionAllowed } from '@/lib/ecuFileTypes'
 
 const SERVICE_TYPES = [
   'Remap',
@@ -39,7 +40,6 @@ const LEVE_BLOCKED = new Set(['Truck', 'Agrícola', 'Máquina Pesada'])
 const VEHICLE_TRANSMISSIONS = ['Automático', 'Manual']
 const PLATE_CATEGORIES = new Set(['Carro/SUV', 'Pickup', 'Truck', 'Moto'])
 const PLATE_REGEX = /^[A-Z]{3}-?(?:\d{4}|\d[A-Z]\d{2})$/i
-const ACCEPTED_EXTENSIONS = '.bin,.hex,.ori,.kfg,.bck,.eprom,.zip,.rar'
 const MAX_BYTES = 256 * 1024 * 1024
 
 const schema = z.object({
@@ -85,8 +85,7 @@ function formatBytes(bytes: number) {
 
 function validateEcuFile(f: File): string | null {
   if (f.size > MAX_BYTES) return `Arquivo muito grande (máx 256 MB): ${formatBytes(f.size)}`
-  const ext = f.name.split('.').pop()?.toLowerCase() ?? ''
-  if (!['bin', 'hex', 'ori', 'kfg', 'bck', 'eprom', 'zip', 'rar'].includes(ext)) return `Formato não permitido: .${ext}`
+  if (!isEcuFileExtensionAllowed(f.name)) return `Formato não permitido: .${f.name.split('.').pop()}`
   return null
 }
 
@@ -903,7 +902,7 @@ export default function EcuJobForm() {
                           Clique para enviar arquivo ECU
                         </span>
                         <input
-                          type="file" className="hidden" accept={ACCEPTED_EXTENSIONS}
+                          type="file" className="hidden" accept={ECU_ACCEPTED_EXTENSIONS}
                           onChange={(e) => {
                             const picked = e.target.files?.[0]
                             if (!picked) return
@@ -920,7 +919,7 @@ export default function EcuJobForm() {
               })}
             </div>
             <p className="text-xs text-muted-foreground">
-              Formatos: .bin .hex .ori .kfg .bck .eprom .zip .rar · Máx 256 MB · Pode adicionar depois no detalhe do arquivo.
+              Formatos: .bin .hex .ori .kfg .bck .eprom .zip .rar .txt · Máx 256 MB · Pode adicionar depois no detalhe do arquivo.
             </p>
           </div>
 

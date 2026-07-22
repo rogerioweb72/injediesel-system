@@ -37,7 +37,9 @@ function resolveBucket(fileType: string | undefined): string {
 // ── Policy constants ───────────────────────────────────────────────────────────
 const MAX_BYTES = 50 * 1024 * 1024 // 50 MB — ECU files are never this large in practice
 
-const ALLOWED_EXTENSIONS = new Set(['.bin', '.ori', '.kfg', '.bck', '.eprom', '.zip', '.rar'])
+// Mantida em sync manual com src/lib/ecuFileTypes.ts (runtime Deno separado
+// do Vite, não dá pra importar de lá) — mudar uma exige mudar a outra.
+const ALLOWED_EXTENSIONS = new Set(['.bin', '.ori', '.kfg', '.bck', '.eprom', '.zip', '.rar', '.hex', '.txt'])
 
 // Max files a single job may upload per 24 hours before rate-limiting kicks in
 const RATE_LIMIT_PER_JOB_24H = 20

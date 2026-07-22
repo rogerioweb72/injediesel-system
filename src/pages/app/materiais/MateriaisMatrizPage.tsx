@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import {
-  Upload, Trash2, Loader2, AlertCircle, FileIcon,
+  Upload, Trash2, Loader2, AlertCircle, FileIcon, Download,
   Image, FileText, FileImage, Layers, Plus, X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -8,6 +8,7 @@ import {
   useMarketingMaterialsAdmin,
   useUploadMarketingMaterial,
   useDeleteMarketingMaterial,
+  downloadMktMaterial,
   MKT_CATEGORIES,
   type MktCategory,
   type MarketingMaterial,
@@ -224,6 +225,18 @@ function UploadModal({ category, onClose }: UploadModalProps) {
 
 function MaterialRow({ material, onDelete }: { material: MarketingMaterial; onDelete: () => void }) {
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [downloading, setDownloading] = useState(false)
+
+  async function handleDownload() {
+    setDownloading(true)
+    try {
+      await downloadMktMaterial(material)
+    } catch {
+      // silently fail — mesmo padrao do FileRow em MateriaisPage.tsx (franquia)
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   return (
     <div
@@ -256,6 +269,22 @@ function MaterialRow({ material, onDelete }: { material: MarketingMaterial; onDe
           </p>
         )}
       </div>
+
+      <button
+        onClick={handleDownload}
+        disabled={downloading}
+        className="flex-shrink-0 flex items-center justify-center rounded-md"
+        style={{
+          width: 32, height: 32,
+          background: 'hsl(var(--pm-gray-800))',
+          border: '1px solid hsl(var(--pm-gray-700))',
+          color: downloading ? 'hsl(var(--pm-gray-600))' : 'hsl(var(--pm-gray-300))',
+          cursor: downloading ? 'not-allowed' : 'pointer',
+        }}
+        title="Baixar"
+      >
+        {downloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+      </button>
 
       <button
         onClick={() => setConfirmOpen(true)}

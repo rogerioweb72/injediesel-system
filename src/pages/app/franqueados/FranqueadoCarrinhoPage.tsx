@@ -200,7 +200,7 @@ export default function FranqueadoCarrinhoPage() {
           </button>
           <ChevronRight size={12} className="text-muted-foreground/40" />
           <span className="text-xs text-foreground font-medium">Carrinho</span>
-          <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-mono bg-[hsl(var(--pm-gray-800))] text-muted-foreground">
+          <span className="ml-2 px-2 py-0.5 rounded-md text-[10px] font-mono bg-[hsl(var(--pm-gray-800))] text-muted-foreground">
             {totalQty} {totalQty === 1 ? 'item' : 'itens'}
           </span>
         </div>

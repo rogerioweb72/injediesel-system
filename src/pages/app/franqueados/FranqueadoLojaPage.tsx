@@ -83,7 +83,7 @@ export default function FranqueadoLojaPage() {
           Carrinho
           {cartCount > 0 && (
             <span
-              className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
+              className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-md text-[10px] font-bold flex items-center justify-center text-white"
               style={{ background: 'hsl(var(--pm-red-500))' }}
             >
               {cartCount}

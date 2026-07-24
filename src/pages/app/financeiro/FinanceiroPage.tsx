@@ -186,7 +186,7 @@ export default function FinanceiroPage() {
               Franquias
               {unseenCount > 0 && (
                 <span
-                  className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold"
+                  className="inline-flex items-center justify-center w-4 h-4 rounded-md text-[10px] font-bold"
                   style={{ background: 'hsl(var(--pm-red-500))', color: '#fff' }}
                 >
                   {unseenCount > 9 ? '9+' : unseenCount}

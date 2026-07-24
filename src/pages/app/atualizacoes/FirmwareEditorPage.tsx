@@ -214,7 +214,7 @@ function PassosBlockEditor({
     <div className="space-y-2">
       {items.map((item, idx) => (
         <div key={idx} className="flex items-center gap-2">
-          <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-zinc-700 text-xs font-bold text-zinc-300">
+          <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md bg-zinc-700 text-xs font-bold text-zinc-300">
             {idx + 1}
           </span>
           <Input

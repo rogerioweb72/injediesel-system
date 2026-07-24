@@ -37,7 +37,7 @@ export function NavItem({ to, icon: Icon, label, collapsed, end, badge, onNaviga
         <span className="flex items-center gap-2 min-w-0">
           {label}
           {hasBadge && (
-            <span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-green-500 px-1 text-[10px] font-bold text-white tabular-nums">
+            <span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-md bg-green-500 px-1 text-[10px] font-bold text-white tabular-nums">
               {badge > 9 ? '9+' : badge}
             </span>
           )}

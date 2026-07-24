@@ -291,7 +291,7 @@ export default function Dashboard() {
               {metrics!.topUnits.slice(0, 3).map((u, i) => (
                 <div key={u.unitId} className="flex items-center justify-between p-3 rounded-xl bg-[#1C1D26] border border-gray-800/50 hover:border-gray-700 transition-colors group">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center font-bold text-sm ${
+                    <div className={`w-8 h-8 shrink-0 rounded-md flex items-center justify-center font-bold text-sm ${
                       i === 0 ? 'bg-yellow-500/10 text-yellow-500' : 'bg-gray-800 text-gray-400'
                     }`}>
                       {i + 1}

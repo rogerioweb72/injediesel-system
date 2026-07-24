@@ -1172,7 +1172,7 @@ function UserSection({
               <div className="flex items-center gap-3 sm:ml-4 shrink-0">
                 {/* Status badge */}
                 <div
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full mr-1"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md mr-1"
                   style={{
                     background: user.active ? 'rgba(52,211,153,0.08)' : 'rgba(148,163,184,0.06)',
                     border: `1px solid ${user.active ? 'rgba(52,211,153,0.2)' : 'rgba(148,163,184,0.15)'}`,

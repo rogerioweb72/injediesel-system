@@ -180,13 +180,13 @@ export function MotorizacaoCard({ row, isOpen: open, onToggle, readOnly = false 
         {/* Right: gain + year + price + chevron */}
         <div className="flex items-center gap-2.5 shrink-0">
           {row.ganho && (
-            <span className="hidden sm:inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-500/20 tracking-wider whitespace-nowrap">
+            <span className="hidden sm:inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2.5 py-0.5 rounded-md border border-emerald-500/20 tracking-wider whitespace-nowrap">
               {row.ganho}
             </span>
           )}
 
           {row.ano && (
-            <span className="text-[10px] text-gray-500 border border-white/10 px-2 py-0.5 rounded-full whitespace-nowrap">
+            <span className="text-[10px] text-gray-500 border border-white/10 px-2 py-0.5 rounded-md whitespace-nowrap">
               {row.ano}
             </span>
           )}

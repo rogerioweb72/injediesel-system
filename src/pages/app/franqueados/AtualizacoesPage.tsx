@@ -42,7 +42,7 @@ function renderBlock(block: Block, index: number) {
         <ol key={index} className="space-y-2">
           {(block.items ?? []).map((item, i) => (
             <li key={i} className="flex gap-3 text-sm text-zinc-300">
-              <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">
+              <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md bg-red-600 text-xs font-bold text-white">
                 {i + 1}
               </span>
               <span className="mt-0.5">{item}</span>

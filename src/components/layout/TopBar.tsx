@@ -205,7 +205,7 @@ export function TopBar({ sidebarExpanded, isMobile = false, onMobileMenuToggle }
             <Button variant="ghost" size="icon" className="relative">
               <Bell size={18} />
               {notifTotal > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold text-white ring-2 ring-background"
+                <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-md text-[10px] font-bold text-white ring-2 ring-background"
                   style={{ background: '#ef4444' }}>
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-50" style={{ background: '#ef4444' }} />
                   <span className="relative">{notifTotal > 9 ? '9+' : notifTotal}</span>
@@ -217,7 +217,7 @@ export function TopBar({ sidebarExpanded, isMobile = false, onMobileMenuToggle }
             <div className="px-3 py-2 flex items-center justify-between">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Notificações</p>
               {notifTotal > 0 && (
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>
                   {notifTotal}
                 </span>
               )}
@@ -226,7 +226,7 @@ export function TopBar({ sidebarExpanded, isMobile = false, onMobileMenuToggle }
             {notifItems.length > 0 ? (
               notifItems.map(item => (
                 <DropdownMenuItem key={item.key} onClick={() => navigate(item.route)} className="flex items-start gap-3 py-2.5 px-3">
-                  <span className="flex items-center justify-center min-w-[22px] h-[22px] rounded-full text-[10px] font-bold text-white mt-0.5 shrink-0" style={{ background: '#34D399' }}>
+                  <span className="flex items-center justify-center min-w-[22px] h-[22px] rounded-md text-[10px] font-bold text-white mt-0.5 shrink-0" style={{ background: '#34D399' }}>
                     {item.count > 9 ? '9+' : item.count}
                   </span>
                   <div className="min-w-0">

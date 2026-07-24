@@ -824,7 +824,7 @@ export default function FranqueadoPerfilPage() {
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-white">Minhas Comissões</h3>
             <span
-              className="text-sm font-bold px-3 py-1 rounded-full"
+              className="text-sm font-bold px-3 py-1 rounded-md"
               style={{ background: 'rgba(74,222,128,0.1)', color: '#4ADE80' }}
             >
               Total: {totalCommission.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}

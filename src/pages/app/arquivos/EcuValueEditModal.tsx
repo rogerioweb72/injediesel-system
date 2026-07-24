@@ -135,7 +135,7 @@ export function EcuValueEditModal({ open, onClose, jobId, jobCode, valorAtual }:
                   key={chip}
                   type="button"
                   onClick={() => setMotivo(chip)}
-                  className="px-2 py-0.5 rounded-full text-[11px] transition-colors"
+                  className="px-2 py-0.5 rounded-md text-[11px] transition-colors"
                   style={{
                     background: motivo === chip ? 'hsl(var(--pm-red-500)/0.2)' : 'hsl(var(--pm-gray-800))',
                     color: motivo === chip ? '#fff' : 'hsl(var(--pm-gray-400))',

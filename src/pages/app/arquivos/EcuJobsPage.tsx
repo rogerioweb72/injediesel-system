@@ -15,6 +15,7 @@ import { useEcuJobs, useUpdateEcuJobStatus, type EcuJob } from '@/hooks/useEcuJo
 import { BadgeStatusFinanceiro } from '@/components/shared/BadgeStatusFinanceiro'
 import { useProfile } from '@/hooks/useProfile'
 import { useUnseenJobs } from '@/hooks/useUnseenJobs'
+import { useFranchiseUnitsList } from '@/hooks/useFranchiseUnits'
 import { useAuthStore } from '@/stores/auth'
 import { cn, formatCurrency, formatDateTime } from '@/lib/utils'
 import type { FileStatus } from '@/types/app'
@@ -306,14 +307,24 @@ function buildColumns(
 export default function EcuJobsPage() {
   const navigate = useNavigate()
   const prefix = useRoutePrefix()
-  const { isFranchiseUser } = useProfile()
+  const { isFranchiseUser, isMatrixUser } = useProfile()
   const [q, setQ] = useState('')
   const [status, setStatus] = useState<FileStatus | ''>('')
   const [page, setPage] = useState(0)
   const PAGE_SIZE = 20
 
-  const { data, isLoading } = useEcuJobs({ q, status, page, pageSize: PAGE_SIZE })
   const isFranchise = isFranchiseUser()
+  const isMatrix = isMatrixUser()
+
+  // A.10 item 4: filtro de unidade (só matriz). Sentinela '_all' (todas) /
+  // '_matrix' (jobs sem unidade, unit_id null) / uuid da unidade selecionada
+  // — mesmo padrão de sentinela já usado no seletor de unidade do EcuJobForm.
+  const [unitFilter, setUnitFilter] = useState('_all')
+  const { data: franchiseUnitsData = [] } = useFranchiseUnitsList(isMatrix)
+  const unitId     = isMatrix && unitFilter !== '_all' && unitFilter !== '_matrix' ? unitFilter : null
+  const matrixOnly = isMatrix && unitFilter === '_matrix'
+
+  const { data, isLoading } = useEcuJobs({ q, status, page, pageSize: PAGE_SIZE, unitId, matrixOnly })
   const { unseenIds } = useUnseenJobs()
 
   // A.9 item 6: olhinho de privacidade — Valor Custo borrado por padrão pra
@@ -361,6 +372,24 @@ export default function EcuJobsPage() {
             </SelectContent>
           </Select>
         </div>
+
+        {isMatrix && (
+          <div className="w-52">
+            <Select
+              value={unitFilter}
+              onValueChange={(v) => { setUnitFilter(v); setPage(0) }}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_all">Todas as unidades</SelectItem>
+                <SelectItem value="_matrix">Só matriz</SelectItem>
+                {franchiseUnitsData.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div className="ml-auto flex items-center gap-2">
           {isFranchise && (

@@ -88,11 +88,16 @@ interface ListFilter {
   status?: FileStatus | ''
   page?: number
   pageSize?: number
+  // A.10 item 4: filtro de unidade (visão matriz). unitId filtra unit_id
+  // exato; matrixOnly filtra unit_id IS NULL. Nenhum dos dois = todas as
+  // unidades (comportamento de sempre — migration 097).
+  unitId?: string | null
+  matrixOnly?: boolean
 }
 
-export function useEcuJobs({ q = '', status = '', page = 0, pageSize = 20 }: ListFilter = {}) {
+export function useEcuJobs({ q = '', status = '', page = 0, pageSize = 20, unitId = null, matrixOnly = false }: ListFilter = {}) {
   return useQuery({
-    queryKey: ['ecu-jobs', q, status, page, pageSize],
+    queryKey: ['ecu-jobs', q, status, page, pageSize, unitId, matrixOnly],
     queryFn: async () => {
       // Busca unificada (cliente, CPF, placa, serviço) via RPC — join com
       // customers não dá pra combinar com OR direto no client (PostgREST
@@ -103,6 +108,8 @@ export function useEcuJobs({ q = '', status = '', page = 0, pageSize = 20 }: Lis
         p_status: status || null,
         p_page: page,
         p_page_size: pageSize,
+        p_unit_id: unitId,
+        p_matrix_only: matrixOnly,
       })
       if (error) throw error
       const rows = (data ?? []) as { data: EcuJob; total_count: number }[]

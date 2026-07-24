@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { useCustomers, useCreateCustomer, useLookupCustomerByDocument, type Customer, type CustomerAddress } from '@/hooks/useCustomers'
-import { useVehicles } from '@/hooks/useVehicles'
+import { useVehicles, useCreateVehicle } from '@/hooks/useVehicles'
 import { useCreateEcuJob } from '@/hooks/useEcuJobs'
 import { useUploadEcuFile } from '@/hooks/useEcuFiles'
 import { useUsers } from '@/hooks/useUsers'
@@ -36,6 +36,13 @@ const SERVICE_TYPES = [
 
 const SERVICE_TAGS = ['Potência', 'EGR', 'DPF', 'AdBlue', 'Pops and Bangs', 'Pops and Flames', 'Hard Cut', 'Full Smoke', 'Lup Tuner'] as const
 const VEHICLE_CATEGORIES = ['Carro/SUV', 'Pickup', 'Truck', 'Agrícola', 'Máquina Pesada', 'Moto', 'Náutica']
+// Categoria (label do form) → vehicle_type (enum do banco). Categorias sem
+// entrada aqui (Carro/SUV, Pickup, Truck, Moto) caem no default 'automotivo'.
+const CATEGORIA_TO_VEHICLE_TYPE: Record<string, 'maquina_agricola' | 'maquina_pesada' | 'nautica'> = {
+  'Agrícola':        'maquina_agricola',
+  'Máquina Pesada':  'maquina_pesada',
+  'Náutica':         'nautica',
+}
 // Categorias bloqueadas para contrato linha_leve
 const LEVE_BLOCKED = new Set(['Truck', 'Agrícola', 'Máquina Pesada'])
 const VEHICLE_TRANSMISSIONS = ['Automático', 'Manual']
@@ -330,6 +337,7 @@ export default function EcuJobForm() {
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null)
 
   const createJob   = useCreateEcuJob()
+  const createVehicle = useCreateVehicle()
   const uploadFile  = useUploadEcuFile()
   const { data: myUnit }        = useMyUnit()
   const { isMatrixUser } = useProfile()
@@ -483,9 +491,35 @@ export default function EcuJobForm() {
     setUploading(true)
     setUploadProgress(10)
     try {
+      // Veículo digitado manualmente (sem selecionar da lista "Veículo
+      // cadastrado") nunca virava linha em `vehicles` — ficava só no jsonb
+      // vehicle_info do job, customer_id nunca gravado, /clientes/:id
+      // sempre mostrava "Veículos (0)". Cria a linha aqui antes do job.
+      let vehicleId = values.vehicle_id || null
+      if (!vehicleId) {
+        const notes = [
+          values.vehicle_transmissao ? `Transmissão: ${values.vehicle_transmissao}` : null,
+          values.vehicle_horas_km ? `Horas/Km: ${values.vehicle_horas_km}` : null,
+        ].filter(Boolean).join(' · ') || null
+        try {
+          const vehicle = await createVehicle.mutateAsync({
+            customer_id: values.customer_id,
+            vehicle_type: CATEGORIA_TO_VEHICLE_TYPE[values.vehicle_categoria] ?? 'automotivo',
+            plate: values.vehicle_placa || null,
+            brand: values.vehicle_marca || '',
+            model: values.vehicle_modelo || '',
+            year: values.vehicle_ano ? Number(values.vehicle_ano.match(/\d{4}/)?.[0]) || null : null,
+            engine: values.vehicle_motor || null,
+            notes,
+          })
+          vehicleId = vehicle.id
+        } catch {
+          toast.warning('Job será criado, mas o veículo não pôde ser vinculado ao cadastro do cliente — contate o suporte.')
+        }
+      }
       const job = await createJob.mutateAsync({
         customer_id: values.customer_id,
-        vehicle_id:  values.vehicle_id || null,
+        vehicle_id:  vehicleId,
         unit_id:     effectiveUnitId,
         service_type: values.service_type,
         service_tags: values.service_tags,

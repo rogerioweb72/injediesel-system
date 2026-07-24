@@ -839,15 +839,23 @@ export default function EcuJobDetail() {
                   const isModificado = f.file_type === 'entrega'
                   return (
                   <div key={f.id} className={cn('flex items-center gap-3 p-3', isModificado && 'bg-green-500/[0.06]')}>
-                    {isModificado ? (
-                      <ArrowDown size={18} className="text-green-600 shrink-0" />
-                    ) : (
-                      <ArrowUp size={18} className="text-red-500 shrink-0" />
-                    )}
+                    {/* Tipo: ícone + título lado a lado, na mesma linha vertical — o
+                        que precisa ficar óbvio de cara é ORIGINAL vs MODIFICADO. */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {isModificado ? (
+                        <ArrowDown size={20} className="text-green-600 shrink-0" />
+                      ) : (
+                        <ArrowUp size={20} className="text-red-500 shrink-0" />
+                      )}
+                      <span className="text-lg font-black uppercase tracking-wide text-foreground">
+                        {isModificado ? 'Modificado' : 'Original'}
+                      </span>
+                    </div>
+                    <div className="w-px self-stretch bg-white/10 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-foreground truncate">{f.file_name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {isModificado ? 'Modificado' : 'Original'} · {formatBytes(f.size_bytes)} · {formatDateTime(f.created_at)}
+                        {formatBytes(f.size_bytes)} · {formatDateTime(f.created_at)}
                       </p>
                     </div>
                     {(f.scan_status === 'infected' || f.scan_status === 'blocked') ? (

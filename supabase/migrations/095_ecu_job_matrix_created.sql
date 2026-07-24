@@ -27,6 +27,24 @@
 --      veículo ou histórico de job: cliente nunca fica "visível" de
 --      uma unidade pra outra, só preenche o cadastro NOVO da unidade
 --      atual quando o documento bate.
+--
+-- REVISÃO 24/07/2026 (perguntas do Rogério antes do push):
+--   a) lookup_customer_by_document TEM que continuar SECURITY DEFINER.
+--      Se fosse INVOKER, a RLS de customers_unit_member entraria em
+--      jogo pro usuário que chama — ele só enxergaria clientes do
+--      PRÓPRIO unit_id, e a busca cross-unit nunca acharia nada de
+--      outra unidade. INVOKER quebra a feature. O que preserva o
+--      isolamento não é o modo de execução, é o RETURN TABLE só ter
+--      name/email/phone — nunca id, unit_id, document, veículo ou
+--      job. Ninguém descobre EM QUAL unidade o contato já existe,
+--      só reaproveita nome/telefone/e-mail pro cadastro novo.
+--   b) ecu_job_price_adjustments é append-only de verdade: policies
+--      abaixo cobrem só SELECT e INSERT. Sem policy de UPDATE/DELETE
+--      pra franquia/matriz — RLS nega por padrão o que não tem
+--      policy casando o comando, igual audit_logs. O "total" exibido
+--      no front (valor original + soma dos ajustes) é só leitura,
+--      nenhuma mutation escreve nele; não existe endpoint de
+--      reset/edição/remoção de ajuste em lugar nenhum do código.
 -- ============================================================
 
 -- ── 1. Flag "criado pela matriz" ───────────────────────────────
@@ -51,17 +69,45 @@ CREATE INDEX IF NOT EXISTS idx_ecu_job_price_adjustments_job
 
 ALTER TABLE public.ecu_job_price_adjustments ENABLE ROW LEVEL SECURITY;
 
--- Mesmo padrão de 3 camadas de ecu_jobs (system_ti / matrix / unit_member).
+-- system_ti mantém FOR ALL (god-mode de sempre, igual toda outra tabela).
+-- Matrix e unit_member: só SELECT + INSERT — SEM policy de UPDATE/DELETE.
+-- RLS nega por padrão comando sem policy correspondente, então o ledger é
+-- append-only na prática, igual audit_logs (histórico nunca é editado nem
+-- apagado, nem por quem inseriu).
 CREATE POLICY "ecu_job_price_adjustments_system_all" ON public.ecu_job_price_adjustments
   FOR ALL USING (public.is_system_ti());
 
-CREATE POLICY "ecu_job_price_adjustments_matrix_all" ON public.ecu_job_price_adjustments
-  FOR ALL USING (
-    public.current_user_role() IN ('company_admin', 'operations_admin', 'support_agent')
+-- finance_admin/finance_staff inclusos (além dos 3 papéis de matriz de
+-- sempre): quem confere/registra pagamento precisa enxergar se o valor
+-- foi ajustado depois da criação do job — sem isso, financeiro vê só o
+-- amount_charged_to_customer original e pode fechar conta com valor
+-- desatualizado. Read+insert, mesma regra dos outros papéis de matriz —
+-- sem UPDATE/DELETE nunca (ledger append-only, ver nota (b) acima).
+CREATE POLICY "ecu_job_price_adjustments_matrix_select" ON public.ecu_job_price_adjustments
+  FOR SELECT USING (
+    public.current_user_role() IN (
+      'company_admin', 'operations_admin', 'support_agent',
+      'finance_admin', 'finance_staff'
+    )
   );
 
-CREATE POLICY "ecu_job_price_adjustments_unit_member" ON public.ecu_job_price_adjustments
-  FOR ALL USING (
+CREATE POLICY "ecu_job_price_adjustments_matrix_insert" ON public.ecu_job_price_adjustments
+  FOR INSERT WITH CHECK (
+    public.current_user_role() IN (
+      'company_admin', 'operations_admin', 'support_agent',
+      'finance_admin', 'finance_staff'
+    )
+  );
+
+CREATE POLICY "ecu_job_price_adjustments_unit_select" ON public.ecu_job_price_adjustments
+  FOR SELECT USING (
+    ecu_job_id IN (
+      SELECT id FROM public.ecu_jobs WHERE unit_id IN (SELECT public.my_unit_ids())
+    )
+  );
+
+CREATE POLICY "ecu_job_price_adjustments_unit_insert" ON public.ecu_job_price_adjustments
+  FOR INSERT WITH CHECK (
     ecu_job_id IN (
       SELECT id FROM public.ecu_jobs WHERE unit_id IN (SELECT public.my_unit_ids())
     )

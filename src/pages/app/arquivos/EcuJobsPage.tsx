@@ -359,7 +359,16 @@ export default function EcuJobsPage() {
         searchValue={q}
         searchPlaceholder="Buscar por cliente, CPF, placa ou serviço..."
         onRowClick={(r) => navigate(`${prefix}/arquivos/${r.id}`)}
-        rowClassName={(r) => r.contact_finance ? 'bg-red-500/[0.08] hover:bg-red-500/[0.14] border-l-2 border-l-red-500' : undefined}
+        // Precedência: contact_finance (vermelho) ganha de is_complex_file (âmbar)
+        // quando os dois são true na mesma linha — urgência financeira > sinalização
+        // de complexidade técnica.
+        rowClassName={(r) =>
+          r.contact_finance
+            ? 'bg-red-500/[0.08] hover:bg-red-500/[0.14] border-l-2 border-l-red-500'
+            : r.is_complex_file
+              ? 'bg-amber-500/[0.08] hover:bg-amber-500/[0.14] border-l-2 border-l-amber-500'
+              : undefined
+        }
         emptyTitle="Nenhum job ECU"
         emptyDescription="Clique em Novo Arquivo para registrar o primeiro."
       />

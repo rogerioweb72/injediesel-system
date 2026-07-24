@@ -220,7 +220,7 @@ export default function AuditoriaPage() {
                     {/* Actor */}
                     <td className="px-4 py-2.5">
                       <span
-                        className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full"
+                        className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-md"
                         style={{ background: 'rgba(255,255,255,0.06)', color: '#fff' }}
                       >
                         {row.actor_name ?? 'Sistema'}
@@ -237,7 +237,7 @@ export default function AuditoriaPage() {
                     {/* Action */}
                     <td className="px-4 py-2.5">
                       <span
-                        className="inline-block text-[11px] font-bold px-2 py-0.5 rounded-full"
+                        className="inline-block text-[11px] font-bold px-2 py-0.5 rounded-md"
                         style={{ color: actionStyle.color, background: actionStyle.bg }}
                       >
                         {actionLabel(row.action)}

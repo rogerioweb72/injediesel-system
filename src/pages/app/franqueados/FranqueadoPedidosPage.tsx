@@ -314,12 +314,12 @@ export default function FranqueadoPedidosPage() {
                         {PAYMENT_LABELS[order.payment_method ?? ''] ?? order.payment_method ?? '—'}
                       </span>
                       {needsPix(order) && !hasComprovante && (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(251,146,60,0.15)', color: '#FB923C' }}>
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md" style={{ background: 'rgba(251,146,60,0.15)', color: '#FB923C' }}>
                           Pagamento pendente
                         </span>
                       )}
                       {hasComprovante && needsPay && (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(52,211,153,0.1)', color: '#34D399' }}>
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md" style={{ background: 'rgba(52,211,153,0.1)', color: '#34D399' }}>
                           Comprovante enviado
                         </span>
                       )}

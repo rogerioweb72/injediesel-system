@@ -130,7 +130,7 @@ export function TabCategorias() {
                 <tr key={item.id} className="border-b border-zinc-800 hover:bg-zinc-800/40">
                   <td className="px-4 py-2 font-medium text-white">{item.name}</td>
                   <td className="px-4 py-2">
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${TYPE_CLASS[item.type] ?? ''}`}>
+                    <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${TYPE_CLASS[item.type] ?? ''}`}>
                       {TYPE_LABEL[item.type] ?? item.type}
                     </span>
                   </td>

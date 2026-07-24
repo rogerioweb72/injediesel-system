@@ -176,7 +176,7 @@ export default function PedidosB2BPage() {
 
                   {/* Status badge */}
                   <div
-                    className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold"
+                    className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-semibold"
                     style={{ background: meta.bg, color: meta.color }}
                   >
                     <StatusIcon size={11} />

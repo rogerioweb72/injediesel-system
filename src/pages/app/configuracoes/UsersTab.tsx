@@ -687,7 +687,7 @@ export function UsersTab() {
                       style={{ background: 'hsl(var(--pm-gray-900))', color: 'hsl(var(--pm-gray-300))' }}>
                       <span className="flex items-center gap-2">
                         <Shield size={13} /> Permissões de Acesso
-                        <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px]"
+                        <span className="ml-1 px-1.5 py-0.5 rounded-md text-[10px]"
                           style={{ background: 'hsl(var(--pm-red-500)/0.15)', color: 'hsl(var(--pm-red-500))' }}>
                           {countActivePermissions(editPermissions)}
                         </span>
@@ -1005,7 +1005,7 @@ export function UsersTab() {
                     <Shield size={13} />
                     Permissões de Acesso
                     <span
-                      className="ml-1 px-1.5 py-0.5 rounded-full text-[10px]"
+                      className="ml-1 px-1.5 py-0.5 rounded-md text-[10px]"
                       style={{ background: 'hsl(var(--pm-red-500)/0.15)', color: 'hsl(var(--pm-red-500))' }}
                     >
                       {countActivePermissions(createPermissions)}

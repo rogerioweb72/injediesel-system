@@ -157,7 +157,7 @@ export default function FranqueadoFaturasPage() {
             Em Aberto
           </p>
           {resumo.qtdEmAberto > 0 && (
-            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+            <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
               style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>
               {resumo.qtdEmAberto}
             </span>
@@ -204,7 +204,7 @@ export default function FranqueadoFaturasPage() {
               Pagos
             </p>
             {pagosFiltrados.length > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+              <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
                 style={{ background: 'rgba(34,197,94,0.12)', color: '#22c55e' }}>
                 {pagosFiltrados.length}
               </span>

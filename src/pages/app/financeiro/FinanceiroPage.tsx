@@ -232,7 +232,7 @@ export default function FinanceiroPage() {
                 <p className="text-xs font-bold uppercase tracking-widest" style={{ color: '#FB923C' }}>
                   Edições de Valor Pendentes
                 </p>
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
                   style={{ background: 'rgba(251,146,60,0.15)', color: '#FB923C' }}>
                   {pendingEdits.length}
                 </span>
@@ -317,7 +317,7 @@ export default function FinanceiroPage() {
                 <p className="text-xs font-bold uppercase tracking-widest" style={{ color: '#FBBF24' }}>
                   Em Aberto
                 </p>
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
                   style={{ background: 'rgba(251,191,36,0.15)', color: '#FBBF24' }}>
                   {openJobs.length + openOrders.length}
                 </span>
@@ -402,7 +402,7 @@ export default function FinanceiroPage() {
                 Cobranças ECU Pendentes
               </p>
               {payments.length > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
                   style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>
                   {payments.length}
                 </span>
@@ -454,7 +454,7 @@ export default function FinanceiroPage() {
                 <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'hsl(var(--pm-gray-500))' }}>
                   Serviços ECU Realizados
                 </p>
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
                   style={{ background: 'rgba(74,222,128,0.1)', color: '#4ADE80' }}>
                   {ecuReceipts.length}
                 </span>
@@ -496,7 +496,7 @@ export default function FinanceiroPage() {
                 Faturamento Inter-Franquias
               </p>
               {franchiseBilling.length > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
                   style={{ background: 'rgba(96,165,250,0.1)', color: '#60A5FA' }}>
                   {franchiseBilling.length}
                 </span>

@@ -228,7 +228,7 @@ export default function CaixaPage() {
             <p className="text-xs font-bold uppercase tracking-widest" style={{ color: '#FBBF24' }}>
               Em Aberto
             </p>
-            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+            <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
               style={{ background: 'rgba(251,191,36,0.15)', color: '#FBBF24' }}>
               {openJobs.length}
             </span>
@@ -277,7 +277,7 @@ export default function CaixaPage() {
           </p>
           {payments.length > 0 && (
             <span
-              className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+              className="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
               style={{ background: 'hsl(var(--pm-red-500)/0.15)', color: 'hsl(var(--pm-red-500))' }}
             >
               {payments.length}
@@ -337,7 +337,7 @@ export default function CaixaPage() {
             <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'hsl(var(--pm-gray-500))' }}>
               Serviços ECU Realizados
             </p>
-            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+            <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
               style={{ background: 'rgba(74,222,128,0.1)', color: '#4ADE80' }}>
               {ecuReceipts.length}
             </span>

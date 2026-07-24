@@ -132,7 +132,7 @@ function ArticleModal({ article, onClose }: { article: HelpArticle; onClose: () 
           {/* Category + close */}
           <div className="flex items-center justify-between">
             <span
-              className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
+              className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-md"
               style={{ color, background: bg }}
             >
               {CATEGORY_LABELS[article.category]}

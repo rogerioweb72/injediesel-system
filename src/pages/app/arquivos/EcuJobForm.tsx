@@ -943,7 +943,7 @@ export default function EcuJobForm() {
                       setValue('service_tags', active ? cur.filter(t => t !== tag) : [...cur, tag])
                     }}
                     className={cn(
-                      'px-3 py-1 rounded-full text-xs font-mono uppercase tracking-wide border transition-colors',
+                      'px-3 py-1 rounded-md text-xs font-mono uppercase tracking-wide border transition-colors',
                       active
                         ? 'bg-[hsl(var(--pm-red-500))] border-[hsl(var(--pm-red-500))] text-white'
                         : 'bg-transparent border-[hsl(var(--pm-gray-700))] text-muted-foreground hover:border-[hsl(var(--pm-gray-500))]',

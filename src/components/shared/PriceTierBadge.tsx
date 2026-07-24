@@ -13,7 +13,7 @@ export function PriceTierBadge({ tier }: { tier: PriceTier | null | undefined })
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 5,
-      padding: '3px 9px', borderRadius: 999,
+      padding: '3px 9px', borderRadius: 6,
       background: bg, color,
       fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap',
     }}>

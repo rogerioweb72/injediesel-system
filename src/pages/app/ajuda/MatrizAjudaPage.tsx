@@ -64,7 +64,7 @@ function ArticleCard({
         {/* Status badge */}
         <div className="absolute top-2 right-2">
           <span
-            className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full"
+            className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md"
             style={{
               background: published ? 'rgba(22,163,74,0.85)' : 'rgba(100,100,100,0.75)',
               color: '#fff',
@@ -80,7 +80,7 @@ function ArticleCard({
         {/* Category */}
         <div className="flex items-center gap-2">
           <span
-            className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
+            className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-md"
             style={{ color, background: bg }}
           >
             {CATEGORY_LABELS[article.category]}

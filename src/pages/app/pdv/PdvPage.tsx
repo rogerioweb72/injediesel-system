@@ -616,7 +616,7 @@ export default function PdvPage() {
             <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'hsl(var(--pm-gray-500))' }}>
               Cobranças ECU Pendentes
             </p>
-            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+            <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
               style={{ background: 'hsl(var(--pm-red-500)/0.15)', color: 'hsl(var(--pm-red-500))' }}>
               {ecuPendentes.length}
             </span>

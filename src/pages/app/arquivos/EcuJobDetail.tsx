@@ -649,7 +649,7 @@ export default function EcuJobDetail() {
                     {isMatrixUser() && job.matrix_payment_status === 'em_aberto' && (
                       job.edicao_valor_pendente ? (
                         <span
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold"
                           style={{ background: 'rgba(251,146,60,0.15)', color: '#FB923C', border: '1px solid rgba(251,146,60,0.3)' }}
                           title="Já existe uma alteração pendente de aprovação"
                         >
@@ -940,7 +940,7 @@ export default function EcuJobDetail() {
                               ({sign}{diff.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})
                             </span>
                           </div>
-                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
                             style={{ background: `${statusColor}22`, color: statusColor }}>
                             {statusLabel}
                           </span>

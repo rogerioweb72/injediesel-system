@@ -1,10 +1,13 @@
 import { useState, useCallback } from 'react'
-import { AlertTriangle } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { AlertTriangle, FileClock } from 'lucide-react'
 import { FranqueadoSidebar } from './FranqueadoSidebar'
 import { TopBar } from './TopBar'
 import { PageHeaderProvider } from '@/contexts/PageHeaderContext'
 import { Toaster } from '@/components/ui/sonner'
 import { useMyUnit } from '@/hooks/useMyUnit'
+import { useNewMatrixCreatedJobsCount } from '@/hooks/useNotifications'
+import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
 import type { SidebarMode } from './AppShell'
 
 function UnitBlockedBanner() {
@@ -34,6 +37,38 @@ function UnitBlockedBanner() {
         <strong>UNIDADE BLOQUEADA PELA MATRIZ</strong>
         {unit.contract_blocked_reason ? ` — ${unit.contract_blocked_reason}` : ''}
         {' '}· Envio de arquivos suspenso. Contate a Matriz para regularização.
+      </p>
+    </div>
+  )
+}
+
+// A.5: espelho de NewFranchiseJobsFooter (AppShell.tsx) — franquia é avisada
+// de jobs novos criados pela matriz em nome da unidade.
+function NewMatrixCreatedJobsFooter() {
+  const navigate = useNavigate()
+  const prefix = useRoutePrefix()
+  const { data: count = 0 } = useNewMatrixCreatedJobsCount()
+
+  if (count === 0) return null
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => navigate(`${prefix}/arquivos`)}
+      style={{
+        background: 'hsl(var(--pm-gray-900))',
+        borderTop: '1px solid rgba(96,165,250,0.25)',
+        padding: '6px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        cursor: 'pointer',
+      }}
+    >
+      <FileClock size={13} color="#60A5FA" style={{ flexShrink: 0 }} />
+      <p style={{ fontSize: 12, color: '#60A5FA' }}>
+        {count} arquivo{count === 1 ? '' : 's'} novo{count === 1 ? '' : 's'} criado{count === 1 ? '' : 's'} pela Matriz aguardando
       </p>
     </div>
   )
@@ -70,6 +105,7 @@ export function FranqueadoShell({ children }: FranqueadoShellProps) {
           <main className="flex-1 pm-page pm-animate-fade-in">
             {children}
           </main>
+          <NewMatrixCreatedJobsFooter />
         </div>
       </div>
       <Toaster richColors position="top-right" />

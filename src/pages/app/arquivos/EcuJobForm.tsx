@@ -14,12 +14,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { PageHeader } from '@/components/shared/PageHeader'
-import { useCustomers, useCreateCustomer, type Customer, type CustomerAddress } from '@/hooks/useCustomers'
+import { useCustomers, useCreateCustomer, useLookupCustomerByDocument, type Customer, type CustomerAddress } from '@/hooks/useCustomers'
 import { useVehicles } from '@/hooks/useVehicles'
 import { useCreateEcuJob } from '@/hooks/useEcuJobs'
 import { useUploadEcuFile } from '@/hooks/useEcuFiles'
 import { useUsers } from '@/hooks/useUsers'
 import { useMyUnit } from '@/hooks/useMyUnit'
+import { useFranchiseUnitsList } from '@/hooks/useFranchiseUnits'
 import { useProfile } from '@/hooks/useProfile'
 import { useBrasilAPI } from '@/hooks/useBrasilAPI'
 import { useEcuCategories } from '@/hooks/useEcuCategories'
@@ -52,7 +53,11 @@ const schema = z.object({
   seller_id:                z.string().optional().transform(v => v === '' ? null : v),
   amount_charged_to_customer: z.preprocess(
     (v) => (v === '' || v == null ? null : Number(v)),
-    z.number({ message: 'Informe o valor' }).min(0.01, 'Valor deve ser maior que zero')
+    z.number().min(0.01, 'Valor deve ser maior que zero').nullable()
+  ),
+  amount_charged_by_matrix: z.preprocess(
+    (v) => (v === '' || v == null ? null : Number(v)),
+    z.number().min(0.01, 'Valor deve ser maior que zero').nullable()
   ),
   vehicle_categoria:  z.string().min(1, 'Categoria obrigatória'),
   vehicle_placa:      z.string().optional(),
@@ -110,11 +115,21 @@ function NovoClienteModal({ open, onClose, onCreated, unitId }: {
   const [docErr,   setDocErr]   = useState(false)
 
   const create = useCreateCustomer()
+  const lookupByDocument = useLookupCustomerByDocument()
 
   function resetForm() {
     setName(''); setPhone(''); setEmail(''); setDoc('')
     setCidade(''); setEstado(''); setLogradouro(''); setNumero('')
     setNameErr(false); setPhoneErr(false); setDocErr(false)
+  }
+
+  async function handleDocBlur() {
+    if (!doc.trim()) return
+    const found = await lookupByDocument.mutateAsync(doc.trim()).catch(() => null)
+    if (!found) return
+    if (!name.trim())  setName(found.name)
+    if (!phone.trim()) setPhone(found.phone ?? '')
+    if (!email.trim() && found.email) setEmail(found.email)
   }
 
   async function handleSave() {
@@ -183,6 +198,7 @@ function NovoClienteModal({ open, onClose, onCreated, unitId }: {
                 placeholder="000.000.000-00"
                 value={doc}
                 onChange={e => { setDoc(e.target.value); setDocErr(false) }}
+                onBlur={handleDocBlur}
                 className={cn(docErr && 'field-error-blink border-red-500')}
               />
               {docErr && <p className="text-xs text-red-400">CPF obrigatório</p>}
@@ -310,10 +326,20 @@ export default function EcuJobForm() {
   const [flashKey, setFlashKey]             = useState(0)
   const [lookupLoading, setLookupLoading]   = useState(false)
   const [costValue, setCostValue]           = useState<string>('')
+  const [matrixCostValue, setMatrixCostValue] = useState<string>('')
+  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null)
 
   const createJob   = useCreateEcuJob()
   const uploadFile  = useUploadEcuFile()
   const { data: myUnit }        = useMyUnit()
+  const { isMatrixUser } = useProfile()
+  const isMatrix = isMatrixUser()
+  const { data: franchiseUnitsData = [] } = useFranchiseUnitsList(isMatrix)
+  // Job criado pela matriz EM NOME de uma unidade (A.5): unidade escolhida no
+  // seletor, não a do próprio usuário. Fora disso (franquia logada, ou matriz
+  // atendendo cliente direto) segue o comportamento de sempre.
+  const effectiveUnitId  = isMatrix ? selectedUnitId : (myUnit?.unit_id ?? null)
+  const createdByMatrix  = isMatrix && !!selectedUnitId
   const isLinhaLeve  = myUnit?.franchise_units?.contract_type === 'linha_leve'
   const isBlocked    = myUnit?.franchise_units?.contract_blocked === true
   const blockedReason = myUnit?.franchise_units?.contract_blocked_reason ?? null
@@ -323,7 +349,11 @@ export default function EcuJobForm() {
   const sellers = usersData.filter((u) =>
     u.active && (isFranchise ? u.role === 'unit_seller' : u.role === 'seller')
   )
-  const { data: customersData } = useCustomers({ pageSize: 200 })
+  const { data: customersData } = useCustomers(
+    isMatrix
+      ? (selectedUnitId ? { pageSize: 200, unitId: selectedUnitId } : { pageSize: 200, scope: 'matrix' })
+      : { pageSize: 200 }
+  )
   const customers = customersData?.data ?? []
 
   const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } =
@@ -337,6 +367,7 @@ export default function EcuJobForm() {
         lgpd_accepted: false,
         seller_id: '',
         amount_charged_to_customer: undefined,
+        amount_charged_by_matrix: undefined,
         vehicle_categoria: '', vehicle_placa: '',
         vehicle_marca: '', vehicle_modelo: '', vehicle_motor: '',
         vehicle_transmissao: '', vehicle_ano: '', vehicle_horas_km: '',
@@ -437,20 +468,34 @@ export default function EcuJobForm() {
       toast.error('Categoria não disponível para o seu tipo de contrato. Entre em contato com a Matriz para upgrade.')
       return
     }
+    // Preço: matriz criando pra franquia preenche o repasse (amount_charged_by_matrix);
+    // a unidade preenche o valor do cliente depois. Nos demais fluxos, valor do
+    // cliente continua obrigatório na criação (comportamento de sempre).
+    if (createdByMatrix) {
+      if (values.amount_charged_by_matrix == null) {
+        toast.error('Informe o valor cobrado da franquia (repasse).')
+        return
+      }
+    } else if (values.amount_charged_to_customer == null) {
+      toast.error('Informe o valor cobrado do cliente.')
+      return
+    }
     setUploading(true)
     setUploadProgress(10)
     try {
       const job = await createJob.mutateAsync({
         customer_id: values.customer_id,
         vehicle_id:  values.vehicle_id || null,
-        unit_id:     myUnit?.unit_id ?? null,
+        unit_id:     effectiveUnitId,
         service_type: values.service_type,
         service_tags: values.service_tags,
         priority: 'normal',
         problem_description: values.problem_description || null,
         due_at: null,
         created_by: profile?.id ?? null,
-        amount_charged_to_customer: values.amount_charged_to_customer ?? null,
+        created_by_matrix: createdByMatrix,
+        amount_charged_to_customer: createdByMatrix ? null : (values.amount_charged_to_customer ?? null),
+        amount_charged_by_matrix: createdByMatrix ? (values.amount_charged_by_matrix ?? null) : null,
         seller_id: values.seller_id || null,
         vehicle_info: {
           categoria: values.vehicle_categoria || undefined,
@@ -520,7 +565,7 @@ export default function EcuJobForm() {
       <NovoClienteModal
         open={newClientOpen}
         onClose={() => setNewClientOpen(false)}
-        unitId={myUnit?.unit_id ?? null}
+        unitId={effectiveUnitId}
         onCreated={(c) => {
           setValue('customer_id', c.id)
           setNewClientOpen(false)
@@ -531,6 +576,35 @@ export default function EcuJobForm() {
         onSubmit={handleSubmit(onSubmit, handleInvalidSubmit)}
         className="pm-card max-w-3xl mx-auto space-y-5"
       >
+
+        {/* ── Unidade (só matriz) — A.5 job em nome da franquia ── */}
+        {isMatrix && (
+          <div className="space-y-1">
+            <Label>Unidade</Label>
+            <Select
+              value={selectedUnitId ?? '_matriz'}
+              onValueChange={(v) => {
+                const unit = v === '_matriz' ? null : v
+                setSelectedUnitId(unit)
+                setValue('customer_id', '')
+                setValue('vehicle_id', null)
+              }}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_matriz">Matriz (cliente direto)</SelectItem>
+                {franchiseUnitsData.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {createdByMatrix && (
+              <p className="text-[11px] text-blue-400 mt-1">
+                Job será criado em nome desta unidade — vai aparecer no painel dela com o selo "Criado pela Matriz".
+              </p>
+            )}
+          </div>
+        )}
 
         {/* ── Cliente ── */}
         <div className="space-y-1">
@@ -870,29 +944,58 @@ export default function EcuJobForm() {
               </div>
             )}
 
-            <div className="space-y-1">
-              <Label>
-                Valor Cobrado do Cliente (R$) <span className="text-red-400">*</span>
-              </Label>
-              <Input
-                key={`amt-${flashKey}`}
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder={suggestedCost ? `Sugerido: R$ ${suggestedCost.toFixed(2)}` : 'Ex: 500,00'}
-                value={costValue}
-                onChange={e => {
-                  setCostValue(e.target.value)
-                  setValue('amount_charged_to_customer', e.target.value === '' ? (null as never) : Number(e.target.value) as never)
-                }}
-                className={cn(fieldErr('amount_charged_to_customer') && 'border-red-500 field-error-blink')}
-              />
-              {errors.amount_charged_to_customer && (
-                <p className="text-xs text-red-400">
-                  {errors.amount_charged_to_customer.message as string}
+            {createdByMatrix ? (
+              <div className="space-y-1">
+                <Label>
+                  Valor Cobrado da Franquia — repasse (R$) <span className="text-red-400">*</span>
+                </Label>
+                <Input
+                  key={`amt-matrix-${flashKey}`}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Ex: 300,00"
+                  value={matrixCostValue}
+                  onChange={e => {
+                    setMatrixCostValue(e.target.value)
+                    setValue('amount_charged_by_matrix', e.target.value === '' ? null : Number(e.target.value))
+                  }}
+                  className={cn(fieldErr('amount_charged_by_matrix') && 'border-red-500 field-error-blink')}
+                />
+                {errors.amount_charged_by_matrix && (
+                  <p className="text-xs text-red-400">
+                    {errors.amount_charged_by_matrix.message as string}
+                  </p>
+                )}
+                <p className="text-[11px] text-muted-foreground">
+                  Valor cobrado do cliente fica em aberto — a unidade preenche depois de receber o arquivo.
                 </p>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <Label>
+                  Valor Cobrado do Cliente (R$) <span className="text-red-400">*</span>
+                </Label>
+                <Input
+                  key={`amt-${flashKey}`}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder={suggestedCost ? `Sugerido: R$ ${suggestedCost.toFixed(2)}` : 'Ex: 500,00'}
+                  value={costValue}
+                  onChange={e => {
+                    setCostValue(e.target.value)
+                    setValue('amount_charged_to_customer', e.target.value === '' ? null : Number(e.target.value))
+                  }}
+                  className={cn(fieldErr('amount_charged_to_customer') && 'border-red-500 field-error-blink')}
+                />
+                {errors.amount_charged_to_customer && (
+                  <p className="text-xs text-red-400">
+                    {errors.amount_charged_to_customer.message as string}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* ── Arquivos ECU ── */}

@@ -112,6 +112,28 @@ export function useNewFranchiseJobsCount() {
   })
 }
 
+// A.5: espelho de useNewFranchiseJobsCount — franquia vê contagem de jobs
+// novos criados PELA MATRIZ em nome da sua unidade.
+export function useNewMatrixCreatedJobsCount() {
+  const { isFranchiseUser } = useProfile()
+  const { data: myUnit } = useMyUnit()
+  return useQuery({
+    queryKey: ['new-matrix-created-jobs-count', myUnit?.unit_id],
+    enabled: isFranchiseUser() && !!myUnit?.unit_id,
+    refetchInterval: 30_000,
+    queryFn: async () => {
+      const { count, error } = await (supabase as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .from('ecu_jobs')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'recebido')
+        .eq('unit_id', myUnit!.unit_id)
+        .eq('created_by_matrix', true)
+      if (error) throw error
+      return (count as number) ?? 0
+    },
+  })
+}
+
 export function useNotifications(prefix: string) {
   const { isFranchiseUser, isMatrixUser } = useProfile()
   const isFranchise = isFranchiseUser()

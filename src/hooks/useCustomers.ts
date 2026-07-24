@@ -61,6 +61,28 @@ export function useCustomers({ q = '', page = 0, pageSize = 20, scope, unitId }:
   })
 }
 
+// A.5: autocomplete de contato entre unidades via RPC lookup_customer_by_document
+// (migration 095, SECURITY DEFINER). Devolve só nome/email/telefone — nunca
+// unit_id/veículo/job — pra preencher o cadastro NOVO da unidade atual.
+export interface CustomerContactLookup {
+  name: string
+  email: string | null
+  phone: string | null
+}
+
+export function useLookupCustomerByDocument() {
+  return useMutation({
+    mutationFn: async (document: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .rpc('lookup_customer_by_document', { p_document: document })
+      if (error) throw error
+      const rows = (data ?? []) as CustomerContactLookup[]
+      return rows[0] ?? null
+    },
+  })
+}
+
 export function useCustomer(id: string) {
   return useQuery({
     queryKey: ['customer', id],

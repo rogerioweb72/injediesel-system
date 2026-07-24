@@ -15,7 +15,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { PageHeader } from '@/components/shared/PageHeader'
 import { EcuStatusBadge, STATUS_LABELS } from '@/components/shared/EcuStatusBadge'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
-import { useEcuJob, useUpdateEcuJobStatus, useSetMatrixPrice, useUpdateEcuJobFlags, useUpdateServiceNotes, NEXT_STATUS, useEcuJobFinancialEntry, useSendToFinance, type EcuJob } from '@/hooks/useEcuJobs'
+import {
+  useEcuJob, useUpdateEcuJobStatus, useSetMatrixPrice, useSetCustomerPrice,
+  useUpdateEcuJobFlags, useUpdateServiceNotes, NEXT_STATUS,
+  useEcuJobFinancialEntry, useSendToFinance,
+  useEcuJobPriceAdjustments, useAddEcuJobPriceAdjustment,
+  type EcuJob,
+} from '@/hooks/useEcuJobs'
 import { useUploadEcuFile, useDownloadEcuFile, useEcuJobFilesRealtime } from '@/hooks/useEcuFiles'
 import { useCreateSupportTicket } from '@/hooks/useSupportTickets'
 import { useMyUnit } from '@/hooks/useMyUnit'
@@ -245,6 +251,77 @@ function TicketCorrecaoModal({ open, onClose, job }: {
   )
 }
 
+// ── Ajuste de Preço Modal (A.5 — franquia lança acréscimo/desconto pós-entrega) ──
+function AddPriceAdjustmentModal({ open, onClose, jobId }: {
+  open: boolean
+  onClose: () => void
+  jobId: string
+}) {
+  const [amount, setAmount] = useState('')
+  const [reason, setReason] = useState('')
+  const addAdjustment = useAddEcuJobPriceAdjustment()
+
+  function handleClose() {
+    if (!addAdjustment.isPending) { setAmount(''); setReason(''); onClose() }
+  }
+
+  async function handleSubmit() {
+    const value = Number(amount)
+    if (!amount || Number.isNaN(value) || value === 0) { toast.error('Informe um valor diferente de zero'); return }
+    if (!reason.trim()) { toast.error('Descreva o motivo do ajuste'); return }
+    try {
+      await addAdjustment.mutateAsync({ jobId, amount: value, reason: reason.trim() })
+      toast.success('Ajuste registrado')
+      handleClose()
+    } catch {
+      toast.error('Erro ao registrar ajuste')
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Adicionar Ajuste de Preço</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pt-2">
+          <div className="space-y-1">
+            <Label>Valor (R$) — use negativo para desconto *</Label>
+            <input
+              type="number" step="0.01"
+              placeholder="Ex: 50,00 ou -30,00"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              disabled={addAdjustment.isPending}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Motivo *</Label>
+            <Textarea
+              rows={3}
+              placeholder="Ex: serviço adicional solicitado pelo cliente na retirada"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              disabled={addAdjustment.isPending}
+            />
+          </div>
+          <div className="flex justify-between items-center gap-3 pt-1">
+            <Button variant="ghost" onClick={handleClose} disabled={addAdjustment.isPending}>Cancelar</Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={addAdjustment.isPending || !amount || !reason.trim()}
+              style={{ background: 'var(--pm-accent-gradient)' }}
+            >
+              {addAdjustment.isPending ? 'Salvando...' : 'Adicionar'}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function EcuJobDetail() {
   const navigate = useNavigate()
@@ -258,6 +335,9 @@ export default function EcuJobDetail() {
   const [valueEditOpen, setValueEditOpen] = useState(false)
   const [editingNotes, setEditingNotes] = useState(false)
   const [notesDraft, setNotesDraft] = useState('')
+  const [editingCustomerPrice, setEditingCustomerPrice] = useState(false)
+  const [customerPriceDraft, setCustomerPriceDraft] = useState('')
+  const [addAdjustmentOpen, setAddAdjustmentOpen] = useState(false)
 
   const { data: job, isLoading } = useEcuJob(id ?? '')
   useEcuJobFilesRealtime(id ?? '')
@@ -265,6 +345,8 @@ export default function EcuJobDetail() {
   const updateFlags  = useUpdateEcuJobFlags()
   const updateNotes  = useUpdateServiceNotes()
   const setPrice     = useSetMatrixPrice()
+  const setCustomerPrice = useSetCustomerPrice()
+  const { data: priceAdjustments = [] } = useEcuJobPriceAdjustments(job?.created_by_matrix ? (id ?? '') : '')
   const uploadFile   = useUploadEcuFile()
   const downloadFile = useDownloadEcuFile()
   const { isMatrixUser, isFranchiseUser, hasRole } = useProfile()
@@ -296,8 +378,10 @@ export default function EcuJobDetail() {
   // sempre. Read-only pra esses, igual franquia.
   const canEditServiceNotes = hasRole('company_admin', 'operations_admin', 'support_agent')
   const allNextStatuses = NEXT_STATUS[job.status] ?? []
+  // A.5: job criado pela matriz nunca é cancelável pela franquia — quem criou
+  // foi a matriz, só ela cancela.
   const nextStatuses = isFranchise
-    ? (job.status === 'recebido' ? (['cancelado'] as typeof allNextStatuses) : [])
+    ? (job.status === 'recebido' && !job.created_by_matrix ? (['cancelado'] as typeof allNextStatuses) : [])
     : allNextStatuses
   // Job de franquia cobra pelo valor que a matriz repassa; job direto de matriz
   // (sem unidade) cobra direto do valor passado ao cliente — não existe repasse.
@@ -413,6 +497,9 @@ export default function EcuJobDetail() {
                 {job.is_complex_file && (
                   <span className="pm-badge pm-badge--warning">Arquivo Complexo</span>
                 )}
+                {job.created_by_matrix && (
+                  <span className="pm-badge pm-badge--info">Criado pela Matriz</span>
+                )}
               </div>
             </div>
             <div>
@@ -495,9 +582,36 @@ export default function EcuJobDetail() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs text-muted-foreground">Cobrado do cliente</p>
-                <p className="text-sm font-medium text-green-400">
-                  {formatCurrency(job.amount_charged_to_customer)}
-                </p>
+                {isFranchise && job.created_by_matrix && !job.amount_charged_to_customer ? (
+                  editingCustomerPrice ? (
+                    <div className="flex gap-2 items-center mt-1">
+                      <input
+                        type="number" step="0.01" min="0" placeholder="0,00"
+                        value={customerPriceDraft}
+                        onChange={(e) => setCustomerPriceDraft(e.target.value)}
+                        className="w-28 rounded border border-[hsl(var(--pm-gray-700))] bg-background px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-[hsl(var(--pm-red-500))]"
+                      />
+                      <Button
+                        size="sm" disabled={setCustomerPrice.isPending || !customerPriceDraft}
+                        style={{ background: 'var(--pm-accent-gradient)' }}
+                        onClick={async () => {
+                          await setCustomerPrice.mutateAsync({ id: job.id, amount: Number(customerPriceDraft) })
+                          setEditingCustomerPrice(false)
+                          setCustomerPriceDraft('')
+                        }}
+                      >Salvar</Button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setEditingCustomerPrice(true)}
+                      className="text-sm text-amber-400 underline underline-offset-2"
+                    >Informar valor</button>
+                  )
+                ) : (
+                  <p className="text-sm font-medium text-green-400">
+                    {formatCurrency(job.amount_charged_to_customer)}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -582,6 +696,57 @@ export default function EcuJobDetail() {
               )}
             </div>
           </div>
+
+          {/* Ajustes de Preço — A.5, ledger sobre amount_charged_to_customer */}
+          {job.created_by_matrix && (
+            <div className="pm-card space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                  Ajustes de Preço
+                </p>
+                {isFranchise && (
+                  <button
+                    type="button"
+                    onClick={() => setAddAdjustmentOpen(true)}
+                    className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+                  >
+                    Adicionar
+                  </button>
+                )}
+              </div>
+
+              {job.amount_charged_to_customer != null && (
+                <div className="flex items-center justify-between text-sm pb-2 border-b border-white/[0.06]">
+                  <span className="text-muted-foreground">Total (valor + ajustes)</span>
+                  <span className="font-bold text-green-400">
+                    {formatCurrency(
+                      job.amount_charged_to_customer + priceAdjustments.reduce((s, a) => s + a.amount, 0)
+                    )}
+                  </span>
+                </div>
+              )}
+
+              {priceAdjustments.length > 0 ? (
+                <div className="space-y-1.5">
+                  {priceAdjustments.map((a) => (
+                    <div key={a.id} className="flex items-center justify-between text-xs gap-3">
+                      <div className="min-w-0">
+                        <span className={a.amount >= 0 ? 'text-green-400' : 'text-red-400'}>
+                          {a.amount >= 0 ? '+' : ''}{formatCurrency(a.amount)}
+                        </span>
+                        <span className="text-muted-foreground ml-2">{a.reason}</span>
+                      </div>
+                      <span className="text-muted-foreground shrink-0 whitespace-nowrap">
+                        {formatDateTime(a.created_at)}{a.creator?.name ? ` · ${a.creator.name}` : ''}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground italic">Nenhum ajuste registrado.</p>
+              )}
+            </div>
+          )}
 
           {/* Observações do Serviço */}
           {(isMatrixUser() || !!job.service_notes?.trim()) && (
@@ -1010,6 +1175,14 @@ export default function EcuJobDetail() {
           jobId={job.id}
           jobCode={`#${job.id.slice(0, 8).toUpperCase()}`}
           valorAtual={job.amount_charged_by_matrix}
+        />
+      )}
+
+      {addAdjustmentOpen && (
+        <AddPriceAdjustmentModal
+          open={addAdjustmentOpen}
+          onClose={() => setAddAdjustmentOpen(false)}
+          jobId={job.id}
         />
       )}
     </div>

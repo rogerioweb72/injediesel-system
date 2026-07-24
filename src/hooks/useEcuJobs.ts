@@ -44,6 +44,7 @@ export interface EcuJob {
   seller?: { id: string; name: string } | null
   due_at: string | null
   created_by: string | null
+  created_by_matrix: boolean
   created_at: string
   updated_at: string
   // financial (informativo — sem gateway de pagamento)
@@ -147,7 +148,9 @@ interface CreatePayload {
   problem_description: string | null
   due_at: string | null
   created_by: string | null
+  created_by_matrix?: boolean
   amount_charged_to_customer: number | null
+  amount_charged_by_matrix?: number | null
   seller_id?: string | null
   service_tags?: string[]
   vehicle_info?: EcuJob['vehicle_info']
@@ -250,6 +253,80 @@ export function useSetMatrixPrice() {
     onSuccess: ({ id }) => {
       qc.invalidateQueries({ queryKey: ['ecu-job', id] })
       log({ entity: 'ecu_job', entityId: id, action: 'matrix_price_set' })
+    },
+  })
+}
+
+// A.5: unidade preenche o valor do cliente quando o job foi criado pela
+// matriz (amount_charged_to_customer nasce em aberto nesse fluxo).
+export function useSetCustomerPrice() {
+  const qc = useQueryClient()
+  const { log } = useAuditLog()
+  return useMutation({
+    mutationFn: async ({ id, amount }: { id: string; amount: number }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
+        .from('ecu_jobs')
+        .update({ amount_charged_to_customer: amount, updated_at: new Date().toISOString() })
+        .eq('id', id)
+      if (error) throw error
+      return { id, amount }
+    },
+    onSuccess: ({ id }) => {
+      qc.invalidateQueries({ queryKey: ['ecu-job', id] })
+      log({ entity: 'ecu_job', entityId: id, action: 'customer_price_set' })
+    },
+  })
+}
+
+// A.5: ledger de acréscimo/desconto pós-entrega sobre amount_charged_to_customer
+// (migration 095) — insert-only, sem aprovação, autonomia da franquia sobre o
+// preço do próprio cliente.
+export interface EcuJobPriceAdjustment {
+  id: string
+  ecu_job_id: string
+  amount: number
+  reason: string
+  created_by: string | null
+  created_at: string
+  creator?: { name: string } | null
+}
+
+export function useEcuJobPriceAdjustments(jobId: string) {
+  return useQuery({
+    queryKey: ['ecu-job-price-adjustments', jobId],
+    enabled: !!jobId,
+    queryFn: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from('ecu_job_price_adjustments')
+        .select('*, creator:profiles!created_by(name)')
+        .eq('ecu_job_id', jobId)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return (data ?? []) as EcuJobPriceAdjustment[]
+    },
+  })
+}
+
+export function useAddEcuJobPriceAdjustment() {
+  const qc = useQueryClient()
+  const { log } = useAuditLog()
+  const user = useAuthStore((s) => s.user)
+  return useMutation({
+    mutationFn: async ({ jobId, amount, reason }: { jobId: string; amount: number; reason: string }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from('ecu_job_price_adjustments')
+        .insert({ ecu_job_id: jobId, amount, reason, created_by: user?.id ?? null })
+        .select('*, creator:profiles!created_by(name)')
+        .single()
+      if (error) throw error
+      return data as EcuJobPriceAdjustment
+    },
+    onSuccess: (row) => {
+      qc.invalidateQueries({ queryKey: ['ecu-job-price-adjustments', row.ecu_job_id] })
+      log({ entity: 'ecu_job', entityId: row.ecu_job_id, action: 'price_adjustment_added' })
     },
   })
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
-import { Plus, ChevronDown, Check, AlertTriangle } from 'lucide-react'
+import { Plus, ChevronDown, Check, AlertTriangle, Eye, EyeOff } from 'lucide-react'
 import { PermissionGuard } from '@/components/auth/PermissionGuard'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -15,7 +15,8 @@ import { useEcuJobs, useUpdateEcuJobStatus, type EcuJob } from '@/hooks/useEcuJo
 import { BadgeStatusFinanceiro } from '@/components/shared/BadgeStatusFinanceiro'
 import { useProfile } from '@/hooks/useProfile'
 import { useUnseenJobs } from '@/hooks/useUnseenJobs'
-import { formatCurrency, formatDateTime } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth'
+import { cn, formatCurrency, formatDateTime } from '@/lib/utils'
 import type { FileStatus } from '@/types/app'
 
 // ─── Status dot indicator ──────────────────────────────────────────────────────
@@ -171,6 +172,7 @@ function buildColumns(
   _navigate: ReturnType<typeof useNavigate>,
   isFranchise: boolean,
   unseenIds: Set<string>,
+  blurValorCusto: boolean,
 ): Column<EcuJob>[] {
   const cols: Column<EcuJob>[] = [
     {
@@ -266,7 +268,7 @@ function buildColumns(
         if (r.amount_charged_by_matrix == null) return null
         const isFranchiseJob = r.unit_id !== null
         return (
-          <div className="flex items-center gap-2">
+          <div className={cn('flex items-center gap-2', blurValorCusto && 'blur-[6px] select-none')}>
             <span className="text-sm font-mono text-foreground">{formatCurrency(r.amount_charged_by_matrix)}</span>
             {isFranchiseJob && <BadgeStatusFinanceiro status={r.matrix_payment_status} />}
           </div>
@@ -307,7 +309,26 @@ export default function EcuJobsPage() {
   const isFranchise = isFranchiseUser()
   const { unseenIds } = useUnseenJobs()
 
-  const COLUMNS = buildColumns(navigate, isFranchise, unseenIds)
+  // A.9 item 6: olhinho de privacidade — Valor Custo borrado por padrão pra
+  // franquia (só o custo dela junto à matriz, não o preço do próprio cliente).
+  // Persistido em localStorage escopado por user_id — não pode vazar entre
+  // contas diferentes na mesma máquina.
+  const user = useAuthStore((s) => s.user)
+  const [blurValorCusto, setBlurValorCusto] = useState(true)
+  useEffect(() => {
+    if (!user?.id) return
+    const stored = localStorage.getItem(`ecu-jobs-blur-valor-custo:${user.id}`)
+    if (stored !== null) setBlurValorCusto(stored === '1')
+  }, [user?.id])
+  function toggleBlurValorCusto() {
+    setBlurValorCusto((prev) => {
+      const next = !prev
+      if (user?.id) localStorage.setItem(`ecu-jobs-blur-valor-custo:${user.id}`, next ? '1' : '0')
+      return next
+    })
+  }
+
+  const COLUMNS = buildColumns(navigate, isFranchise, unseenIds, isFranchise && blurValorCusto)
 
   return (
     <div>
@@ -334,7 +355,17 @@ export default function EcuJobsPage() {
           </Select>
         </div>
 
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          {isFranchise && (
+            <button
+              type="button"
+              onClick={toggleBlurValorCusto}
+              title={blurValorCusto ? 'Mostrar Valor Custo' : 'Ocultar Valor Custo'}
+              className="shrink-0 flex items-center justify-center h-9 w-9 rounded-lg border border-white/10 hover:border-white/25 bg-white/[0.04] hover:bg-white/[0.08] text-muted-foreground hover:text-foreground transition-all"
+            >
+              {blurValorCusto ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          )}
           <PermissionGuard module="ecu_arquivos" action="create">
             <Button
               onClick={() => navigate(`${prefix}/arquivos/novo`)}

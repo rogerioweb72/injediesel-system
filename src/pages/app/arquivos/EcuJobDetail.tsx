@@ -4,7 +4,7 @@ import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
 import {
   ArrowLeft, Upload, FileText, Clock, Pencil,
   ChevronRight, AlertCircle, AlertTriangle, MessageSquarePlus, X,
-  CreditCard, CheckCircle2, Loader2, ShieldAlert, ShieldCheck, ArrowUp, ArrowDown,
+  CreditCard, CheckCircle2, Loader2, ShieldAlert, ArrowUp, ArrowDown,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ECU_ACCEPTED_EXTENSIONS } from '@/lib/ecuFileTypes'
@@ -876,15 +876,11 @@ export default function EcuJobDetail() {
                         className={cn(
                           f.r2_key.startsWith('mock/')
                             ? 'opacity-40 cursor-not-allowed'
-                            : f.scan_status === 'skipped'
-                              ? 'bg-amber-600 hover:bg-amber-500 text-white border-0 gap-1.5'
-                              : 'bg-green-600 hover:bg-green-500 text-white border-0 gap-1.5',
+                            : 'bg-green-600 hover:bg-green-500 text-white border-0 gap-1.5',
                         )}
-                        title={f.scan_status === 'skipped' ? 'Arquivo sem verificação antivírus' : undefined}
                         onClick={() => handleDownloadFile(f)}
                       >
-                        {f.scan_status === 'skipped' ? <ShieldAlert size={14} /> : <ShieldCheck size={14} />}
-                        {f.scan_status === 'skipped' ? 'Baixar (sem verificação)' : 'Baixar'}
+                        Baixar
                       </Button>
                     )}
                   </div>

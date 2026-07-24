@@ -247,17 +247,6 @@ function buildColumns(
       cell: (r) => <StatusCell job={r} readOnly={isFranchise} />,
     },
     {
-      key: 'elapsed', header: 'Tempo',
-      cell: (r) => (
-        <ElapsedCell
-          createdAt={r.created_at}
-          updatedAt={r.updated_at}
-          status={r.status}
-          firstEntregaAt={r.first_entrega_at}
-        />
-      ),
-    },
-    {
       // Valor que a franquia deve à matriz (custo dela). Job direto matriz-
       // cliente não tem repasse — amount_charged_by_matrix fica null, célula
       // vazia. Badge de status de pagamento fica aqui quando é job de
@@ -291,6 +280,22 @@ function buildColumns(
       },
     },
   )
+
+  // A.9 item 7: coluna Tempo (semáforo) só pra matriz — franquia não vê.
+  // Sem dependência de sort/filter no campo, esconder é seguro.
+  if (!isFranchise) {
+    cols.push({
+      key: 'elapsed', header: 'Tempo',
+      cell: (r) => (
+        <ElapsedCell
+          createdAt={r.created_at}
+          updatedAt={r.updated_at}
+          status={r.status}
+          firstEntregaAt={r.first_entrega_at}
+        />
+      ),
+    })
+  }
 
   return cols
 }

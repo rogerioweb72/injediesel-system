@@ -841,13 +841,13 @@ export default function EcuJobDetail() {
                   <div key={f.id} className={cn('flex items-center gap-3 p-3', isModificado && 'bg-green-500/[0.06]')}>
                     {/* Tipo: ícone + título lado a lado, na mesma linha vertical — o
                         que precisa ficar óbvio de cara é ORIGINAL vs MODIFICADO. */}
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0 min-w-[160px]">
                       {isModificado ? (
                         <ArrowDown size={20} className="text-green-600 shrink-0" />
                       ) : (
                         <ArrowUp size={20} className="text-red-500 shrink-0" />
                       )}
-                      <span className="text-lg font-black uppercase tracking-wide text-foreground">
+                      <span className="text-lg font-black uppercase tracking-wide text-foreground whitespace-nowrap">
                         {isModificado ? 'Modificado' : 'Original'}
                       </span>
                     </div>

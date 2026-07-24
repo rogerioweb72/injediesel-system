@@ -4,6 +4,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
 
 export interface Column<T> {
   key: string
@@ -26,12 +27,14 @@ interface DataTableProps<T extends { id: string }> {
   onRowClick?: (row: T) => void
   emptyTitle?: string
   emptyDescription?: string
+  rowClassName?: (row: T) => string | undefined
 }
 
 export function DataTable<T extends { id: string }>({
   columns, data, isLoading, total, page, pageSize,
   onPageChange, onSearch, searchValue = '', searchPlaceholder = 'Buscar...',
   onRowClick, emptyTitle = 'Nenhum registro', emptyDescription = 'Nenhum item encontrado.',
+  rowClassName,
 }: DataTableProps<T>) {
   const totalPages = Math.ceil(total / pageSize)
 
@@ -82,7 +85,7 @@ export function DataTable<T extends { id: string }>({
               data.map((row) => (
                 <TableRow
                   key={row.id}
-                  className={onRowClick ? 'cursor-pointer hover:bg-[hsl(var(--pm-gray-800))]' : ''}
+                  className={cn(onRowClick && 'cursor-pointer hover:bg-[hsl(var(--pm-gray-800))]', rowClassName?.(row))}
                   onClick={() => onRowClick?.(row)}
                 >
                   {columns.map((col) => (

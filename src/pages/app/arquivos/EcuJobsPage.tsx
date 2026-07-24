@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
-import { Plus, ChevronDown, Check } from 'lucide-react'
+import { Plus, ChevronDown, Check, AlertTriangle } from 'lucide-react'
 import { PermissionGuard } from '@/components/auth/PermissionGuard'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -15,8 +15,8 @@ import { useEcuJobs, useUpdateEcuJobStatus, type EcuJob } from '@/hooks/useEcuJo
 import { BadgeStatusFinanceiro } from '@/components/shared/BadgeStatusFinanceiro'
 import { useProfile } from '@/hooks/useProfile'
 import { useUnseenJobs } from '@/hooks/useUnseenJobs'
-import { formatCurrency } from '@/lib/utils'
-import type { FileStatus, PriorityLevel } from '@/types/app'
+import { formatCurrency, formatDateTime } from '@/lib/utils'
+import type { FileStatus } from '@/types/app'
 
 // ─── Status dot indicator ──────────────────────────────────────────────────────
 function StatusDot({ status, unseen }: { status: FileStatus; unseen?: boolean }) {
@@ -109,12 +109,6 @@ function ElapsedCell({ createdAt, updatedAt, status, firstEntregaAt }: {
   )
 }
 
-const PRIORITY_LABELS: Record<PriorityLevel, string> = {
-  normal: 'Normal',
-  alta: 'Alta',
-  critica: 'Crítica',
-}
-
 const STATUS_ORDER: FileStatus[] = [
   'recebido', 'em_triagem', 'em_processamento',
   'aguardando_cliente', 'concluido', 'cancelado',
@@ -185,16 +179,37 @@ function buildColumns(
       cell: (r) => <StatusDot status={r.status} unseen={unseenIds.has(r.id)} />,
     },
     {
+      key: 'job', header: 'Job',
+      cell: (r) => (
+        <span className="text-xs font-mono text-muted-foreground inline-flex items-center gap-1.5">
+          {r.contact_finance && (
+            <AlertTriangle size={12} className="text-yellow-400 shrink-0" />
+          )}
+          {r.id.slice(0, 8).toUpperCase()}
+        </span>
+      ),
+    },
+    {
+      key: 'created_at', header: 'Data/Hora',
+      cell: (r) => <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDateTime(r.created_at)}</span>,
+    },
+    {
       key: 'customer', header: 'Cliente',
       cell: (r) => <span className="text-sm text-foreground">{r.customers?.name ?? '—'}</span>,
     },
     {
-      key: 'vehicle', header: 'Veículo',
+      key: 'vehicle', header: 'Placa/Veículo',
       cell: (r) => {
-        const label = r.vehicles
+        const plate = r.vehicles?.plate ?? r.vehicle_info?.placa
+        const model = r.vehicles
           ? `${r.vehicles.brand} ${r.vehicles.model}`
-          : [r.vehicle_info?.marca, r.vehicle_info?.modelo].filter(Boolean).join(' ') || '—'
-        return <span className="text-sm text-muted-foreground">{label}</span>
+          : [r.vehicle_info?.marca, r.vehicle_info?.modelo].filter(Boolean).join(' ')
+        return (
+          <div>
+            {plate && <p className="text-xs font-mono text-foreground">{plate}</p>}
+            <p className="text-xs text-muted-foreground">{model || '—'}</p>
+          </div>
+        )
       },
     },
   ]
@@ -226,14 +241,6 @@ function buildColumns(
   cols.push(
     { key: 'service_type', header: 'Serviço', cell: (r) => <span className="text-sm">{r.service_type}</span> },
     {
-      key: 'priority', header: 'Prio.',
-      cell: (r) => (
-        <span className={r.priority === 'critica' ? 'text-[hsl(var(--pm-red-400))] font-medium text-xs' : 'text-xs text-muted-foreground'}>
-          {PRIORITY_LABELS[r.priority]}
-        </span>
-      ),
-    },
-    {
       key: 'status', header: 'Status',
       cell: (r) => <StatusCell job={r} readOnly={isFranchise} />,
     },
@@ -249,15 +256,34 @@ function buildColumns(
       ),
     },
     {
-      key: 'financeiro', header: 'Financeiro',
+      // Valor que a franquia deve à matriz (custo dela). Job direto matriz-
+      // cliente não tem repasse — amount_charged_by_matrix fica null, célula
+      // vazia. Badge de status de pagamento fica aqui quando é job de
+      // franquia — é o valor que efetivamente vira financial_entries nesse
+      // caso (mesma regra que já valia na coluna "Financeiro" antiga).
+      key: 'valor_custo', header: 'Valor Custo',
       cell: (r) => {
+        if (r.amount_charged_by_matrix == null) return null
         const isFranchiseJob = r.unit_id !== null
-        const amount = isFranchiseJob ? r.amount_charged_by_matrix : r.amount_charged_to_customer
-        if (amount == null) return null
         return (
           <div className="flex items-center gap-2">
-            <span className="text-sm font-mono text-foreground">{formatCurrency(amount)}</span>
-            <BadgeStatusFinanceiro status={r.matrix_payment_status} />
+            <span className="text-sm font-mono text-foreground">{formatCurrency(r.amount_charged_by_matrix)}</span>
+            {isFranchiseJob && <BadgeStatusFinanceiro status={r.matrix_payment_status} />}
+          </div>
+        )
+      },
+    },
+    {
+      // Valor cobrado do cliente final. Em job direto (sem franquia), é
+      // esse valor que vira financial_entries — badge fica aqui nesse caso.
+      key: 'valor_cliente', header: 'Valor Cliente',
+      cell: (r) => {
+        if (r.amount_charged_to_customer == null) return null
+        const isFranchiseJob = r.unit_id !== null
+        return (
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-mono text-foreground">{formatCurrency(r.amount_charged_to_customer)}</span>
+            {!isFranchiseJob && <BadgeStatusFinanceiro status={r.matrix_payment_status} />}
           </div>
         )
       },
@@ -333,6 +359,7 @@ export default function EcuJobsPage() {
         searchValue={q}
         searchPlaceholder="Buscar por cliente, CPF, placa ou serviço..."
         onRowClick={(r) => navigate(`${prefix}/arquivos/${r.id}`)}
+        rowClassName={(r) => r.contact_finance ? 'bg-red-500/[0.08] hover:bg-red-500/[0.14] border-l-2 border-l-red-500' : undefined}
         emptyTitle="Nenhum job ECU"
         emptyDescription="Clique em Novo Arquivo para registrar o primeiro."
       />

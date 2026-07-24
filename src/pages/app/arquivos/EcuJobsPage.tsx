@@ -257,8 +257,10 @@ function buildColumns(
         if (r.amount_charged_by_matrix == null) return null
         const isFranchiseJob = r.unit_id !== null
         return (
-          <div className={cn('flex items-center gap-2', blurValorCusto && 'blur-[6px] select-none')}>
-            <span className="text-sm font-mono text-foreground">{formatCurrency(r.amount_charged_by_matrix)}</span>
+          <div className="flex items-center gap-2">
+            <span className={cn('text-sm font-mono text-foreground', blurValorCusto && 'blur-[6px] select-none')}>
+              {formatCurrency(r.amount_charged_by_matrix)}
+            </span>
             {isFranchiseJob && <BadgeStatusFinanceiro status={r.matrix_payment_status} />}
           </div>
         )

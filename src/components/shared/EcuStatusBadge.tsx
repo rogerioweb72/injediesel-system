@@ -3,7 +3,7 @@ import type { FileStatus } from '@/types/app'
 const STATUS_CONFIG: Record<FileStatus, { label: string; color: string; bg: string }> = {
   recebido:           { label: 'Recebido',          color: '#94A3B8', bg: 'rgba(148,163,184,0.1)' },
   em_triagem:         { label: 'Em Triagem',         color: '#60A5FA', bg: 'rgba(96,165,250,0.1)'  },
-  em_processamento:   { label: 'Em Processamento',   color: '#FBBF24', bg: 'rgba(251,191,36,0.1)'  },
+  em_processamento:   { label: 'Processamento',      color: '#FBBF24', bg: 'rgba(251,191,36,0.1)'  },
   aguardando_cliente: { label: 'Aguardando Cliente', color: '#C084FC', bg: 'rgba(192,132,252,0.1)' },
   concluido:          { label: 'Concluído',          color: '#34D399', bg: 'rgba(52,211,153,0.1)'  },
   cancelado:          { label: 'Cancelado',          color: '#F87171', bg: 'rgba(248,113,113,0.1)' },

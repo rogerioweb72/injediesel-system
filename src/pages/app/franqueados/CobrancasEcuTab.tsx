@@ -28,7 +28,7 @@ function exportCSV(items: CobrancaEcuItem[], unitName: string) {
       veiculo,
       fmtDate(item.created_at),
       (item.amount_charged_by_matrix ?? 0).toFixed(2).replace('.', ','),
-      item.matrix_payment_status === 'pago' ? 'Pago' : 'Em Aberto',
+      item.matrix_payment_status === 'pago' ? 'Pago' : 'Aberto',
       item.matrix_paid_at ? fmtDate(item.matrix_paid_at) : '—',
       item.financeiro_pagamentos?.forma_pagamento ?? '—',
     ].join(',')
@@ -78,7 +78,7 @@ export default function CobrancasEcuTab({ unitId, unitName }: Props) {
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-2">
         {[
-          { label: 'Em Aberto', value: totais.emAberto, color: '#ef4444', bg: 'rgba(239,68,68,0.06)', border: 'rgba(239,68,68,0.2)' },
+          { label: 'Aberto', value: totais.emAberto, color: '#ef4444', bg: 'rgba(239,68,68,0.06)', border: 'rgba(239,68,68,0.2)' },
           { label: 'Pago (período)', value: totais.pago, color: '#22c55e', bg: 'rgba(34,197,94,0.06)', border: 'rgba(34,197,94,0.2)' },
           { label: 'Total período', value: totais.total, color: 'hsl(var(--pm-gray-300))', bg: 'hsl(var(--pm-gray-900))', border: 'rgba(255,255,255,0.06)' },
         ].map(({ label, value, color, bg, border }) => (
@@ -93,7 +93,7 @@ export default function CobrancasEcuTab({ unitId, unitName }: Props) {
         <div className="flex items-center gap-2 flex-wrap">
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)} style={selectStyle}>
             <option value="todos">Todos os status</option>
-            <option value="em_aberto">Em Aberto</option>
+            <option value="em_aberto">Aberto</option>
             <option value="pago">Pagos</option>
           </select>
           <input

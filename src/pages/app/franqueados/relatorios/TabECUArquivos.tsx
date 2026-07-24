@@ -7,7 +7,7 @@ import { useEcuJobsReport, fmt, pct, type PeriodFilter } from '@/hooks/useRelato
 
 const STATUS_LABELS: Record<string, string> = {
   recebido: 'Recebido', em_triagem: 'Em Triagem',
-  em_processamento: 'Em Processamento', aguardando_cliente: 'Aguard. Cliente',
+  em_processamento: 'Processamento', aguardando_cliente: 'Aguard. Cliente',
   concluido: 'Concluído', cancelado: 'Cancelado',
 }
 const STATUS_ORDER = ['recebido','em_triagem','em_processamento','aguardando_cliente','concluido','cancelado']

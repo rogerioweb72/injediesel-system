@@ -226,7 +226,7 @@ export default function CaixaPage() {
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle size={14} style={{ color: '#FBBF24' }} />
             <p className="text-xs font-bold uppercase tracking-widest" style={{ color: '#FBBF24' }}>
-              Em Aberto
+              Aberto
             </p>
             <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
               style={{ background: 'rgba(251,191,36,0.15)', color: '#FBBF24' }}>

@@ -181,7 +181,7 @@ export default function FinanceiroPage() {
       <Tabs defaultValue="em-aberto" className="w-full">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
           <TabsList style={{ background: 'hsl(var(--pm-gray-900))' }}>
-            <TabsTrigger value="em-aberto" className="text-xs px-3">Em Aberto</TabsTrigger>
+            <TabsTrigger value="em-aberto" className="text-xs px-3">Aberto</TabsTrigger>
             <TabsTrigger value="franquias" className="text-xs px-3 gap-1.5">
               Franquias
               {unseenCount > 0 && (
@@ -315,7 +315,7 @@ export default function FinanceiroPage() {
               <div className="flex items-center gap-2 mb-3">
                 <AlertTriangle size={14} style={{ color: '#FBBF24' }} />
                 <p className="text-xs font-bold uppercase tracking-widest" style={{ color: '#FBBF24' }}>
-                  Em Aberto
+                  Aberto
                 </p>
                 <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
                   style={{ background: 'rgba(251,191,36,0.15)', color: '#FBBF24' }}>

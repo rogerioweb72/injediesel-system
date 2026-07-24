@@ -34,7 +34,7 @@ export function BadgeStatusFinanceiro({ status }: Props) {
       }}
     >
       <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444] inline-block" />
-      EM ABERTO
+      ABERTO
     </span>
   )
 }

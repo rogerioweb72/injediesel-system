@@ -142,7 +142,7 @@ export default function FranqueadoFaturasPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <ResumoCard label="Em Aberto" value={resumo.totalEmAberto}
+        <ResumoCard label="Aberto" value={resumo.totalEmAberto}
           color="#ef4444" bg="rgba(239,68,68,0.06)" border="rgba(239,68,68,0.2)" />
         <ResumoCard label="Pago este mês" value={resumo.totalPagoMes}
           color="#22c55e" bg="rgba(34,197,94,0.06)" border="rgba(34,197,94,0.2)" />
@@ -154,7 +154,7 @@ export default function FranqueadoFaturasPage() {
       <section className="space-y-3">
         <div className="flex items-center gap-2">
           <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'hsl(var(--pm-gray-500))' }}>
-            Em Aberto
+            Aberto
           </p>
           {resumo.qtdEmAberto > 0 && (
             <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold"

@@ -58,9 +58,9 @@ const schema = z.object({
   vehicle_placa:      z.string().optional(),
   vehicle_marca:      z.string().optional(),
   vehicle_modelo:     z.string().optional(),
-  vehicle_motor:      z.string().optional(),
+  vehicle_motor:      z.string().min(1, 'Motor obrigatório'),
   vehicle_transmissao: z.string().min(1, 'Selecione a transmissão'),
-  vehicle_ano:        z.string().optional(),
+  vehicle_ano:        z.string().min(1, 'Ano obrigatório'),
   vehicle_horas_km:   z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.vehicle_categoria && PLATE_CATEGORIES.has(data.vehicle_categoria)) {
@@ -724,8 +724,19 @@ export default function EcuJobForm() {
                 </div>
               )}
               <div className="space-y-1">
-                <Label className="text-xs">Motor</Label>
-                <Input placeholder="Ex: 2.0 TSI 220cv" {...register('vehicle_motor')} />
+                <Label className="text-xs">
+                  Motor <span className="text-red-400">*</span>
+                </Label>
+                <Input
+                  placeholder="Ex: 2.0 TSI 220cv"
+                  {...register('vehicle_motor')}
+                  className={cn(fieldErr('vehicle_motor') && 'border-red-500 field-error-blink')}
+                />
+                {(errors as Record<string, { message?: string }>).vehicle_motor && (
+                  <p className="text-xs text-red-400">
+                    {(errors as Record<string, { message?: string }>).vehicle_motor?.message}
+                  </p>
+                )}
               </div>
 
               {/* Modelo + Transmissão */}
@@ -773,8 +784,19 @@ export default function EcuJobForm() {
 
               {/* Ano + Horas/Km */}
               <div className="space-y-1">
-                <Label className="text-xs">Ano</Label>
-                <Input placeholder="Ex: 2022/2023" {...register('vehicle_ano')} />
+                <Label className="text-xs">
+                  Ano <span className="text-red-400">*</span>
+                </Label>
+                <Input
+                  placeholder="Ex: 2022/2023"
+                  {...register('vehicle_ano')}
+                  className={cn(fieldErr('vehicle_ano') && 'border-red-500 field-error-blink')}
+                />
+                {(errors as Record<string, { message?: string }>).vehicle_ano && (
+                  <p className="text-xs text-red-400">
+                    {(errors as Record<string, { message?: string }>).vehicle_ano?.message}
+                  </p>
+                )}
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Horas / Km</Label>

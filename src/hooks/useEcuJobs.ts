@@ -79,6 +79,7 @@ export interface EcuJob {
   vehicles?: { brand: string; model: string; plate: string | null } | null
   franchise_units?: { name: string; city: string | null; state: string | null } | null
   creator_profile?: { name: string | null } | null
+  technician?: { id: string; name: string } | null
   ecu_job_files?: EcuJobFile[]
   ecu_job_events?: EcuJobEvent[]
 }
@@ -126,7 +127,7 @@ export function useEcuJob(id: string) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from('ecu_jobs')
-        .select('*, customers(name, email, address), vehicles(brand, model, plate), franchise_units(name, city, state), creator_profile:profiles!created_by(name), seller:profiles!seller_id(id,name), ecu_job_files(*), ecu_job_events(*)')
+        .select('*, customers(name, email, address), vehicles(brand, model, plate), franchise_units(name, city, state), creator_profile:profiles!created_by(name), seller:profiles!seller_id(id,name), technician:profiles!assigned_to(id,name), ecu_job_files(*), ecu_job_events(*)')
         .eq('id', id)
         .single()
       if (error) throw error

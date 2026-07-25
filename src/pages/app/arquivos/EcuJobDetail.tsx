@@ -12,18 +12,20 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { EcuStatusBadge, STATUS_LABELS } from '@/components/shared/EcuStatusBadge'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import {
   useEcuJob, useUpdateEcuJobStatus, useSetMatrixPrice, useSetCustomerPrice,
   useUpdateEcuJobFlags, useUpdateServiceNotes, NEXT_STATUS,
-  useEcuJobFinancialEntry, useSendToFinance,
+  useEcuJobFinancialEntry, useSendToFinance, useAssignEcuJob,
   useEcuJobPriceAdjustments, useAddEcuJobPriceAdjustment,
   type EcuJob,
 } from '@/hooks/useEcuJobs'
 import { useUploadEcuFile, useDownloadEcuFile, useEcuJobFilesRealtime } from '@/hooks/useEcuFiles'
 import { useCreateSupportTicket } from '@/hooks/useSupportTickets'
+import { useUsers } from '@/hooks/useUsers'
 import { useMyUnit } from '@/hooks/useMyUnit'
 import { useProfile } from '@/hooks/useProfile'
 import { useMarkJobAsSeen } from '@/hooks/useUnseenJobs'
@@ -349,7 +351,14 @@ export default function EcuJobDetail() {
   const { data: priceAdjustments = [] } = useEcuJobPriceAdjustments(job?.created_by_matrix ? (id ?? '') : '')
   const uploadFile   = useUploadEcuFile()
   const downloadFile = useDownloadEcuFile()
+  const assignJob    = useAssignEcuJob()
   const { isMatrixUser, isFranchiseUser, hasRole } = useProfile()
+  // B.3: técnico responsável — só matriz atribui, franquia só lê. Sem role
+  // "técnico" dedicada em MATRIX_ROLES (ecu_technician é papel de franquia) —
+  // operations_admin + support_agent são os papéis operacionalmente mais
+  // próximos, decisão confirmada com Rogério em 24/07/2026.
+  const { data: usersData = [] } = useUsers()
+  const technicians = usersData.filter((u) => u.active && (u.role === 'operations_admin' || u.role === 'support_agent'))
   const { data: editHistory = [], isError: editHistoryError } = useJobValueEditHistory(isMatrixUser() ? (id ?? '') : '')
   const markAsSeen   = useMarkJobAsSeen(id)
   const { data: financialEntry } = useEcuJobFinancialEntry(job?.id ?? '')
@@ -565,6 +574,25 @@ export default function EcuJobDetail() {
             <div>
               <p className="text-xs text-muted-foreground">Abertura</p>
               <p className="text-sm text-foreground">{formatDateTime(job.created_at)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Técnico Responsável</p>
+              {isMatrixUser() ? (
+                <Select
+                  value={job.assigned_to ?? '_none'}
+                  onValueChange={(v) => assignJob.mutate({ id: job.id, assignedTo: v === '_none' ? null : v })}
+                >
+                  <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">Não atribuído</SelectItem>
+                    {technicians.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-sm text-foreground">{job.technician?.name ?? '—'}</p>
+              )}
             </div>
             {job.problem_description && (
               <div className="col-span-2">

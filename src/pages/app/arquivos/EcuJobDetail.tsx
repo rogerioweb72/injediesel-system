@@ -361,12 +361,7 @@ export default function EcuJobDetail() {
   const technicians = usersData.filter((u) => u.active && (u.role === 'operations_admin' || u.role === 'support_agent'))
   const { data: editHistory = [], isError: editHistoryError } = useJobValueEditHistory(isMatrixUser() ? (id ?? '') : '')
   const markAsSeen   = useMarkJobAsSeen(id)
-  // Commit 2/3 (FIN.5): hook agora retorna lista — lógica de 3 casos
-  // (franquia normal / matriz-direto / created_by_matrix) e render de
-  // 2 linhas ficam pro commit 3. Adapter abaixo preserva comportamento
-  // atual (1 entry) até lá.
   const { data: financialEntries = [] } = useEcuJobFinancialEntries(job?.id ?? '')
-  const financialEntry = financialEntries[0] ?? null
   const sendToFinance = useSendToFinance()
 
   useEffect(() => {
@@ -397,12 +392,31 @@ export default function EcuJobDetail() {
   const nextStatuses = isFranchise
     ? (job.status === 'recebido' && !job.created_by_matrix ? (['cancelado'] as typeof allNextStatuses) : [])
     : allNextStatuses
-  // Job de franquia cobra pelo valor que a matriz repassa; job direto de matriz
-  // (sem unidade) cobra direto do valor passado ao cliente — não existe repasse.
-  const isFranchiseJob = job.unit_id !== null
-  const chargeAmount = isFranchiseJob ? job.amount_charged_by_matrix : job.amount_charged_to_customer
-  const chargeFieldLabel = isFranchiseJob ? 'cobrado pela matriz' : 'cobrado do cliente'
-  const missingMatrixPriceToConclude = isFranchiseJob && !job.amount_charged_by_matrix
+  // FIN.5: 3 casos de cobrança.
+  // - Job normal de franquia (unit_id != null, !created_by_matrix): 1 entry,
+  //   valor do repasse (amount_charged_by_matrix) — comportamento original.
+  // - Job direto matriz→cliente (unit_id == null): 1 entry, valor cheio do
+  //   cliente (amount_charged_to_customer) — sem repasse, não existe franquia.
+  // - Job created_by_matrix (unit_id != null, created_by_matrix true): matriz
+  //   cobra cliente final direto E franquia paga repasse técnico — 2 entries
+  //   independentes, só envia quando ambos os valores estiverem preenchidos
+  //   (envio é ação única — não há como completar a segunda entry depois).
+  const hasFranchiseLeg = job.unit_id !== null
+  const isCreatedByMatrixJob = hasFranchiseLeg && job.created_by_matrix
+  const missingMatrixPriceToConclude = hasFranchiseLeg && !job.amount_charged_by_matrix
+  const chargeFieldLabel = isCreatedByMatrixJob
+    ? 'cobrado do cliente final e repasse à franquia'
+    : hasFranchiseLeg ? 'cobrado pela matriz' : 'cobrado do cliente'
+  const financeEntries: { unit_id: string | null; amount: number }[] | null = isCreatedByMatrixJob
+    ? (job.amount_charged_to_customer && job.amount_charged_by_matrix
+        ? [
+            { unit_id: null, amount: job.amount_charged_to_customer },
+            { unit_id: job.unit_id, amount: job.amount_charged_by_matrix },
+          ]
+        : null)
+    : hasFranchiseLeg
+      ? (job.amount_charged_by_matrix ? [{ unit_id: job.unit_id, amount: job.amount_charged_by_matrix }] : null)
+      : (job.amount_charged_to_customer ? [{ unit_id: null, amount: job.amount_charged_to_customer }] : null)
   const files  = job.ecu_job_files ?? []
   const events = [...(job.ecu_job_events ?? [])].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -435,12 +449,10 @@ export default function EcuJobDetail() {
 
   async function handleSendToFinance() {
     if (!job) return
-    if (!chargeAmount) return
+    if (!financeEntries) return
     try {
-      // Commit 2/3 (FIN.5): entries com item único preserva comportamento
-      // atual — split em 2 entries (created_by_matrix) fica pro commit 3.
       await sendToFinance.mutateAsync({
-        entries: [{ unit_id: job.unit_id, amount: chargeAmount, ecu_job_id: job.id }],
+        entries: financeEntries.map((e) => ({ ...e, ecu_job_id: job.id })),
         serviceType: job.service_type,
         customerName: job.customers?.name ?? 'Cliente',
       })
@@ -1096,8 +1108,11 @@ export default function EcuJobDetail() {
                 Status Financeiro
               </p>
 
-              {/* Serviço 100% completo: job concluído + pago */}
-              {job.status === 'concluido' && financialEntry?.status === 'pago' && (
+              {/* Serviço 100% completo: job concluído + todas as entries pagas
+                  (created_by_matrix só fica 100% quando cliente final E
+                  repasse à franquia estiverem quitados). */}
+              {job.status === 'concluido' && financialEntries.length > 0
+                && financialEntries.every((e) => e.status === 'pago') && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-lg"
                   style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)' }}>
                   <CheckCircle2 size={15} style={{ color: '#4ADE80', flexShrink: 0 }} />
@@ -1108,30 +1123,46 @@ export default function EcuJobDetail() {
                 </div>
               )}
 
-              {/* Status do pagamento */}
-              {!financialEntry ? (
+              {/* Status do pagamento — 1 linha por entry. created_by_matrix
+                  gera 2 (cliente final + repasse franquia), rótulo só aparece
+                  quando há mais de 1 pra não repetir contexto óbvio no caso comum. */}
+              {financialEntries.length === 0 ? (
                 <p className="text-sm" style={{ color: 'hsl(var(--pm-gray-500))' }}>
                   Financeiro não aberto
                 </p>
-              ) : financialEntry.status === 'pendente' ? (
-                <div className="flex items-center gap-2 justify-center py-2.5 px-4 rounded-xl text-sm font-medium"
-                  style={{ background: 'rgba(251,191,36,0.1)', color: '#FBBF24' }}>
-                  <Clock size={14} /> Aguardando caixa
-                </div>
               ) : (
-                <div className="flex items-center gap-2 justify-center py-2.5 px-4 rounded-xl text-sm font-medium"
-                  style={{ background: 'rgba(74,222,128,0.1)', color: '#4ADE80' }}>
-                  <CheckCircle2 size={14} /> Pago
-                  {financialEntry.payment_method && (
-                    <span style={{ opacity: 0.7 }}>· {financialEntry.payment_method}</span>
-                  )}
+                <div className="space-y-2">
+                  {financialEntries.map((entry) => (
+                    <div key={entry.id}>
+                      {financialEntries.length > 1 && (
+                        <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70 mb-1">
+                          {entry.unit_id === null ? 'Cliente final' : 'Repasse à franquia'}
+                        </p>
+                      )}
+                      {entry.status === 'pendente' ? (
+                        <div className="flex items-center gap-2 justify-center py-2.5 px-4 rounded-xl text-sm font-medium"
+                          style={{ background: 'rgba(251,191,36,0.1)', color: '#FBBF24' }}>
+                          <Clock size={14} /> Aguardando caixa
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 justify-center py-2.5 px-4 rounded-xl text-sm font-medium"
+                          style={{ background: 'rgba(74,222,128,0.1)', color: '#4ADE80' }}>
+                          <CheckCircle2 size={14} /> Pago
+                          {entry.payment_method && (
+                            <span style={{ opacity: 0.7 }}>· {entry.payment_method}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
 
-              {/* Botão Enviar para o Financeiro — qualquer status, enquanto não enviado.
-                  Cobrança: job de franquia usa amount_charged_by_matrix (repasse);
-                  job direto de matriz usa amount_charged_to_customer (sem repasse). */}
-              {!financialEntry && chargeAmount ? (
+              {/* Botão Enviar para o Financeiro — qualquer status, enquanto não
+                  enviado. created_by_matrix só habilita quando os 2 valores
+                  (cliente final + repasse) estiverem preenchidos, pois o envio
+                  cria as 2 entries de uma vez só. */}
+              {financialEntries.length === 0 && financeEntries ? (
                 <button
                   onClick={handleSendToFinance}
                   disabled={sendToFinance.isPending}
@@ -1145,7 +1176,7 @@ export default function EcuJobDetail() {
                   )}
                   Enviar para o Financeiro
                 </button>
-              ) : !financialEntry && !chargeAmount ? (
+              ) : financialEntries.length === 0 && !financeEntries ? (
                 <p className="text-xs text-center" style={{ color: 'hsl(var(--pm-gray-500))' }}>
                   Informe o valor {chargeFieldLabel} antes de enviar ao financeiro.
                 </p>

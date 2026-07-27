@@ -32,6 +32,44 @@
 -- DROP + CREATE (não existe ALTER POLICY … role list em Postgres
 -- pra troca de condição — mesmo padrão de toda migration anterior
 -- que edita policy existente).
+--
+-- PADRÃO DO BUG (pra reconhecer em outro lugar): quando um mesmo
+-- domínio de dado tem múltiplas policies pra ações diferentes do
+-- ciclo de vida (ex.: criar/escrever vs. atualizar/quitar), e cada
+-- policy evolui em migration separada ao longo do tempo, as listas
+-- de role divergem sem ninguém perceber — RLS nega o UPDATE/INSERT
+-- de forma silenciosa (0 linhas afetadas, SEM erro), a mutation do
+-- front reporta sucesso, e o dado nunca muda de estado no banco.
+-- Correção: sincronizar as listas de role entre as policies do
+-- mesmo domínio sempre que uma delas ganhar um role novo.
+--
+-- EXPLICAÇÃO DO SELLER: 'seller' está em financial_admin_mark_paid
+-- e financial_admin_update_commissions mas DE PROPÓSITO NÃO está em
+-- financial_admin_write (089) — não é typo, não remover em
+-- cherry-pick pra outro sistema. Motivo (migration 080 original):
+-- PDV abre "Registrar Pagamento ECU" pra seller sem guarda de rota.
+-- seller só entra na transição pendente→pago (e no upsert de
+-- comissão, mesmo fluxo), nunca na criação da cobrança — isso é
+-- só financeiro/admin.
+--
+-- CANDIDATO A CHERRY-PICK: sim. Esse desalinhamento de listas de
+-- role entre policies do mesmo domínio provavelmente existe em
+-- Promax Tuner e EvoPro também (mesma origem de código). Verificar
+-- nos clones antes de assumir que não afeta:
+--
+--   SELECT tablename, policyname, cmd, qual, with_check
+--   FROM pg_policies
+--   WHERE tablename IN ('financial_entries','commission_entries')
+--     AND policyname IN (
+--       'financial_admin_write',
+--       'financial_admin_mark_paid',
+--       'financial_admin_update_commissions'
+--     )
+--   ORDER BY tablename, policyname;
+--
+-- Comparar as listas de role em cada linha — se divergirem (fora do
+-- 'seller' intencional em mark_paid/update_commissions, explicado
+-- acima), aplicar o mesmo fix.
 -- ============================================================
 
 DROP POLICY IF EXISTS "financial_admin_mark_paid" ON public.financial_entries;

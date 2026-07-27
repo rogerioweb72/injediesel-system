@@ -19,7 +19,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import {
   useEcuJob, useUpdateEcuJobStatus, useSetMatrixPrice, useSetCustomerPrice,
   useUpdateEcuJobFlags, useUpdateServiceNotes, NEXT_STATUS,
-  useEcuJobFinancialEntry, useSendToFinance, useAssignEcuJob,
+  useEcuJobFinancialEntries, useSendToFinance, useAssignEcuJob,
   useEcuJobPriceAdjustments, useAddEcuJobPriceAdjustment,
   type EcuJob,
 } from '@/hooks/useEcuJobs'
@@ -361,7 +361,12 @@ export default function EcuJobDetail() {
   const technicians = usersData.filter((u) => u.active && (u.role === 'operations_admin' || u.role === 'support_agent'))
   const { data: editHistory = [], isError: editHistoryError } = useJobValueEditHistory(isMatrixUser() ? (id ?? '') : '')
   const markAsSeen   = useMarkJobAsSeen(id)
-  const { data: financialEntry } = useEcuJobFinancialEntry(job?.id ?? '')
+  // Commit 2/3 (FIN.5): hook agora retorna lista — lógica de 3 casos
+  // (franquia normal / matriz-direto / created_by_matrix) e render de
+  // 2 linhas ficam pro commit 3. Adapter abaixo preserva comportamento
+  // atual (1 entry) até lá.
+  const { data: financialEntries = [] } = useEcuJobFinancialEntries(job?.id ?? '')
+  const financialEntry = financialEntries[0] ?? null
   const sendToFinance = useSendToFinance()
 
   useEffect(() => {
@@ -432,10 +437,10 @@ export default function EcuJobDetail() {
     if (!job) return
     if (!chargeAmount) return
     try {
+      // Commit 2/3 (FIN.5): entries com item único preserva comportamento
+      // atual — split em 2 entries (created_by_matrix) fica pro commit 3.
       await sendToFinance.mutateAsync({
-        jobId: job.id,
-        unitId: job.unit_id,
-        amount: chargeAmount,
+        entries: [{ unit_id: job.unit_id, amount: chargeAmount, ecu_job_id: job.id }],
         serviceType: job.service_type,
         customerName: job.customers?.name ?? 'Cliente',
       })

@@ -394,23 +394,27 @@ export function useUpdateServiceNotes() {
   })
 }
 
-export function useEcuJobFinancialEntry(jobId: string) {
+// FIN.5: job created_by_matrix gera 2 entries (cliente final +
+// repasse franquia) — hook passa a retornar lista em vez de um
+// registro único. 1 entry pros demais fluxos (comportamento atual).
+export function useEcuJobFinancialEntries(jobId: string) {
   return useQuery({
-    queryKey: ['ecu-job-financial-entry', jobId],
+    queryKey: ['ecu-job-financial-entries', jobId],
     enabled: !!jobId,
     queryFn: async () => {
       const { data } = await sb()
         .from('financial_entries')
-        .select('id, status, amount, discount_amount, payment_method')
+        .select('id, status, amount, discount_amount, payment_method, unit_id')
         .eq('ecu_job_id', jobId)
-        .maybeSingle()
-      return data as {
+        .order('created_at', { ascending: true })
+      return (data ?? []) as {
         id: string
         status: 'pendente' | 'pago'
         amount: number
         discount_amount: number
         payment_method: string | null
-      } | null
+        unit_id: string | null
+      }[]
     },
   })
 }
@@ -422,49 +426,46 @@ export function useSendToFinance() {
 
   return useMutation({
     mutationFn: async ({
-      jobId,
-      unitId,
-      amount,
+      entries,
       serviceType,
       customerName,
     }: {
-      jobId: string
-      unitId: string | null
-      amount: number
+      entries: { unit_id: string | null; amount: number; ecu_job_id: string }[]
       serviceType: string
       customerName: string
     }) => {
       const now = new Date()
+      const rows = entries.map((e) => ({
+        type: 'receita',
+        status: 'pendente',
+        amount: e.amount,
+        ecu_job_id: e.ecu_job_id,
+        unit_id: e.unit_id,
+        description: `ECU: ${serviceType} — ${customerName}`,
+        period_year: now.getFullYear(),
+        period_month: now.getMonth() + 1,
+        discount_amount: 0,
+        payment_method: null,
+        created_by: user?.id ?? null,
+        category_id: null,
+      }))
       const { data, error } = await sb()
         .from('financial_entries')
-        .insert({
-          type: 'receita',
-          status: 'pendente',
-          amount,
-          ecu_job_id: jobId,
-          unit_id: unitId,
-          description: `ECU: ${serviceType} — ${customerName}`,
-          period_year: now.getFullYear(),
-          period_month: now.getMonth() + 1,
-          discount_amount: 0,
-          payment_method: null,
-          created_by: user?.id ?? null,
-          category_id: null,
-        })
+        .insert(rows)
         .select('id')
-        .single()
       if (error) throw error
-      return data as { id: string }
+      return data as { id: string }[]
     },
     onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: ['ecu-job', variables.jobId] })
-      qc.invalidateQueries({ queryKey: ['ecu-job-financial-entry', variables.jobId] })
+      const jobId = variables.entries[0].ecu_job_id
+      qc.invalidateQueries({ queryKey: ['ecu-job', jobId] })
+      qc.invalidateQueries({ queryKey: ['ecu-job-financial-entries', jobId] })
       qc.invalidateQueries({ queryKey: ['caixa-pendentes'] })
       log({
         entity: 'ecu_job',
-        entityId: variables.jobId,
+        entityId: jobId,
         action: 'sent_to_finance',
-        metadata: { amount: variables.amount },
+        metadata: { amounts: variables.entries.map((e) => e.amount) },
       })
     },
     onError: () => {

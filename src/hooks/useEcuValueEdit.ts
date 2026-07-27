@@ -173,7 +173,7 @@ export function useApproveValueEdit() {
       qc.invalidateQueries({ queryKey: ['pending-value-edits'] })
       qc.invalidateQueries({ queryKey: ['value-edit-history', vars.jobId] })
       qc.invalidateQueries({ queryKey: ['saldo-franquias'] })
-      qc.invalidateQueries({ queryKey: ['ecu-job-financial-entry', vars.jobId] })
+      qc.invalidateQueries({ queryKey: ['ecu-job-financial-entries', vars.jobId] })
       qc.invalidateQueries({ queryKey: ['caixa-pendentes'] })
       if (result?.alreadyPaid) {
         toast.warning('Alteração aprovada, mas a cobrança já foi quitada com o valor anterior — ajuste manual necessário no caixa.')

@@ -37,6 +37,19 @@
 -- que precise virar aggregate quando o domínio passar a permitir
 -- múltiplas entries por job.
 --
+-- APRENDIZADO PORTÁVEL (padrão de update duplicado em campo
+-- controlado por trigger): este trigger é a ÚNICA fonte da verdade
+-- pro fechamento de ecu_jobs.matrix_payment_status. Front-end NÃO
+-- deve gravar esse campo diretamente — qualquer UPDATE direto em
+-- paralelo ignora o aggregate check acima e abre janela de
+-- inconsistência (fecha job com entry irmã ainda pendente). Existia
+-- um update direto assim em useRegisterPayment (useCaixa.ts), best
+-- -effort desde a migration 093 pra cobrir roles sem RLS de UPDATE
+-- em ecu_jobs — removido no commit 2 desta série agora que o
+-- trigger cobre 100% dos roles com aggregate check correto. Nos
+-- clones: procurar por updates diretos de campos espelhados por
+-- trigger SECURITY DEFINER e remover — trigger sozinho basta.
+--
 -- SQL DE VERIFICAÇÃO (rodar após aplicar, nos clones e aqui):
 --   -- lista triggers/functions que assumem 1:1 job→entry sem
 --   -- aggregate check — candidatos a mesmo bug:

@@ -67,7 +67,7 @@ export default function SupportTicketDetail() {
   const isMatrix  = profile ? getAccountTier(profile.role) === 'matrix' : false
   const [reopenOpen, setReopenOpen] = useState(false)
 
-  const { data: ticket, isLoading } = useSupportTicket(id ?? '')
+  const { data: ticket, isLoading, isError, error } = useSupportTicket(id ?? '')
   const updateStatus = useUpdateTicketStatus()
   const reopen       = useReopenTicket()
   const markSeen     = useMarkTicketSeen(id ?? '')
@@ -80,6 +80,17 @@ export default function SupportTicketDetail() {
   useEffect(() => {
     if (id) markSeen.mutate()
   }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (isError) {
+    return (
+      <div className="rounded-xl border border-red-500/20 bg-red-500/[0.06] px-5 py-8 text-center">
+        <p className="text-sm font-medium text-red-400 mb-1">Erro ao carregar chamado</p>
+        <p className="text-xs text-red-400/60">
+          {error instanceof Error ? error.message : 'Falha na consulta. Verifique sua sessão.'}
+        </p>
+      </div>
+    )
+  }
 
   if (isLoading || !ticket) return <div className="pm-skeleton h-96 w-full rounded" />
 

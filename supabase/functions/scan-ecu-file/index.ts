@@ -39,7 +39,19 @@ const MAX_BYTES = 50 * 1024 * 1024 // 50 MB — ECU files are never this large i
 
 // Mantida em sync manual com src/lib/ecuFileTypes.ts (runtime Deno separado
 // do Vite, não dá pra importar de lá) — mudar uma exige mudar a outra.
-const ALLOWED_EXTENSIONS = new Set(['.bin', '.ori', '.kfg', '.bck', '.eprom', '.zip', '.rar', '.hex', '.txt'])
+const ALLOWED_EXTENSIONS = new Set([
+  // binários universais
+  '.bin', '.ori', '.hex', '.s19', '.s28', '.s37', '.srec', '.mot', '.mxt',
+  // proprietários de ferramentas de tuning
+  '.kfg', '.bck', '.eprom', '.cod', '.dtf', '.bbf', '.srf', '.tun', '.cal', '.map',
+  '.ecu', '.rom', '.img', '.frf', '.sgm', '.sgo', '.sox', '.odx', '.a2l', '.xdf', '.damos', '.dam',
+  // dados/calibração
+  '.csv', '.xml', '.json', '.dat', '.log',
+  // containers/compactados
+  '.zip', '.rar', '.7z', '.gz', '.tar',
+  // texto/documentação
+  '.txt', '.pdf',
+])
 
 // Max files a single job may upload per 24 hours before rate-limiting kicks in
 const RATE_LIMIT_PER_JOB_24H = 20

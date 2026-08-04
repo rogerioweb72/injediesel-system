@@ -903,39 +903,18 @@ export default function EcuJobDetail() {
                         {formatBytes(f.size_bytes)} · {formatDateTime(f.created_at)}
                       </p>
                     </div>
-                    {(f.scan_status === 'infected' || f.scan_status === 'blocked') ? (
-                      <Button size="sm" disabled className="bg-red-700/80 text-white border-0 gap-1.5 cursor-not-allowed opacity-90">
-                        <ShieldAlert size={14} />
-                        {f.scan_status === 'blocked' ? 'Bloqueado' : 'Infectado'}
-                      </Button>
-                    ) : f.scan_status === 'error' ? (
-                      <Button
-                        size="sm" disabled
-                        className="bg-amber-700/70 text-white border-0 gap-1.5 cursor-not-allowed opacity-90"
-                        title="Falha ao verificar o arquivo — tente reenviar"
-                      >
-                        <ShieldAlert size={14} />
-                        Erro na verificação
-                      </Button>
-                    ) : f.scan_status === 'pending' ? (
-                      <Button size="sm" disabled className="opacity-60 gap-1.5 cursor-not-allowed">
-                        <Loader2 size={14} className="animate-spin" />
-                        Analisando
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        disabled={f.r2_key.startsWith('mock/') || downloadFile.isPending}
-                        className={cn(
-                          f.r2_key.startsWith('mock/')
-                            ? 'opacity-40 cursor-not-allowed'
-                            : 'bg-green-600 hover:bg-green-500 text-white border-0 gap-1.5',
-                        )}
-                        onClick={() => handleDownloadFile(f)}
-                      >
-                        Baixar
-                      </Button>
-                    )}
+                    <Button
+                      size="sm"
+                      disabled={f.r2_key.startsWith('mock/') || downloadFile.isPending}
+                      className={cn(
+                        f.r2_key.startsWith('mock/')
+                          ? 'opacity-40 cursor-not-allowed'
+                          : 'bg-green-600 hover:bg-green-500 text-white border-0 gap-1.5',
+                      )}
+                      onClick={() => handleDownloadFile(f)}
+                    >
+                      Baixar
+                    </Button>
                   </div>
                   )
                 })}

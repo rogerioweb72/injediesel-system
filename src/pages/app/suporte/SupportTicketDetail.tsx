@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, RefreshCw } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Upload } from 'lucide-react'
+import { toast } from 'sonner'
 import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -17,6 +18,8 @@ import {
   useAssignTicket,
   useMatrixAgents,
 } from '@/hooks/useSupportTickets'
+import { useUploadEcuFile } from '@/hooks/useEcuFiles'
+import { ECU_ACCEPTED_EXTENSIONS } from '@/lib/ecuFileTypes'
 import { useAuthStore } from '@/stores/auth'
 import {
   getAccountTier,
@@ -66,12 +69,14 @@ export default function SupportTicketDetail() {
   const profile   = useAuthStore((s) => s.profile)
   const isMatrix  = profile ? getAccountTier(profile.role) === 'matrix' : false
   const [reopenOpen, setReopenOpen] = useState(false)
+  const correcaoFileRef = useRef<HTMLInputElement>(null)
 
   const { data: ticket, isLoading, isError, error } = useSupportTicket(id ?? '')
-  const updateStatus = useUpdateTicketStatus()
-  const reopen       = useReopenTicket()
-  const markSeen     = useMarkTicketSeen(id ?? '')
-  const assignTicket = useAssignTicket()
+  const updateStatus  = useUpdateTicketStatus()
+  const reopen        = useReopenTicket()
+  const markSeen      = useMarkTicketSeen(id ?? '')
+  const assignTicket  = useAssignTicket()
+  const uploadCorrecao = useUploadEcuFile()
 
   const { data: agents = [] } = useMatrixAgents(isMatrix)
 
@@ -93,6 +98,18 @@ export default function SupportTicketDetail() {
   }
 
   if (isLoading || !ticket) return <div className="pm-skeleton h-96 w-full rounded" />
+
+  async function handleCorrecaoFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !ticket?.ecu_job_id) return
+    e.target.value = ''
+    try {
+      await uploadCorrecao.mutateAsync({ jobId: ticket.ecu_job_id, file, fileType: 'correcao' })
+      toast.success('Correção enviada com sucesso.')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao enviar correção')
+    }
+  }
 
   const messages = [...(ticket.support_messages ?? [])].sort(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
@@ -246,6 +263,25 @@ export default function SupportTicketDetail() {
                   Ver arquivo ECU →
                 </Button>
               </div>
+
+              {isMatrix && !isResolved && (
+                <div className="space-y-1">
+                  <input
+                    ref={correcaoFileRef} type="file" className="hidden"
+                    accept={ECU_ACCEPTED_EXTENSIONS}
+                    onChange={handleCorrecaoFileSelect}
+                  />
+                  <button
+                    type="button"
+                    disabled={uploadCorrecao.isPending}
+                    onClick={() => correcaoFileRef.current?.click()}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-amber-500/40 bg-amber-500/[0.06] hover:border-amber-400/70 hover:bg-amber-500/[0.12] text-amber-400 hover:text-amber-300 transition-all py-3 font-mono text-xs font-semibold uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <Upload size={14} />
+                    {uploadCorrecao.isPending ? 'Enviando...' : 'Enviar Correção'}
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>

@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { useAuditLog } from '@/hooks/useAuditLog'
 import { useAuthStore } from '@/stores/auth'
-import type { FileStatus, PriorityLevel } from '@/types/app'
+import type { FileStatus, PriorityLevel, TicketStatus } from '@/types/app'
 
 const sb = () => supabase as any // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -12,7 +12,7 @@ export type EcuFileScanStatus = 'pending' | 'clean' | 'infected' | 'blocked' | '
 export interface EcuJobFile {
   id: string
   job_id: string
-  file_type: 'original' | 'entrega'
+  file_type: 'original' | 'entrega' | 'correcao'
   r2_key: string
   file_name: string
   mime_type: string
@@ -82,6 +82,15 @@ export interface EcuJob {
   technician?: { id: string; name: string } | null
   ecu_job_files?: EcuJobFile[]
   ecu_job_events?: EcuJobEvent[]
+  support_tickets?: EcuJobLinkedTicket[]
+}
+
+export interface EcuJobLinkedTicket {
+  id: string
+  protocol: string
+  status: TicketStatus
+  title: string
+  created_at: string
 }
 
 interface ListFilter {
@@ -127,8 +136,9 @@ export function useEcuJob(id: string) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from('ecu_jobs')
-        .select('*, customers(name, email, address), vehicles(brand, model, plate), franchise_units(name, city, state), creator_profile:profiles!created_by(name), seller:profiles!seller_id(id,name), technician:profiles!assigned_to(id,name), ecu_job_files(*), ecu_job_events(*)')
+        .select('*, customers(name, email, address), vehicles(brand, model, plate), franchise_units(name, city, state), creator_profile:profiles!created_by(name), seller:profiles!seller_id(id,name), technician:profiles!assigned_to(id,name), ecu_job_files(*), ecu_job_events(*), support_tickets(id, protocol, status, title, created_at)')
         .eq('id', id)
+        .order('created_at', { ascending: false, referencedTable: 'support_tickets' })
         .single()
       if (error) throw error
       return data as EcuJob

@@ -48,3 +48,9 @@ test-results/
 .mcp.json
 .superpowers/
 systen/
+.claude-flow/
+agentdb.rvf
+agentdb.rvf.lock
+ruvector.db
+claude-flow.config.json
+data/

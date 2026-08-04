@@ -47,7 +47,7 @@ export function useUploadEcuFile() {
     }: {
       jobId: string
       file: File
-      fileType: 'original' | 'entrega'
+      fileType: 'original' | 'entrega' | 'correcao'
     }) => {
       const token = session?.access_token ?? ''
       let r2Key = `mock/${jobId}/${fileType}/${file.name}`

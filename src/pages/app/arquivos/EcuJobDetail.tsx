@@ -51,6 +51,23 @@ const STATUS_PIPELINE: FileStatus[] = [
   'recebido', 'em_processamento', 'concluido',
 ]
 
+// Tickets vinculados ao job (FASE 3 — visibilidade bidirecional job ↔ ticket)
+const ACTIVE_TICKET_STATUSES = new Set(['aberto', 'em_atendimento', 'aguardando_cliente'])
+const TICKET_STATUS_LABELS: Record<string, string> = {
+  aberto:             'Aberto',
+  em_atendimento:     'Em Atendimento',
+  aguardando_cliente: 'Aguardando Cliente',
+  resolvido:          'Resolvido',
+  fechado:            'Fechado',
+}
+const TICKET_STATUS_COLORS: Record<string, string> = {
+  aberto:             'text-blue-400',
+  em_atendimento:     'text-amber-400',
+  aguardando_cliente: 'text-purple-400',
+  resolvido:          'text-green-400',
+  fechado:            'text-muted-foreground',
+}
+
 function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -421,6 +438,8 @@ export default function EcuJobDetail() {
   const events = [...(job.ecu_job_events ?? [])].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   )
+  const linkedTickets = job.support_tickets ?? []
+  const activeTicket  = linkedTickets.find((t) => ACTIVE_TICKET_STATUSES.has(t.status))
 
   async function handleStatusChange() {
     if (!confirmStatus || !job) return
@@ -479,6 +498,21 @@ export default function EcuJobDetail() {
           </Button>
         }
       />
+
+      {/* Alerta: correção solicitada (ticket ativo vinculado ao job) */}
+      {activeTicket && (
+        <button
+          type="button"
+          onClick={() => navigate(`${prefix}/suporte/${activeTicket.id}`)}
+          className="flex items-center gap-3 px-4 py-3 rounded-xl mb-4 w-full text-left"
+          style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)' }}
+        >
+          <AlertTriangle size={16} style={{ color: '#FBBF24', flexShrink: 0 }} />
+          <p className="text-sm font-semibold" style={{ color: '#FBBF24' }}>
+            CORREÇÃO SOLICITADA — ticket {activeTicket.protocol} em aberto
+          </p>
+        </button>
+      )}
 
       {/* Alerta: contatar financeiro */}
       {job.contact_finance && (
@@ -882,18 +916,25 @@ export default function EcuJobDetail() {
               <div className="pm-card p-0 divide-y divide-[hsl(var(--pm-gray-700))]">
                 {files.map((f) => {
                   const isModificado = f.file_type === 'entrega'
+                  const isCorrecao   = f.file_type === 'correcao'
                   return (
-                  <div key={f.id} className={cn('flex items-center gap-3 p-3', isModificado && 'bg-green-500/[0.06]')}>
+                  <div key={f.id} className={cn(
+                    'flex items-center gap-3 p-3',
+                    isModificado && 'bg-green-500/[0.06]',
+                    isCorrecao && 'bg-amber-500/[0.06]',
+                  )}>
                     {/* Tipo: ícone + título lado a lado, na mesma linha vertical — o
-                        que precisa ficar óbvio de cara é ORIGINAL vs MODIFICADO. */}
+                        que precisa ficar óbvio de cara é ORIGINAL vs MODIFICADO vs CORREÇÃO. */}
                     <div className="flex items-center gap-2 shrink-0 min-w-[160px]">
-                      {isModificado ? (
+                      {isCorrecao ? (
+                        <ArrowDown size={20} className="text-amber-500 shrink-0" />
+                      ) : isModificado ? (
                         <ArrowDown size={20} className="text-green-600 shrink-0" />
                       ) : (
                         <ArrowUp size={20} className="text-red-500 shrink-0" />
                       )}
                       <span className="text-lg font-black uppercase tracking-wide text-foreground whitespace-nowrap">
-                        {isModificado ? 'Modificado' : 'Original'}
+                        {isCorrecao ? 'Correção' : isModificado ? 'Modificado' : 'Original'}
                       </span>
                     </div>
                     <div className="w-px self-stretch bg-white/10 shrink-0" />
@@ -1001,6 +1042,30 @@ export default function EcuJobDetail() {
             </p>
             <StatusPipeline current={job.status} />
           </div>
+
+          {/* Tickets vinculados (FASE 3 — visível pra matriz e franquia) */}
+          {linkedTickets.length > 0 && (
+            <div className="pm-card space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Tickets
+              </p>
+              <div className="space-y-2">
+                {linkedTickets.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => navigate(`${prefix}/suporte/${t.id}`)}
+                    className="flex items-center justify-between w-full text-left px-3 py-2 rounded-lg border border-white/[0.06] hover:border-white/20 hover:bg-white/[0.03] transition-colors"
+                  >
+                    <span className="text-sm font-mono text-foreground">{t.protocol}</span>
+                    <span className={cn('text-xs font-medium', TICKET_STATUS_COLORS[t.status] ?? 'text-muted-foreground')}>
+                      {TICKET_STATUS_LABELS[t.status] ?? t.status}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Próximas Ações (matriz ou franchise cancelar) */}
           {(nextStatuses.length > 0 || isMatrixUser()) && (

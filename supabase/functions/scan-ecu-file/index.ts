@@ -31,7 +31,7 @@ const BUCKET_ORIGINALS  = Deno.env.get('R2_BUCKET_ECU_ORIGINALS') || LEGACY_BUCK
 const BUCKET_DELIVERED  = Deno.env.get('R2_BUCKET_ECU_DELIVERED') || LEGACY_BUCKET
 
 function resolveBucket(fileType: string | undefined): string {
-  return fileType === 'entrega' ? BUCKET_DELIVERED : BUCKET_ORIGINALS
+  return (fileType === 'entrega' || fileType === 'correcao') ? BUCKET_DELIVERED : BUCKET_ORIGINALS
 }
 
 // ── Policy constants ───────────────────────────────────────────────────────────

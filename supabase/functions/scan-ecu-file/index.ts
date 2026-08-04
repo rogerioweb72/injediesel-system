@@ -35,7 +35,7 @@ function resolveBucket(fileType: string | undefined): string {
 }
 
 // ── Policy constants ───────────────────────────────────────────────────────────
-const MAX_BYTES = 50 * 1024 * 1024 // 50 MB — ECU files are never this large in practice
+const MAX_BYTES = 10 * 1024 * 1024 // 10 MB — alinhado com EcuJobForm.tsx
 
 // Mantida em sync manual com src/lib/ecuFileTypes.ts (runtime Deno separado
 // do Vite, não dá pra importar de lá) — mudar uma exige mudar a outra.

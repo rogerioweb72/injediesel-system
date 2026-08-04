@@ -1,7 +1,7 @@
 # INJEDIESEL — Memória do Projeto (documento durável)
 
-**Última atualização:** 27/07/2026 (FIN.5 fechado em produção)
-**HEAD atual em produção:** 9cf44d5 (main) — FIN.5 completo (5212bae, 259fdd7, 9cf44d5)
+**Última atualização:** 04/08/2026 (Grupo C da evolução do JOB fechado; fluxo de correção especificado)
+**HEAD:** `9cf44d5` foi o último confirmado em produção (27/07). Em 04/08 saíram 3 commits — `433e708`, `a281261`, `118c3e2` — que estavam LOCAIS ao fim da sessão. **CONFIRMAR se o push saiu e o Actions fechou verde** antes de assumir que estão em produção.
 **Método:** Rogério orquestra via Claude; agente VSCode escreve código; Rogério executa passos irreversíveis.
 
 ---
@@ -66,6 +66,8 @@
 | B.3 | Campo Técnico Responsável no job (dropdown com técnicos da matriz) | ✅ Produção |
 | Sprint bugs financeiros | FIN.3 — policies `financial_admin_mark_paid` + `financial_admin_update_commissions` estendidas pra 7 roles (mig 098). A.11 bug 1 — SupportTicketDetail renderiza estado de erro real em vez de skeleton infinito | ✅ Produção |
 | **FIN.5** | Cliente final órfão em job created_by_matrix. Trigger 093 aggregate check (mig 099), useSendToFinance com lista de entries, useEcuJobFinancialEntries plural, EcuJobDetail 3 casos com 2 linhas de Status Financeiro | ✅ Produção — 5212bae, 259fdd7, 9cf44d5 (27/07/2026) |
+| **RBAC operations_admin** | Renan (operations_admin) travado em quase tudo. 5 frentes: mig 081 (profiles.email — coluna nunca existiu, functions de convite faziam upsert nela); fixes em `invite-user`/`invite-franchisee` (allowlists sem operations_admin + profileErr fatal abortando vínculo `user_unit_roles`); mig 082 (`profiles_update_admin` com operations_admin + `id <> auth.uid()`); mig 083 (`franchise_units_admin_all`); mig 084 (**21 policies** em 13 tabelas que usavam `is_matrix_admin()`); mig 085 (`marketing_materials` sem system_ti); Worker R2 `isMatrixAdmin()` consultava profiles com anon key → 403 pra TODOS os roles; fix 22P02 (string vazia em campo integer no wizard); guarda `isEditingSelf` no UsersTab | ✅ Produção — 20/07/2026 |
+| **Grupo C (evolução JOB)** | Item 13: whitelist de extensões ECU 9 → 42 formatos (`a281261`). Item 14: remoção definitiva do bloqueio por `scan_status` no download — VirusTotal OFF de ponta a ponta (`433e708`). Limite de arquivo alinhado em 10MB front+backend (`118c3e2`). Item 12 investigado: sem bug ativo, mas limitação conhecida — `.single()` em `useMyUnit` quebra se um usuário tiver 2+ unidades. Item 15 (autofill CNPJ via BrasilAPI) reportado como já em produção | ✅ Código pronto — 04/08/2026, **push a confirmar** |
 
 ---
 
@@ -133,19 +135,46 @@ Feature aditiva sem quebrar consumidores: prop opcional `rowClassName?: (row: T)
 **Não é blackout, é gap:** dado bruto preservado, narrativa humana perdida pra roles não-master.
 **Fix correto:** SECURITY DEFINER por entidade (padrão da 093), sessão dedicada de observabilidade. NÃO abrir policy de INSERT genérica (perde tamper-resistance).
 
+### 5.13 — Helper functions de role em policies são armadilha silenciosa
+**Sintoma:** `is_matrix_admin()` e `is_matrix_user()` parecem intercambiáveis mas têm escopos diferentes — a primeira só cobre `system_ti` + `company_admin`. Toda policy de ESCRITA que usava `is_matrix_admin()` excluía `operations_admin` sem nenhum aviso: o usuário via os dados (SELECT passava por outra policy) mas o INSERT/UPDATE voltava 42501. Descoberto em 20/07 com 21 policies afetadas em 13 tabelas de uma vez.
+**Agravante:** o padrão INVERSO também existe — `marketing_materials` usava inline check com `ARRAY['company_admin','operations_admin']` e esquecia `system_ti`, quebrando pro usuário master.
+**Fix:** não confiar em helper nenhuma para policies novas. Inline check explícito com a lista completa de roles.
+**Verificação nos clones:**
+```sql
+SELECT c.relname AS tabela, pol.polname, pol.polcmd,
+       pg_get_expr(pol.polqual, pol.polrelid) AS using_expr
+FROM pg_policy pol
+JOIN pg_class c ON c.oid = pol.polrelid
+WHERE pg_get_expr(pol.polqual, pol.polrelid) LIKE '%is_matrix_admin%'
+   OR pg_get_expr(pol.polwithcheck, pol.polrelid) LIKE '%is_matrix_admin%'
+ORDER BY c.relname, pol.polname;
+```
+
+### 5.14 — Worker Cloudflare consultando Supabase com anon key
+**Sintoma:** Worker faz `SELECT` em `profiles` com `Authorization: Bearer ${env.SUPABASE_ANON_KEY}`. A RLS de `profiles_read` exige `auth.uid()` — anon key não tem uid → query volta vazia → o Worker conclui que ninguém é admin → **403 pra todos os roles**. Upload/delete de marketing e firmware ficaram 100% quebrados sem ninguém perceber.
+**Fix:** `verifyToken` retorna `{ userId, token }` e a checagem de role usa o **JWT do usuário**, não a anon key.
+**Ainda pendente no Injediesel:** `checkFirmwareAcceptance` no mesmo `r2-presign.ts` tem o mesmo padrão (Bug H, não corrigido).
+
 ---
 
 ## 6. BACKLOG PRIORIZADO
 
-**Em andamento agora:** nenhum. FIN.5 fechado (5212bae, 259fdd7, 9cf44d5), migration 099 aplicada e deploy validado — falta só Rogério validar o fluxo end-to-end em produção (teste dos 7 passos, ver seção 10) antes de abrir o próximo item.
+**Em andamento agora:** Fluxo de Correção integrado ao Job — **Fase 1 concluída** (migration 100 aplicada e verificada em produção em 04/08); **Fase 2 em checkpoint** (6 arquivos alterados, sem commit). Ver detalhe no item 1 da fila.
 
-**Fila (próxima ordem sugerida, após validação do FIN.5):**
-1. **A.11 bug 1.1** — Página `/suporte/:id` mostra "Erro ao carregar chamado — Falha na consulta" após criar ticket. RLS de `support_tickets` confirmadamente OK (6 policies inspecionadas). Suspeitas: (a) hook `useSupportTicket` montando query com campo/relação inexistente; (b) join com tabela com RLS bloqueando (profiles/ecu_jobs); (c) throw error escondendo erro real.
-2. **FIN.1** — Parcelamento cartão (1-12x) e boleto (1-5x). Modal mostra select "Nx de R$ Y,YY" (número + valor por parcela). Campo `parcelas` em `financial_entries` (migration nova). PIX/Débito sem parcelamento.
-3. **A.11 features 2, 3, 4:**
-   - Hook `useNewOpenTicketsCount` pro sino do header
-   - Dot verde no NavItem de Suporte
-   - Badge "CORREÇÃO" na listagem ECU (migration adiciona `LEFT JOIN LATERAL` em `support_tickets` à RPC `search_ecu_jobs`)
+**A.11 bug 1.1 — RESOLVIDO.** Em 04/08 o `SupportTicketDetail.tsx` foi lido do disco e já renderiza estado de erro real, com o join `requester:profiles!support_tickets_created_by_fkey(...)` funcionando. Sai da fila.
+
+**Fila (próxima ordem sugerida):**
+1. **Fluxo de Correção integrado ao Job** — hoje o ticket de correção (`support_tickets` com `ecu_job_id`) é um chat paralelo: arquivo anexado vai pra `support_messages.attachment_r2_key` e NUNCA aparece em `ecu_job_files`; o job não sabe que existe ticket aberto. 4 fases especificadas:
+   - **Fase 1 (mig 100) — ✅ APLICADA 04/08.** `file_type` era `text` com CHECK inline SEM nome (`006_ecu.sql:24`), não enum. A migration descobre o nome real via `pg_constraint` antes de dropar, em vez de assumir o default. Constraint aceita agora `('original','entrega','correcao')`. Nenhuma das 3 policies ativas de `ecu_job_files` filtra por `file_type` (todas FOR ALL) — nada a alterar.
+   - **Fase 2:** bloco "Enviar Correção" no `SupportTicketDetail` (só matriz, só ticket ativo, só se `ecu_job_id != null`), espelhando o "Enviar Arquivo Pronto". No `EcuJobDetail`, terceira variante na lista: rótulo **CORREÇÃO**, ícone `ArrowDown` âmbar, fundo `bg-amber-500/[0.06]`.
+   - **Fase 3:** visibilidade bidirecional — `useEcuJob` traz tickets vinculados; banner âmbar "CORREÇÃO SOLICITADA — ticket {protocol} em aberto" no topo do job + bloco "Tickets" no painel lateral. Visível pra matriz E franquia. (Isso absorve o item "badge CORREÇÃO" que estava em A.11 feature 4.)
+   - **Fase 4:** anexo do chat aceita **qualquer** tipo de arquivo até **100MB** (hoje tem whitelist antiga hardcoded `image/*,.pdf,.txt,.bin,.hex,.ori,.ori2,.csv`, defasada em relação às 42 extensões da `ecuFileTypes.ts`).
+   - **BUCKET R2 — resolvido na prática:** implementado reaproveitando `ECU_DELIVERED` (correção no mesmo bucket dos modificados, diferenciada por `file_type` no banco). Sem bucket novo, sem binding no `wrangler.toml`, sem rota nova no worker. `resolveBucket()` de `scan-ecu-file` e `ecu-download-url` corrigido pra tratar `'correcao'` como `'entrega'`. **PENDENTE:** `workers/r2-presign.ts` não entrou no diff da Fase 2 — confirmar que o upload cai no bucket certo.
+2. **Grupo B restante da evolução do JOB:**
+   - **Item 9 — Arquivo extra com tags:** até 3 arquivos extras com tag descritiva (ex: "Correção Arla"), aparecendo um de cada vez. **Decisão do Rogério: mesma tabela** (`ecu_job_files` + coluna de tag), não tabela separada.
+   - **Item 10 — Reabrir job concluído:** adicionar novo arquivo + novo valor somando à OS + motivo da reabertura. Modelo de dado ainda não decidido (status "Reaberto" no pipeline vs volta pra "Processamento"; como soma sem sobrescrever).
+   - Itens 6, 7 e 8 do Grupo B **já estão em produção** (tags Arquivo Complexo/Contatar Financeiro via mig 087; Técnico Responsável via B.3; `service_notes` via mig 091).
+3. **FIN.1** — Parcelamento cartão (1-12x) e boleto (1-5x). Modal com select "Nx de R$ Y,YY". Campo `parcelas` em `financial_entries` (migration nova). PIX/Débito sem parcelamento.
 4. **FIN.4** — Redesign do painel Caixa. Manter abas (Aberto, Franquias, Inter-Franquias, Lançamentos, Histórico). Na aba Aberto (principal): cobranças em ordem de chegada (produção), sem discriminar tipo. Cards mostram cliente, serviço, valor, técnico. Financeiro clica → forma de pagamento → finaliza → some.
 5. **A.10 item 2 refino** — badge Aberto/Pago com `min-w-[72px]` estimado. Rogério vai conferir visualmente e reportar ajuste.
 6. **Autofill do veículo** — no `EcuJobForm` ao selecionar veículo cadastrado, autofill de marca/modelo/ano/categoria/transmissão. Km/horas editável.
@@ -154,6 +183,9 @@ Feature aditiva sem quebrar consumidores: prop opcional `rowClassName?: (row: T)
    - INSERT novo + histórico via `ecu_job_events` vs UPDATE in-place (webhook não dispara em UPDATE, precisaria compensar)
    - Sem coluna nova em `ecu_job_files` (deleted_at / uploaded_by ficam pra escopo maior)
 9. **A.7** — Matriz de permissões granulares (`profiles.permissions`) hoje decorativa. Fazer as caixinhas do cadastro valerem no ECU.
+10. **A.11 features restantes:**
+    - Hook `useNewOpenTicketsCount` pro sino do header
+    - Dot verde no NavItem de Suporte
 
 **Backlog técnico (débito registrado, sem urgência operacional):**
 - **audit_logs** — SECURITY DEFINER por entidade em sessão dedicada de observabilidade.
@@ -184,6 +216,11 @@ Feature aditiva sem quebrar consumidores: prop opcional `rowClassName?: (row: T)
 | Migration | Descrição | Portável? |
 |---|---|---|
 | 080 | financial_admin_mark_paid estendida (contexto histórico) | Sim |
+| 081 | `profiles.email` (coluna nunca existiu; backfill + trigger `handle_new_user` reescrito) | **Sim, crítico** |
+| 082 | `profiles_update_admin` com operations_admin + `id <> auth.uid()` | Sim |
+| 083 | `franchise_units_admin_all` com operations_admin | Sim |
+| 084 | **21 policies** em 13 tabelas que usavam `is_matrix_admin()` — inline check com os 3 roles | **Sim, crítico** |
+| 085 | `marketing_materials` insert/update/delete com system_ti | Sim |
 | 087 | `is_complex_file` + `contact_finance` em ecu_jobs | Sim |
 | 088 | RPC search_ecu_jobs SECURITY INVOKER com busca unificada | Sim |
 | 089 | financial_admin_write estendida a 6 roles | Sim |
@@ -216,10 +253,13 @@ Feature aditiva sem quebrar consumidores: prop opcional `rowClassName?: (row: T)
 
 **Ao carregar este documento, o próximo Claude deve saber:**
 
-- HEAD em produção: `9cf44d5` (main) — FIN.5 completo, 3 commits (`5212bae`, `259fdd7`, `9cf44d5`), migration 099 aplicada, deploy Actions/FTP concluído com sucesso (27/07/2026)
-- Trabalho em andamento: NENHUM
-- Ação imediata do Rogério: validar FIN.5 em produção — teste dos 7 passos: (1) matriz cria job `created_by_matrix=true` pra franquia Cascavel, (2) preenche `amount_charged_to_customer` E `amount_charged_by_matrix`, (3) conclui o job, (4) envia pro financeiro, (5) confirma 2 entries geradas (cliente final `unit_id=null` no Caixa da matriz + repasse `unit_id=Cascavel` no Caixa da franquia), (6) quita uma isolada e confirma que `matrix_payment_status` continua pendente, (7) quita a outra e confirma que só aí o job fecha
-- Ação imediata do agente: aguardar Rogério validar; depois disso, abrir **A.11 bug 1.1** (próximo item da fila, seção 6)
+- **Data do último fechamento:** 04/08/2026
+- **HEAD:** `9cf44d5` foi o último confirmado em produção (27/07). Os commits `433e708`, `a281261` e `118c3e2` (04/08) estavam LOCAIS ao fim da sessão — **primeira coisa a checar: `git log origin/main..HEAD` e o status do Actions.**
+- **FIN.5:** dado como validado (as sprints seguintes andaram por cima). Se houver dúvida, o teste dos 7 passos continua descrito no histórico.
+- **Trabalho em andamento:** Fluxo de Correção — Fase 1 aplicada (mig 100), Fase 2 em checkpoint (6 arquivos, sem commit). Falta verificar `workers/r2-presign.ts`, Fase 3 (visibilidade bidirecional) e Fase 4 (anexo livre 100MB).
+- **Ação imediata do Rogério:** confirmar push dos 3 commits de 04/08 (`git log origin/main..HEAD`).
+- **Ação imediata do agente:** responder o checkpoint sobre `workers/r2-presign.ts` antes de commitar a Fase 2.
+- **Numeração de migrations:** a última aplicada é a **100**. A próxima é a **101**.
 
 ---
 

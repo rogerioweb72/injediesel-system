@@ -5,9 +5,16 @@ import { getSignedUrl } from 'npm:@aws-sdk/s3-request-presigner'
 import { corsHeaders } from '../_shared/cors.ts'
 import { requireAuth } from '../_shared/auth.ts'
 
-const ALLOWED_EXTENSIONS = ['bin', 'hex', 'ori', 'ori2', 'csv', 'txt']
-const ALLOWED_MIME_PREFIXES = ['image/', 'application/pdf', 'text/plain', 'application/octet-stream']
-const MAX_SIZE = 10 * 1024 * 1024
+const MAX_SIZE = 100 * 1024 * 1024
+
+// SECURITY (VULN-07, atualizado 04/08/2026): era whitelist de extensão+MIME.
+// Decisão de produto: chat de suporte precisa aceitar arquivo ECU de
+// qualquer extensão (o mesmo motivo do ecuFileTypes.ts). Whitelist virou
+// BLOCKLIST — mitigação continua ativa pro que importa (executável/script),
+// só deixou de restringir formato de arquivo legítimo desconhecido.
+// Sync manual com src/components/support/SupportChatPanel.tsx
+// (BLOCKED_EXTENSIONS) — runtime Deno separado, não dá pra importar de lá.
+const BLOCKED_EXTENSIONS = ['html', 'htm', 'svg', 'js', 'mjs', 'exe', 'bat', 'cmd', 'sh', 'php', 'phtml', 'jar', 'app', 'msi', 'com', 'scr', 'vbs']
 
 serve(async (req) => {
   const CORS = corsHeaders(req)
@@ -27,15 +34,11 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: 'ticketId, filename, mime e size são obrigatórios' }), { status: 400, headers: CORS })
   }
   if (size > MAX_SIZE) {
-    return new Response(JSON.stringify({ error: 'Arquivo excede 10 MB' }), { status: 400, headers: CORS })
+    return new Response(JSON.stringify({ error: 'Arquivo excede 100 MB' }), { status: 400, headers: CORS })
   }
 
   const ext = (filename.split('.').pop() ?? 'bin').toLowerCase()
-  const mimeOk = ALLOWED_MIME_PREFIXES.some(p => mime.startsWith(p))
-  const extOk  = ALLOWED_EXTENSIONS.includes(ext)
-  // SECURITY (VULN-07): usar || para rejeitar quando QUALQUER validação falha.
-  // Com &&, um arquivo .bin com MIME text/html era aceito pois extOk=true.
-  if (!mimeOk || !extOk) {
+  if (BLOCKED_EXTENSIONS.includes(ext)) {
     return new Response(JSON.stringify({ error: 'Tipo de arquivo não permitido' }), { status: 400, headers: CORS })
   }
 

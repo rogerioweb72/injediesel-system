@@ -1,6 +1,7 @@
 // src/components/support/SupportChatPanel.tsx
 import { useRef, useState, useEffect } from 'react'
 import { Send, Paperclip, X, Lock } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
@@ -13,6 +14,14 @@ import type { SupportMessage } from '@/hooks/useSupportTickets'
 import type { TicketStatus } from '@/types/app'
 
 const ACTIVE_STATUSES: TicketStatus[] = ['aberto', 'em_atendimento', 'aguardando_cliente']
+const MAX_ATTACHMENT_BYTES = 100 * 1024 * 1024
+
+// Blocklist de extensões executáveis/script (VULN-07, mantida — vira
+// blocklist em vez de whitelist em 04/08/2026 pra aceitar arquivo ECU de
+// qualquer extensão). Sync manual com supabase/functions/support-upload-url/
+// index.ts (Deno, runtime separado, não dá pra importar de lá) — mesmo
+// padrão do src/lib/ecuFileTypes.ts.
+const BLOCKED_EXTENSIONS = ['html', 'htm', 'svg', 'js', 'mjs', 'exe', 'bat', 'cmd', 'sh', 'php', 'phtml', 'jar', 'app', 'msi', 'com', 'scr', 'vbs']
 
 interface Props {
   ticketId: string
@@ -126,8 +135,21 @@ export function SupportChatPanel({ ticketId, status, closedAt, messages }: Props
                 ref={fileRef}
                 type="file"
                 className="hidden"
-                accept="image/*,.pdf,.txt,.bin,.hex,.ori,.ori2,.csv"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                onChange={(e) => {
+                  const f = e.target.files?.[0] ?? null
+                  e.target.value = ''
+                  if (!f) { setFile(null); return }
+                  if (f.size > MAX_ATTACHMENT_BYTES) {
+                    toast.error(`Arquivo muito grande (máx 100 MB): ${(f.size / (1024 * 1024)).toFixed(1)} MB`)
+                    return
+                  }
+                  const ext = f.name.split('.').pop()?.toLowerCase() ?? ''
+                  if (BLOCKED_EXTENSIONS.includes(ext)) {
+                    toast.error(`Tipo de arquivo não permitido: .${ext}`)
+                    return
+                  }
+                  setFile(f)
+                }}
               />
               <Button
                 size="sm"

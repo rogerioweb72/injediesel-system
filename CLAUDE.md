@@ -2,6 +2,33 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⚠️ IDENTIDADE DO SISTEMA — LER ANTES DE QUALQUER OPERAÇÃO DE DADOS
+
+Este repositório é **injediesel-system**, TOTALMENTE separado de `promax-tuner` e `evopro`.
+São clones da mesma base (diferenças mínimas), mas **cada um tem repositório, banco Supabase e bucket R2 PRÓPRIOS**. **NUNCA tocar em dados de outro sistema — jamais.**
+
+| Sistema | Supabase (PRODUÇÃO) | Repositório GitHub |
+|---------|---------------------|--------------------|
+| **injediesel** (ESTE) | `ttnmvheptxedwninjedv` → https://ttnmvheptxedwninjedv.supabase.co | github.com/rogerioweb72/injediesel-system |
+| promax-tuner | `myjrylmxzertrbwuosrv` → https://myjrylmxzertrbwuosrv.supabase.co | github.com/rogerioweb72/promax-tuner |
+| evopro | `sumlatisdadarivujabm` → https://sumlatisdadarivujabm.supabase.co | github.com/rogerioweb72/evopro |
+
+**Banco correto do injediesel = `ttnmvheptxedwninjedv`** (confirmado por `supabase/.temp/project-ref`).
+
+🐛 **BUG CONHECIDO — não confiar no `.env.local`:** neste repo o `.env.local` tem
+`VITE_SUPABASE_URL=https://myjrylmxzertrbwuosrv.supabase.co` (banco do **PROMAX**) e
+`VITE_R2_PRESIGN_URL=...promax-tuner-r2-prod...` (R2 do **PROMAX**) — valores herdados do clone e
+nunca atualizados. Ou seja, o dev local do injediesel está gravando no banco/R2 do promax.
+Para saber o banco de PRODUÇÃO do injediesel use SEMPRE `ttnmvheptxedwninjedv`, nunca o `.env.local`.
+Corrigir `.env.local` (URL, anon key e R2) para o projeto correto antes de operar dados.
+
+**Cloudflare R2 do injediesel (registro oficial):**
+- Account ID: `63504ee600b4c431cb74cfd54dcbc164`
+- Dashboard: https://dash.cloudflare.com/63504ee600b4c431cb74cfd54dcbc164/r2/overview
+- Buckets: `injediesel-ecu-originals`, `injediesel-ecu-delivered`, `injediesel-firmware`, `injediesel-mkt-materials`
+- ⚠️ NÃO usar os buckets `promax-*` (esses são do promax). O `VITE_R2_PRESIGN_URL` no `.env.local`
+  ainda aponta para o worker do promax (`promax-tuner-r2-prod`) — trocar pelo worker de presign do injediesel.
+
 > Plataforma operacional 100% independente para performance automotiva, remapeamento e ECU.
 > Sem vínculos com Injediesel ou Promax Peças. Integrações externas somente via API/webhook em fase posterior.
 

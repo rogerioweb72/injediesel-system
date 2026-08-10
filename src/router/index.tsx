@@ -9,7 +9,8 @@ import { TunerSplashProvider } from '@/components/branding/TunerSplashProvider'
 import { RoutePrefixProvider } from '@/contexts/RoutePrefixContext'
 import { RoleGuard } from '@/components/auth/RoleGuard'
 import { UnitGuard } from '@/components/auth/UnitGuard'
-import { MATRIX_ROLES, FRANCHISE_ROLES, SYSTEM_ROLES } from '@/types/app'
+import { ModuleGuard } from '@/components/auth/ModuleGuard'
+import { MATRIX_ROLES, FRANCHISE_ROLES, SYSTEM_ROLES, type RbacModule } from '@/types/app'
 
 const Home              = lazy(() => import('@/pages/LandingV2'))
 const LojaPage          = lazy(() => import('@/pages/LojaPage'))
@@ -88,6 +89,15 @@ function S({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
 }
 
+// Suspense + guarda de módulo (RBAC): bloqueia acesso direto por URL sem can_view.
+function MS({ m, children }: { m: RbacModule; children: React.ReactNode }) {
+  return (
+    <ModuleGuard module={m}>
+      <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
+    </ModuleGuard>
+  )
+}
+
 function RootLayout() {
   useAuth()
   useProfileSync()
@@ -147,29 +157,29 @@ const router = createBrowserRouter([
         children: [
           { index: true,                         element: <Navigate to="dashboard" replace /> },
           { path: 'dashboard',                   element: <S><Dashboard /></S> },
-          { path: 'clientes',                    element: <S><CustomersPage /></S> },
-          { path: 'clientes/novo',               element: <S><CustomerForm /></S> },
-          { path: 'clientes/:id',                element: <S><CustomerDetail /></S> },
-          { path: 'clientes/:id/editar',         element: <S><CustomerForm /></S> },
-          { path: 'produtos',                    element: <S><ProductsPage /></S> },
-          { path: 'produtos/novo',               element: <S><ProductForm /></S> },
-          { path: 'produtos/:id',                element: <S><ProductDetail /></S> },
-          { path: 'produtos/:id/editar',         element: <S><ProductForm /></S> },
-          { path: 'franqueados',                 element: <S><FranchiseesPage /></S> },
-          { path: 'franqueados/:id',             element: <S><FranchiseeDetail /></S> },
-          { path: 'arquivos',                    element: <S><EcuJobsPage /></S> },
-          { path: 'arquivos/novo',               element: <S><EcuJobForm /></S> },
-          { path: 'arquivos/:id',                element: <S><EcuJobDetail /></S> },
-          { path: 'pdv',                         element: <S><PdvPage /></S> },
-          { path: 'pedidos',                     element: <S><OrdersPage /></S> },
-          { path: 'pedidos-b2b',                 element: <S><PedidosB2BPage /></S> },
-          { path: 'suporte',                     element: <S><SupportPage /></S> },
-          { path: 'suporte/novo',                element: <S><SupportTicketForm /></S> },
-          { path: 'suporte/:id',                 element: <S><SupportTicketDetail /></S> },
-          { path: 'configuracoes',               element: <S><ConfigPage /></S> },
-          { path: 'financeiro',                  element: <S><FinanceiroPage /></S> },
+          { path: 'clientes',                    element: <MS m="clientes"><CustomersPage /></MS> },
+          { path: 'clientes/novo',               element: <MS m="clientes"><CustomerForm /></MS> },
+          { path: 'clientes/:id',                element: <MS m="clientes"><CustomerDetail /></MS> },
+          { path: 'clientes/:id/editar',         element: <MS m="clientes"><CustomerForm /></MS> },
+          { path: 'produtos',                    element: <MS m="produtos"><ProductsPage /></MS> },
+          { path: 'produtos/novo',               element: <MS m="produtos"><ProductForm /></MS> },
+          { path: 'produtos/:id',                element: <MS m="produtos"><ProductDetail /></MS> },
+          { path: 'produtos/:id/editar',         element: <MS m="produtos"><ProductForm /></MS> },
+          { path: 'franqueados',                 element: <MS m="franqueados"><FranchiseesPage /></MS> },
+          { path: 'franqueados/:id',             element: <MS m="franqueados"><FranchiseeDetail /></MS> },
+          { path: 'arquivos',                    element: <MS m="ecu_arquivos"><EcuJobsPage /></MS> },
+          { path: 'arquivos/novo',               element: <MS m="ecu_arquivos"><EcuJobForm /></MS> },
+          { path: 'arquivos/:id',                element: <MS m="ecu_arquivos"><EcuJobDetail /></MS> },
+          { path: 'pdv',                         element: <MS m="pdv"><PdvPage /></MS> },
+          { path: 'pedidos',                     element: <MS m="pedidos"><OrdersPage /></MS> },
+          { path: 'pedidos-b2b',                 element: <MS m="pedidos"><PedidosB2BPage /></MS> },
+          { path: 'suporte',                     element: <MS m="suporte"><SupportPage /></MS> },
+          { path: 'suporte/novo',                element: <MS m="suporte"><SupportTicketForm /></MS> },
+          { path: 'suporte/:id',                 element: <MS m="suporte"><SupportTicketDetail /></MS> },
+          { path: 'configuracoes',               element: <MS m="configuracoes"><ConfigPage /></MS> },
+          { path: 'financeiro',                  element: <MS m="financeiro"><FinanceiroPage /></MS> },
           { path: 'cadastros',                   element: <S><CadastrosPage /></S> },
-          { path: 'tabela-remap',                element: <S><TabelaRemapPage /></S> },
+          { path: 'tabela-remap',                element: <MS m="tabela_remap"><TabelaRemapPage /></MS> },
           { path: 'materiais',                   element: <S><MateriaisMatrizPage /></S> },
           { path: 'atualizacoes',                element: <S><AtualizacoesMatrizPage /></S> },
           { path: 'atualizacoes/:equipmentSlug/novo', element: <S><FirmwareEditorPage /></S> },
@@ -177,7 +187,7 @@ const router = createBrowserRouter([
           { path: 'ajuda',                       element: <S><MatrizAjudaPage /></S> },
           { path: 'ajuda/novo',                  element: <S><HelpArticleForm /></S> },
           { path: 'ajuda/:id/editar',            element: <S><HelpArticleForm /></S> },
-          { path: 'auditoria',                   element: <S><AuditoriaPage /></S> },
+          { path: 'auditoria',                   element: <MS m="configuracoes"><AuditoriaPage /></MS> },
           { path: 'control-tower',               element: <S><ControlTowerPage /></S> },
           { path: 'loja',                        element: <EmBreve titulo="Loja Online" /> },
         ],
@@ -188,27 +198,27 @@ const router = createBrowserRouter([
         children: [
           { index: true,                         element: <Navigate to="dashboard" replace /> },
           { path: 'dashboard',                   element: <S><FranqueadoDashboard /></S> },
-          { path: 'arquivos',                    element: <S><EcuJobsPage /></S> },
-          { path: 'arquivos/novo',               element: <S><EcuJobForm /></S> },
-          { path: 'arquivos/:id',                element: <S><EcuJobDetail /></S> },
-          { path: 'tabela-remap',                element: <S><FranqueadoCatalogPage /></S> },
-          { path: 'loja',                        element: <S><FranqueadoLojaPage /></S> },
-          { path: 'carrinho',                    element: <S><FranqueadoCarrinhoPage /></S> },
-          { path: 'pedidos',                     element: <S><FranqueadoPedidosPage /></S> },
-          { path: 'clientes',                    element: <S><FranqueadoCustomersPage /></S> },
-          { path: 'clientes/novo',               element: <S><FranqueadoCustomerForm /></S> },
-          { path: 'clientes/:id',                element: <S><FranqueadoCustomerDetail /></S> },
-          { path: 'clientes/:id/editar',         element: <S><FranqueadoCustomerForm /></S> },
-          { path: 'relatorios',                  element: <S><RelatoriosPage /></S> },
+          { path: 'arquivos',                    element: <MS m="ecu_arquivos"><EcuJobsPage /></MS> },
+          { path: 'arquivos/novo',               element: <MS m="ecu_arquivos"><EcuJobForm /></MS> },
+          { path: 'arquivos/:id',                element: <MS m="ecu_arquivos"><EcuJobDetail /></MS> },
+          { path: 'tabela-remap',                element: <MS m="tabela_remap"><FranqueadoCatalogPage /></MS> },
+          { path: 'loja',                        element: <MS m="pdv"><FranqueadoLojaPage /></MS> },
+          { path: 'carrinho',                    element: <MS m="pdv"><FranqueadoCarrinhoPage /></MS> },
+          { path: 'pedidos',                     element: <MS m="pdv"><FranqueadoPedidosPage /></MS> },
+          { path: 'clientes',                    element: <MS m="clientes"><FranqueadoCustomersPage /></MS> },
+          { path: 'clientes/novo',               element: <MS m="clientes"><FranqueadoCustomerForm /></MS> },
+          { path: 'clientes/:id',                element: <MS m="clientes"><FranqueadoCustomerDetail /></MS> },
+          { path: 'clientes/:id/editar',         element: <MS m="clientes"><FranqueadoCustomerForm /></MS> },
+          { path: 'relatorios',                  element: <MS m="relatorios"><RelatoriosPage /></MS> },
           { path: 'cadastros',                   element: <S><CadastrosPage /></S> },
-          { path: 'caixa',                       element: <S><CaixaPage /></S> },
+          { path: 'caixa',                       element: <MS m="financeiro"><CaixaPage /></MS> },
           { path: 'atualizacoes',                element: <S><AtualizacoesPage /></S> },
           { path: 'suporte',                     element: <S><SupportPage /></S> },
           { path: 'suporte/novo',                element: <S><SupportTicketForm /></S> },
           { path: 'suporte/:id',                 element: <S><SupportTicketDetail /></S> },
           { path: 'materiais',                   element: <S><MateriaisPage /></S> },
           { path: 'perfil',                      element: <S><FranqueadoPerfilPage /></S> },
-          { path: 'faturas',                     element: <S><FranqueadoFaturasPage /></S> },
+          { path: 'faturas',                     element: <MS m="financeiro"><FranqueadoFaturasPage /></MS> },
           { path: 'ajuda',                       element: <S><AjudaPage /></S> },
           { path: 'configuracoes',               element: <S><FranqueadoConfigPage /></S> },
         ],

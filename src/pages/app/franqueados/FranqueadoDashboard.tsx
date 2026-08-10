@@ -1,11 +1,17 @@
-import { useMemo } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Upload, Database, ChevronRight, TrendingUp, Files, Clock, CheckCircle } from 'lucide-react'
 import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
-import { useEcuJobs } from '@/hooks/useEcuJobs'
-import { useMyUnit } from '@/hooks/useMyUnit'
+import { useFranchiseDashboard, type DashboardPeriod } from '@/hooks/useFranchiseDashboard'
 import { EcuStatusBadge } from '@/components/shared/EcuStatusBadge'
 import { formatCurrency } from '@/lib/utils'
+
+const PERIODS: { value: DashboardPeriod; label: string }[] = [
+  { value: 'today', label: 'Hoje' },
+  { value: 'week',  label: '7 dias' },
+  { value: 'month', label: 'Mês' },
+  { value: 'all',   label: 'Tudo' },
+]
 
 function fmt(n: number | null | undefined) {
   if (n == null) return '—'
@@ -78,55 +84,18 @@ function QuickCard({
 }
 
 export default function FranqueadoDashboard() {
-  const { data: myUnit, isLoading: unitLoading } = useMyUnit()
-  const { data: jobsData, isLoading: jobsLoading } = useEcuJobs({ pageSize: 200 })
+  const [period, setPeriod] = useState<DashboardPeriod>('month')
+  const { data: metrics, isLoading } = useFranchiseDashboard(period)
   const prefix = useRoutePrefix()
   const navigate = useNavigate()
-  const isLoading = unitLoading || jobsLoading
 
-  const myJobs = useMemo(
-    () => (jobsData?.data ?? []).filter(j => !myUnit || j.unit_id === myUnit.unit_id),
-    [jobsData, myUnit]
-  )
-
-  const activeJobs = useMemo(
-    () => myJobs.filter(j => j.status !== 'cancelado'),
-    [myJobs]
-  )
-
-  const inProgressJobs = useMemo(
-    () => myJobs.filter(j => ['recebido', 'em_triagem', 'em_processamento', 'aguardando_cliente'].includes(j.status)),
-    [myJobs]
-  )
-
-  const completedJobs = useMemo(
-    () => myJobs.filter(j => j.status === 'concluido'),
-    [myJobs]
-  )
-
-  const faturamento = useMemo(
-    () => activeJobs.reduce((sum, j) => sum + (j.amount_charged_to_customer ?? 0), 0),
-    [activeJobs]
-  )
-
-  const ticketMedio = activeJobs.length > 0 ? faturamento / activeJobs.length : 0
-
-  const byType = useMemo(() => {
-    const map: Record<string, number> = {}
-    activeJobs.forEach(j => {
-      const key = j.service_type || 'Outro'
-      map[key] = (map[key] ?? 0) + (j.amount_charged_to_customer ?? 0)
-    })
-    return Object.entries(map)
-      .map(([label, value]) => ({ label, value, pct: faturamento > 0 ? (value / faturamento) * 100 : 0 }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 6)
-  }, [activeJobs, faturamento])
-
-  const recentJobs = useMemo(
-    () => [...myJobs].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 5),
-    [myJobs]
-  )
+  const faturamento   = metrics?.faturamento ?? 0
+  const ticketMedio   = metrics?.ticketMedio ?? 0
+  const activeCount   = metrics?.totalServicos ?? 0
+  const completedLen  = metrics?.servicosRealizados ?? 0
+  const inProgressLen = metrics?.emAndamento ?? 0
+  const byType        = metrics?.byType ?? []
+  const recentJobs    = metrics?.recentJobs ?? []
 
   if (isLoading) {
     return (
@@ -143,17 +112,36 @@ export default function FranqueadoDashboard() {
   return (
     <div className="space-y-6">
 
+      {/* Filtro de período — escopo local da unidade */}
+      <div className="flex justify-end">
+        <div className="inline-flex rounded-lg p-1 gap-1" style={{ background: 'hsl(var(--pm-gray-900))' }}>
+          {PERIODS.map((p) => (
+            <button
+              key={p.value}
+              onClick={() => setPeriod(p.value)}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
+                period === p.value
+                  ? 'bg-[hsl(var(--pm-red-500))] text-white'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <KpiCard
           label="Faturamento Total"
           value={fmt(faturamento)}
-          sub={`${activeJobs.length} serviços`}
+          sub={`${activeCount} serviços`}
           color="#34D399"
         />
         <KpiCard
           label="Serviços Realizados"
-          value={String(completedJobs.length)}
+          value={String(completedLen)}
           sub="concluídos"
           color="#F8FAFC"
         />
@@ -164,7 +152,7 @@ export default function FranqueadoDashboard() {
         />
         <KpiCard
           label="Em Andamento"
-          value={String(inProgressJobs.length)}
+          value={String(inProgressLen)}
           sub="aguardando processamento"
           color="hsl(var(--pm-red-400))"
         />

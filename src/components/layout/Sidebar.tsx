@@ -60,6 +60,13 @@ export function Sidebar({ mode, onTogglePin, onNavClick }: SidebarProps) {
   const permFranqueados = useModulePermission('franqueados')
   const permFinanceiro  = useModulePermission('financeiro')
   const permConfig      = useModulePermission('configuracoes')
+  const permEcu         = useModulePermission('ecu_arquivos')
+  const permRemap       = useModulePermission('tabela_remap')
+  const permClientes    = useModulePermission('clientes')
+  const permPdv         = useModulePermission('pdv')
+  const permPedidos     = useModulePermission('pedidos')
+  const permProdutos    = useModulePermission('produtos')
+  const permSuporte     = useModulePermission('suporte')
   const { signOut: logout } = useSignOut()
   const { count: unseenJobs } = useUnseenJobs()
   const { data: unreadSupport = 0 } = useUnreadSupportCount()
@@ -116,19 +123,35 @@ export function Sidebar({ mode, onTogglePin, onNavClick }: SidebarProps) {
         {!collapsed && <div className="pm-sidebar-group-title">Operação</div>}
         {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
         <NavItem to={`${prefix}/dashboard`}    icon={LayoutDashboard} label="Dashboard"    collapsed={collapsed} onNavigate={onNavClick} />
-        <NavItem to={`${prefix}/arquivos`}     icon={Files}           label="Arquivos ECU" collapsed={collapsed} onNavigate={onNavClick} badge={unseenJobs} />
-        <NavItem to={`${prefix}/tabela-remap`} icon={IconTabelaRemap} label="Tabela Remap" collapsed={collapsed} onNavigate={onNavClick} />
-        <NavItem to={`${prefix}/clientes`}     icon={Users}           label="Clientes"     collapsed={collapsed} onNavigate={onNavClick} />
+        {permEcu.canView && (
+          <NavItem to={`${prefix}/arquivos`}     icon={Files}           label="Arquivos ECU" collapsed={collapsed} onNavigate={onNavClick} badge={unseenJobs} />
+        )}
+        {permRemap.canView && (
+          <NavItem to={`${prefix}/tabela-remap`} icon={IconTabelaRemap} label="Tabela Remap" collapsed={collapsed} onNavigate={onNavClick} />
+        )}
+        {permClientes.canView && (
+          <NavItem to={`${prefix}/clientes`}     icon={Users}           label="Clientes"     collapsed={collapsed} onNavigate={onNavClick} />
+        )}
         {permFranqueados.canView && (
           <NavItem to={`${prefix}/franqueados`} icon={Building2} label="Franqueados" collapsed={collapsed} onNavigate={onNavClick} />
         )}
 
-        {!collapsed && <div className="pm-sidebar-group-title">Loja</div>}
-        {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
-        <NavItem to={`${prefix}/pdv`}      icon={ShoppingBag}  label="PDV"      collapsed={collapsed} onNavigate={onNavClick} />
-        <NavItem to={`${prefix}/pedidos`}     icon={IconHistoricoPedidos} label="Pedidos" collapsed={collapsed} onNavigate={onNavClick} />
-        <NavItem to={`${prefix}/pedidos-b2b`} icon={ClipboardList} label="Pedidos B2B"  collapsed={collapsed} onNavigate={onNavClick} badge={b2bPending} />
-        <NavItem to={`${prefix}/produtos`} icon={Package}      label="Produtos" collapsed={collapsed} onNavigate={onNavClick} />
+        {(permPdv.canView || permPedidos.canView || permProdutos.canView) && <>
+          {!collapsed && <div className="pm-sidebar-group-title">Loja</div>}
+          {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
+        </>}
+        {permPdv.canView && (
+          <NavItem to={`${prefix}/pdv`}      icon={ShoppingBag}  label="PDV"      collapsed={collapsed} onNavigate={onNavClick} />
+        )}
+        {permPedidos.canView && (
+          <NavItem to={`${prefix}/pedidos`}     icon={IconHistoricoPedidos} label="Pedidos" collapsed={collapsed} onNavigate={onNavClick} />
+        )}
+        {permPedidos.canView && (
+          <NavItem to={`${prefix}/pedidos-b2b`} icon={ClipboardList} label="Pedidos B2B"  collapsed={collapsed} onNavigate={onNavClick} badge={b2bPending} />
+        )}
+        {permProdutos.canView && (
+          <NavItem to={`${prefix}/produtos`} icon={Package}      label="Produtos" collapsed={collapsed} onNavigate={onNavClick} />
+        )}
 
         {!collapsed && <div className="pm-sidebar-group-title">Gestão</div>}
         {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
@@ -136,7 +159,9 @@ export function Sidebar({ mode, onTogglePin, onNavClick }: SidebarProps) {
           <NavItem to={`${prefix}/financeiro`} icon={IconFinanceiro} label="Financeiro" collapsed={collapsed} onNavigate={onNavClick} badge={pendingValueEdits.length} />
         )}
         <NavItem to={`${prefix}/cadastros`} icon={BookOpen} label="Cadastros" collapsed={collapsed} onNavigate={onNavClick} />
-        <NavItem to={`${prefix}/suporte`}   icon={Headphones} label="Suporte"       collapsed={collapsed} onNavigate={onNavClick} badge={unreadSupport} />
+        {permSuporte.canView && (
+          <NavItem to={`${prefix}/suporte`}   icon={Headphones} label="Suporte"       collapsed={collapsed} onNavigate={onNavClick} badge={unreadSupport} />
+        )}
         <NavItem to={`${prefix}/materiais`} icon={Megaphone}  label="Materiais MKT" collapsed={collapsed} onNavigate={onNavClick} />
       </nav>
 

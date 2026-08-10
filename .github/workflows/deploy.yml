@@ -37,6 +37,12 @@ jobs:
           VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID }}
           VITE_R2_PRESIGN_URL: ${{ secrets.VITE_R2_PRESIGN_URL }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          # PIX (chave = CNPJ público). Definir secret VITE_PIX_KEY; NAME/CITY caem no default do código.
+          VITE_PIX_KEY: ${{ secrets.VITE_PIX_KEY }}
+          VITE_PIX_NAME: ${{ secrets.VITE_PIX_NAME }}
+          VITE_PIX_CITY: ${{ secrets.VITE_PIX_CITY }}
+          # WhatsApp PÚBLICO de atendimento (não é segredo; vai no bundle público).
+          VITE_WHATSAPP_NUMBER: "5545999986565"
         run: npm run build
 
       - name: Install lftp

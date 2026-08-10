@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import {
   Search, Play, X, ChevronDown, ChevronUp,
-  Mail, MessageCircle, Loader2,
+  Mail, MessageCircle, Loader2, Headset,
 } from 'lucide-react'
 import { PageHeader } from '@/components/shared/PageHeader'
+import { useSupportWhatsapp, formatBrWhatsapp } from '@/hooks/useSupportWhatsapp'
 import {
   useHelpArticles,
   extractYouTubeId,
@@ -267,6 +268,8 @@ function FaqItem({ article, onClick }: { article: HelpArticle; onClick: () => vo
 export default function AjudaPage() {
   const [search, setSearch]     = useState('')
   const [selected, setSelected] = useState<HelpArticle | null>(null)
+  // Suporte interno (franquias<->matriz): número vem do banco (RPC autenticada), nunca do bundle.
+  const { data: supportWa } = useSupportWhatsapp()
 
   const { data: articles = [], isLoading } = useHelpArticles({
     status: 'published',
@@ -394,6 +397,25 @@ export default function AjudaPage() {
               <p className="text-xs" style={{ color: 'hsl(var(--pm-gray-500))' }}>(45) 99998-6565</p>
             </div>
           </a>
+
+          {/* Suporte interno franquia↔matriz — só renderiza se o banco retornar (usuário autenticado) */}
+          {supportWa && (
+            <a href={`https://wa.me/${supportWa}`} target="_blank" rel="noreferrer"
+              className="flex items-center gap-3 rounded-xl p-4 transition-colors"
+              style={{ background: 'hsl(var(--pm-gray-900))', border: '1px solid rgba(255,255,255,0.05)' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(167,139,250,0.3)' }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.05)' }}
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                style={{ background: 'rgba(167,139,250,0.12)' }}>
+                <Headset size={15} style={{ color: '#A78BFA' }} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">Suporte Franquias (Matriz)</p>
+                <p className="text-xs" style={{ color: 'hsl(var(--pm-gray-500))' }}>{formatBrWhatsapp(supportWa)}</p>
+              </div>
+            </a>
+          )}
         </div>
       </section>
 

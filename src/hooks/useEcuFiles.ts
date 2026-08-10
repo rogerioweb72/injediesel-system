@@ -37,7 +37,6 @@ export function useUploadEcuFile() {
   const qc = useQueryClient()
   const session = useAuthStore((s) => s.session)
   const user = useAuthStore((s) => s.user)
-  const isMock = import.meta.env.VITE_MOCK === 'true'
 
   return useMutation({
     mutationFn: async ({
@@ -50,29 +49,12 @@ export function useUploadEcuFile() {
       fileType: 'original' | 'entrega' | 'correcao'
     }) => {
       const token = session?.access_token ?? ''
-      let r2Key = `mock/${jobId}/${fileType}/${file.name}`
-
-      if (isMock) {
-        try {
-          const { key } = await uploadFileToR2({
-            bucket: fileType === 'original' ? 'originals' : 'delivered',
-            file,
-            accessToken: token,
-            jobId,
-          })
-          r2Key = key
-        } catch (err) {
-          console.warn('R2 upload falhou em modo mock, usando chave mock:', err)
-        }
-      } else {
-        const { key } = await uploadFileToR2({
-          bucket: fileType === 'original' ? 'originals' : 'delivered',
-          file,
-          accessToken: token,
-          jobId,
-        })
-        r2Key = key
-      }
+      const { key: r2Key } = await uploadFileToR2({
+        bucket: fileType === 'original' ? 'originals' : 'delivered',
+        file,
+        accessToken: token,
+        jobId,
+      })
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)

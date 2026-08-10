@@ -92,12 +92,7 @@ const queryClient = new QueryClient({
   },
 })
 
-async function mount() {
-  if (import.meta.env.VITE_MOCK === 'true') {
-    const { setupMocks } = await import('@/mocks')
-    setupMocks()
-  }
-
+function mount() {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <Sentry.ErrorBoundary

@@ -1,6 +1,6 @@
 # INJEDIESEL — Memória do Projeto (documento durável)
 
-**Última atualização:** 04/08/2026 (Grupo C da evolução do JOB fechado; fluxo de correção especificado)
+**Última atualização:** 11/08/2026 (finalização + hardening: e-mail oficial inje.tech, WhatsApp de suporte via banco, RBAC toggles reais, Bug H corrigido, reset do banco)
 **HEAD:** `9cf44d5` foi o último confirmado em produção (27/07). Em 04/08 saíram 3 commits — `433e708`, `a281261`, `118c3e2` — que estavam LOCAIS ao fim da sessão. **CONFIRMAR se o push saiu e o Actions fechou verde** antes de assumir que estão em produção.
 **Método:** Rogério orquestra via Claude; agente VSCode escreve código; Rogério executa passos irreversíveis.
 
@@ -68,6 +68,7 @@
 | **FIN.5** | Cliente final órfão em job created_by_matrix. Trigger 093 aggregate check (mig 099), useSendToFinance com lista de entries, useEcuJobFinancialEntries plural, EcuJobDetail 3 casos com 2 linhas de Status Financeiro | ✅ Produção — 5212bae, 259fdd7, 9cf44d5 (27/07/2026) |
 | **RBAC operations_admin** | Renan (operations_admin) travado em quase tudo. 5 frentes: mig 081 (profiles.email — coluna nunca existiu, functions de convite faziam upsert nela); fixes em `invite-user`/`invite-franchisee` (allowlists sem operations_admin + profileErr fatal abortando vínculo `user_unit_roles`); mig 082 (`profiles_update_admin` com operations_admin + `id <> auth.uid()`); mig 083 (`franchise_units_admin_all`); mig 084 (**21 policies** em 13 tabelas que usavam `is_matrix_admin()`); mig 085 (`marketing_materials` sem system_ti); Worker R2 `isMatrixAdmin()` consultava profiles com anon key → 403 pra TODOS os roles; fix 22P02 (string vazia em campo integer no wizard); guarda `isEditingSelf` no UsersTab | ✅ Produção — 20/07/2026 |
 | **Grupo C (evolução JOB)** | Item 13: whitelist de extensões ECU 9 → 42 formatos (`a281261`). Item 14: remoção definitiva do bloqueio por `scan_status` no download — VirusTotal OFF de ponta a ponta (`433e708`). Limite de arquivo alinhado em 10MB front+backend (`118c3e2`). Item 12 investigado: sem bug ativo, mas limitação conhecida — `.single()` em `useMyUnit` quebra se um usuário tiver 2+ unidades. Item 15 (autofill CNPJ via BrasilAPI) reportado como já em produção | ✅ Código pronto — 04/08/2026, **push a confirmar** |
+| **Sessão 11/08 (finalização + segurança)** | Remoção de mock mode (`src/mocks/`, branches `IS_MOCK`); dashboard do franqueado com filtro de período (novo hook `useFranchiseDashboard` escopado a `unit_id`, sem cap); **toggles de permissão = realidade** — `PermMatrix` (UsersTab) trava Criar/Editar/Excluir acima de `ROLE_DEFAULT_PERMISSIONS[role]` + `ModuleGuard` de rota + Sidebar da matriz gateada por módulo (fecha A.7); menu **"Atualizações"** (firmware) na Sidebar da matriz; **Bug H corrigido** — `checkFirmwareAcceptance` no `workers/r2-presign.ts` passa o JWT do usuário (não anon key), `wrangler deploy` feito; **e-mail transacional oficial** — Resend + domínio `inje.tech` verificado + DMARC + SMTP custom no Supabase Auth + rate limit elevado + 4 templates PT-BR (`docs/email-templates/`); **WhatsApp de suporte via banco** (mig 101 + RPC `get_support_whatsapp()` SECURITY DEFINER, número nunca no front); **reset do banco** (só web72web=master + renan=ops; catálogo/tabela-remap preservados); identidade + `.env.local` mentiroso documentados no CLAUDE.md | ✅ Produção — 11/08/2026 (`593cba8` RBAC + `a445e6d` templates pushados; 1 commit de doc sem push) |
 
 ---
 
@@ -234,6 +235,8 @@ ORDER BY c.relname, pol.polname;
 | 097 | RPC search_ecu_jobs com filtros p_unit_id + p_matrix_only | Sim |
 | 098 | financial_admin_mark_paid + update_commissions estendidas a 7 roles | **Sim, verificar clones** |
 | 099 | fn_sync_ecu_job_payment_status com aggregate check (FIN.5) | Sim |
+| 100 | Fluxo de Correção Fase 1 — `file_type` aceita `'correcao'` (descobre nome do CHECK via `pg_constraint` antes de dropar) | Sim |
+| 101 | `company_settings.support_whatsapp` + RPC `get_support_whatsapp()` SECURITY DEFINER (GRANT só authenticated) | Sim (padrão portável; **número é dado único por empresa**) |
 
 ---
 
@@ -253,13 +256,15 @@ ORDER BY c.relname, pol.polname;
 
 **Ao carregar este documento, o próximo Claude deve saber:**
 
-- **Data do último fechamento:** 04/08/2026
+- **Data do último fechamento:** 11/08/2026 (sessão de finalização + hardening)
+- **Sessão 11/08 entregue:** mocks removidos; dashboard do franqueado por período; RBAC toggles reais (ModuleGuard + teto por cargo); menu Atualizações; Bug H do worker corrigido + deployado; e-mail oficial `inje.tech` (domínio + DMARC + SMTP + 4 templates); WhatsApp de suporte via banco (mig 101 aplicada); banco resetado (2 users). Pushados `593cba8` + `a445e6d`; 1 commit de remoção de doc redundante **sem push**.
+- **Documentação de replicação:** `~/Documents/projetos lovable/HANDOFF-AUDITORIA-CLONES.md` (consolidado p/ auditar Promax/EvoPro) + adendo 11/08 no `CHECKLIST-AUDITORIA-SISTEMAS.md`.
 - **HEAD:** `9cf44d5` foi o último confirmado em produção (27/07). Os commits `433e708`, `a281261` e `118c3e2` (04/08) estavam LOCAIS ao fim da sessão — **primeira coisa a checar: `git log origin/main..HEAD` e o status do Actions.**
 - **FIN.5:** dado como validado (as sprints seguintes andaram por cima). Se houver dúvida, o teste dos 7 passos continua descrito no histórico.
 - **Trabalho em andamento:** Fluxo de Correção — Fase 1 aplicada (mig 100), Fase 2 em checkpoint (6 arquivos, sem commit). Falta verificar `workers/r2-presign.ts`, Fase 3 (visibilidade bidirecional) e Fase 4 (anexo livre 100MB).
 - **Ação imediata do Rogério:** confirmar push dos 3 commits de 04/08 (`git log origin/main..HEAD`).
 - **Ação imediata do agente:** responder o checkpoint sobre `workers/r2-presign.ts` antes de commitar a Fase 2.
-- **Numeração de migrations:** a última aplicada é a **100**. A próxima é a **101**.
+- **Numeração de migrations:** a última aplicada é a **101** (support_whatsapp, 11/08). A próxima é a **102**.
 
 ---
 

@@ -194,14 +194,26 @@ const COL_KEYS: (keyof PermissionEntry)[] = ['can_view', 'can_create', 'can_edit
 function PermMatrix({
   permissions,
   onChange,
+  role,
   disabled,
 }: {
   permissions: PermissionEntry[]
   onChange: (updated: PermissionEntry[]) => void
+  role: UserRole
   disabled?: boolean
 }) {
+  // Teto por cargo: o banco (RLS) grava por ROLE, não pelos toggles. Não deixa
+  // MARCAR acima do que o cargo realmente permite (senão o toggle mente e a ação
+  // falha no banco com 42501). Reduzir abaixo é permitido (esconde o botão no front).
+  const cap = new Map<RbacModule, PermissionEntry>(
+    (ROLE_DEFAULT_PERMISSIONS[role] ?? []).map((e) => [e.module, e]),
+  )
+  const allowedFor = (module: RbacModule, key: keyof PermissionEntry): boolean =>
+    Boolean(cap.get(module)?.[key])
+
   const toggle = (module: RbacModule, key: keyof PermissionEntry) => {
     if (disabled) return
+    if (!allowedFor(module, key)) return // travado: o cargo não tem esse acesso no banco
     onChange(
       permissions.map((e) =>
         e.module === module ? { ...e, [key]: !e[key] } : e,
@@ -238,29 +250,39 @@ function PermMatrix({
                 <td className="py-1 pr-2" style={{ color: anyOn ? 'hsl(var(--pm-gray-300))' : 'hsl(var(--pm-gray-600))' }}>
                   {MODULE_LABELS[entry.module] ?? entry.module}
                 </td>
-                {COL_KEYS.map((key) => (
-                  <td key={key} className="text-center px-1 py-1">
-                    <button
-                      type="button"
-                      onClick={() => toggle(entry.module, key)}
-                      disabled={disabled}
-                      className="w-5 h-5 rounded flex items-center justify-center mx-auto transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-                      style={{
-                        background: entry[key] ? 'hsl(var(--pm-red-500)/0.2)' : 'rgba(255,255,255,0.04)',
-                        border: `1px solid ${entry[key] ? 'hsl(var(--pm-red-500)/0.5)' : 'rgba(255,255,255,0.1)'}`,
-                      }}
-                    >
-                      {entry[key] && (
-                        <span style={{ color: 'hsl(var(--pm-red-500))', fontSize: 10, lineHeight: 1 }}>✓</span>
-                      )}
-                    </button>
-                  </td>
-                ))}
+                {COL_KEYS.map((key) => {
+                  const on = Boolean(entry[key])
+                  const locked = !allowedFor(entry.module, key)
+                  return (
+                    <td key={key} className="text-center px-1 py-1">
+                      <button
+                        type="button"
+                        onClick={() => toggle(entry.module, key)}
+                        disabled={disabled || locked}
+                        title={locked ? 'Não disponível para este cargo/perfil' : undefined}
+                        className="w-5 h-5 rounded flex items-center justify-center mx-auto transition-colors disabled:cursor-not-allowed"
+                        style={{
+                          background: on ? 'hsl(var(--pm-red-500)/0.2)' : 'rgba(255,255,255,0.04)',
+                          border: `1px solid ${on ? 'hsl(var(--pm-red-500)/0.5)' : 'rgba(255,255,255,0.1)'}`,
+                          opacity: locked ? 0.25 : (disabled ? 0.6 : 1),
+                        }}
+                      >
+                        {on && (
+                          <span style={{ color: 'hsl(var(--pm-red-500))', fontSize: 10, lineHeight: 1 }}>✓</span>
+                        )}
+                      </button>
+                    </td>
+                  )
+                })}
               </tr>
             )
           })}
         </tbody>
       </table>
+      <p className="mt-2 text-[10px] leading-relaxed" style={{ color: 'hsl(var(--pm-gray-500))' }}>
+        Criar / Editar / Excluir são limitados pelo <strong>cargo/perfil</strong> — caixas
+        travadas (cinza) não são aplicadas pelo banco. Para liberar mais acesso, mude o cargo.
+      </p>
     </div>
   )
 }
@@ -711,7 +733,7 @@ export function UsersTab() {
                             Você não pode alterar suas próprias permissões
                           </p>
                         )}
-                        <PermMatrix permissions={editPermissions} onChange={setEditPermissions} disabled={isEditingSelf} />
+                        <PermMatrix permissions={editPermissions} onChange={setEditPermissions} role={editRole} disabled={isEditingSelf} />
                       </div>
                     )}
                   </div>
@@ -1030,7 +1052,7 @@ export function UsersTab() {
                         <RotateCcw size={10} /> restaurar padrão
                       </button>
                     </div>
-                    <PermMatrix permissions={createPermissions} onChange={setCreatePermissions} />
+                    <PermMatrix permissions={createPermissions} onChange={setCreatePermissions} role={createRole} />
                   </div>
                 )}
               </div>

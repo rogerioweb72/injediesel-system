@@ -22,8 +22,8 @@ deixando **apenas** itens críticos/irreversíveis/de dado-manual para o Rogéri
 4. O `CLAUDE.md` do repo do Promax — identidade.
 
 ## 2. IDENTIDADE PROMAX (nunca misturar com injediesel/evopro)
-- Repo: `github.com/rogerioweb72/promax-tuner` (local provável: `~/Desktop/promax-tuner` — confirmar `cat .git/config`).
-- Supabase produção: `myjrylmxzertrbwuosrv` — ⚠️ **confirmar na Fase 0.3** (a CLI "promax-vendas" já enxergou `jewabvdguhughyvfbxkx`; achar o de PRODUÇÃO pelo Network do site / GitHub Secret `VITE_SUPABASE_URL`, não pelo `.env.local`).
+- Repo: `github.com/rogerioweb72/promax-tuner` — **local confirmado: `/Users/rogeriolima/Desktop/promax-tuner`** (branch `main`, remote conferido).
+- Supabase produção: `myjrylmxzertrbwuosrv` — ⚠️ **confirmar na Fase 0.3** (a CLI "promax-vendas" já enxergou `jewabvdguhughyvfbxkx`). **O Promax NÃO tem `supabase/.temp/project-ref`** → a fonte de verdade aqui é SÓ o Network do site em produção (filtrar `supabase.co`) ou o GitHub Secret `VITE_SUPABASE_URL`. **Nunca** o `.env.local`.
 - Cloudflare/R2: worker `promax-tuner-r2-prod.promaxtunermatriz.workers.dev`; buckets `promax-ecu-originals`, `promax-ecu-delivered`, `promax-firmware`, `promax-support-attachments` (conta a confirmar com `wrangler whoami`).
 - **Diferencial próprio:** desconto de franquia — **confirmar como funciona, NÃO remover**.
 - **Marca É do Promax:** tokens `--pm-*`, vermelho `#E72B2B`, prefixo de protocolo `PT-` são NATIVOS do Promax — **não tratar como resíduo, não trocar**.

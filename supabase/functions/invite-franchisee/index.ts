@@ -102,7 +102,9 @@ serve(async (req) => {
           'Authorization': `Bearer ${resendKey}`,
         },
         body: JSON.stringify({
-          from: 'Injediesel <noreply@web72.com.br>',
+          // Remetente configurável por secret (conta oficial Injetech). Domínio precisa
+          // estar VERIFICADO no Resend, senão o envio falha. Default: noreply@inje.tech.
+          from: Deno.env.get('RESEND_FROM') ?? 'Injediesel <noreply@inje.tech>',
           to: [email],
           subject: 'Acesso liberado — Injediesel',
           html: `

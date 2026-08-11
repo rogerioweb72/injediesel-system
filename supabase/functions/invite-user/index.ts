@@ -177,7 +177,9 @@ serve(async (req) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${resendKey}` },
           body: JSON.stringify({
-            from: 'Injediesel <noreply@web72.com.br>',
+            // Remetente configurável por secret (conta oficial Injetech). Domínio precisa
+            // estar VERIFICADO no Resend, senão o envio falha. Default: noreply@inje.tech.
+            from: Deno.env.get('RESEND_FROM') ?? 'Injediesel <noreply@inje.tech>',
             to: [email],
             subject: 'Acesso liberado — Injediesel',
             html: `<p>Olá,</p><p>Seu acesso ao sistema <strong>Injediesel</strong> foi vinculado a um novo perfil.</p><p><a href="${linkData.properties.action_link}" style="background:#E72B2B;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">Acessar o Sistema</a></p><p>O link expira em 1 hora. Use em modo anônimo ou deslogado.</p>`,

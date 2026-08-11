@@ -130,5 +130,5 @@ fi
 ---
 
 **Criado em:** 2026-06-05  
-**Projeto:** promax-tuner  
-**Adaptado para:** cualquer projeto Node/React/TypeScript
+**Projeto:** injediesel-system (script reutilizável entre os 3 clones — Injediesel / Promax Tuner / EvoPro)  
+**Adaptado para:** qualquer projeto Node/React/TypeScript

@@ -51,9 +51,14 @@ O gate de isolamento de franquia é **SEMPRE RLS no banco** — filtro no front 
 | Supabase ref | `ttnmvheptxedwninjedv` | `myjrylmxzertrbwuosrv` | `sumlatisdadarivujabm` |
 | Domínio | inje.tech | a confirmar | a confirmar |
 | Cloudflare/R2 | conta Mkt.injediesel@gmail.com · acct `63504ee600b4c431cb74cfd54dcbc164` | worker `promax-tuner-r2-prod.promaxtunermatriz.workers.dev` · conta a confirmar | a descobrir |
-| Diferencial | fila de aprovação de edição de valor | desconto de franquia | a descobrir na Fase 0 |
+| Diferencial | fila de aprovação de edição de valor | desconto de franquia | **desconto especial de cliente** (confirmar) + possível **site público pré-login** (confirmar) |
 
 > ⚠️ **Fonte da verdade do ref = `supabase/.temp/project-ref`, NUNCA o `.env.local`.**
+
+### 1.1 — Intel de partida (Rogério, 11/08/2026)
+- **EvoPro é quase idêntico ao Injediesel** — mesmas páginas, navegação e correções. Diferenças: **desconto especial de cliente** (feature PRÓPRIA — confirmar como funciona, **não remover**) + dados únicos (domínio, marca, e-mail, contatos, WhatsApp, PIX, R2, Supabase ref).
+- **Pode existir um site público ANTES do login** (landing) — **confirmar na Fase 0**; se existir, auditar à parte (SEO, formulários, exposição de dados).
+- Cada diferencial é feature própria do sistema: injediesel=fila de aprovação de valor, promax=desconto de franquia, evopro=desconto de cliente. **Não portar diferencial entre sistemas.**
 
 ---
 

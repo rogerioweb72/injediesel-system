@@ -1,0 +1,40 @@
+<!-- Template de e-mail de MAGIC LINK (acesso sem senha) — Injediesel.
+     Colar em: Supabase → Authentication → Emails → template "Magic Link" (Message body).
+     Assunto (Subject): Seu link de acesso — Injediesel
+     Variável do link: {{ .ConfirmationURL }} (padrão do Supabase Auth). -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
+  <tr><td align="center" style="padding:32px 12px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e6e6e6;">
+      <tr><td style="background:#141416;padding:26px 32px;text-align:center;">
+        <span style="font-size:24px;font-weight:800;letter-spacing:1px;color:#ffffff;text-transform:uppercase;">INJE<span style="color:#E72B2B;">DIESEL</span></span>
+      </td></tr>
+      <tr><td style="padding:34px 32px 8px;">
+        <h1 style="margin:0 0 12px;font-size:20px;color:#141416;">Acesso rápido</h1>
+        <p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:#444444;">
+          Use o botão abaixo para entrar no <strong>Sistema Injediesel</strong> sem digitar senha.
+          O link é de uso único e expira em breve.
+        </p>
+        <table role="presentation" cellpadding="0" cellspacing="0" style="margin:4px 0 24px;">
+          <tr><td style="border-radius:8px;background:#E72B2B;">
+            <a href="{{ .ConfirmationURL }}" target="_blank"
+               style="display:inline-block;padding:14px 30px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:8px;">
+              Entrar no sistema
+            </a>
+          </td></tr>
+        </table>
+        <p style="margin:0 0 6px;font-size:13px;line-height:1.6;color:#777777;">
+          Se o botão não funcionar, copie e cole este link no navegador:
+        </p>
+        <p style="margin:0;font-size:13px;line-height:1.5;">
+          <a href="{{ .ConfirmationURL }}" target="_blank" style="color:#E72B2B;word-break:break-all;">{{ .ConfirmationURL }}</a>
+        </p>
+      </td></tr>
+      <tr><td style="padding:22px 32px 28px;border-top:1px solid #eeeeee;">
+        <p style="margin:0;font-size:12px;line-height:1.6;color:#999999;">
+          Se você não solicitou este acesso, ignore este e-mail.<br>
+          © Injediesel &middot; <a href="https://inje.tech" style="color:#999999;">inje.tech</a>
+        </p>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>

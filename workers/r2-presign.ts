@@ -237,6 +237,7 @@ async function handleMktDelete(request: Request, env: Env): Promise<Response> {
 async function checkFirmwareAcceptance(
   userId: string,
   updateId: string,
+  token: string,
   env: Env
 ): Promise<boolean> {
   try {
@@ -245,7 +246,10 @@ async function checkFirmwareAcceptance(
       {
         headers: {
           apikey: env.SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${env.SUPABASE_ANON_KEY}`,
+          // BUG H fix: usar o JWT do usuário, não a anon key. A RLS de
+          // firmware_update_acceptances exige auth.uid()=user_id; com anon key
+          // a query voltava vazia e o download dava 403 pra todos.
+          Authorization: `Bearer ${token}`,
           Accept: 'application/json',
         },
       }
@@ -322,7 +326,7 @@ async function handleFirmwareFileUpload(request: Request, env: Env): Promise<Res
 async function handleFirmwareDownload(request: Request, env: Env): Promise<Response> {
   const auth = await verifyToken(request.headers.get('Authorization'), env)
   if (!auth) return json({ error: 'Unauthorized' }, 401, env)
-  const { userId } = auth
+  const { userId, token } = auth
 
   const body = await request.json<{ r2Key: string; updateId: string; fileName?: string }>()
   if (!body.r2Key || !body.updateId) {
@@ -338,7 +342,7 @@ async function handleFirmwareDownload(request: Request, env: Env): Promise<Respo
     return json({ error: 'Arquivo não encontrado' }, 404, env)
   }
 
-  const hasAccepted = await checkFirmwareAcceptance(userId, body.updateId, env)
+  const hasAccepted = await checkFirmwareAcceptance(userId, body.updateId, token, env)
   if (!hasAccepted) {
     return json({ error: 'Aceite dos termos necessário antes do download' }, 403, env)
   }

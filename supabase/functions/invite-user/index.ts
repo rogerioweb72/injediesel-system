@@ -182,7 +182,7 @@ serve(async (req) => {
             from: Deno.env.get('RESEND_FROM') ?? 'Injediesel <noreply@inje.tech>',
             to: [email],
             subject: 'Acesso liberado — Injediesel',
-            html: `<p>Olá,</p><p>Seu acesso ao sistema <strong>Injediesel</strong> foi vinculado a um novo perfil.</p><p><a href="${linkData.properties.action_link}" style="background:#E72B2B;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">Acessar o Sistema</a></p><p>O link expira em 1 hora. Use em modo anônimo ou deslogado.</p>`,
+            html: `<p>Olá,</p><p>Seu acesso ao sistema <strong>Injediesel</strong> foi vinculado a um novo perfil.</p><p><a href="${linkData.properties.action_link}" style="background:#00408f;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">Acessar o Sistema</a></p><p>O link expira em 1 hora. Use em modo anônimo ou deslogado.</p>`,
           }),
         })
         emailSent = resendRes.ok

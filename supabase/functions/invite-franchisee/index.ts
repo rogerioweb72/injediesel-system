@@ -111,7 +111,7 @@ serve(async (req) => {
             <p>Olá,</p>
             <p>Seu acesso ao sistema <strong>Injediesel</strong> foi liberado para uma nova unidade.</p>
             <p>Clique no botão abaixo para entrar diretamente (sem precisar de senha):</p>
-            <p><a href="${linkData.properties.action_link}" style="background:#E72B2B;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">Acessar o Sistema</a></p>
+            <p><a href="${linkData.properties.action_link}" style="background:#00408f;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">Acessar o Sistema</a></p>
             <p>O link expira em 1 hora. Use em modo anônimo ou deslogado.</p>
             <p>Injediesel</p>
           `,

@@ -239,7 +239,7 @@
   }
 
   /* ── SIDEBAR LOGO ── */
-  .pm-sidebar-logo { display: block; width: 100%; height: auto; max-height: 44px; object-fit: contain; object-position: left center; }
+  .pm-sidebar-logo { display: block; height: 44px; width: auto; max-width: 100%; object-fit: contain; object-position: left center; }
   .pm-sidebar-logo .st1 { fill: #1565d8; }
   .pm-sidebar-logo .st2 { fill: #6b7280; }
   .pm-sidebar-logo .st3 { fill: #f3f4f6; }

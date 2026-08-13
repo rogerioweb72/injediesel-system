@@ -15,10 +15,59 @@ import {
   CATEGORY_COLORS,
   type HelpArticle,
 } from '@/hooks/useHelpArticles'
+import { useCompanySettings, useUpdateCompanySettings } from '@/hooks/useCompanySettings'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+// ─── WelcomeVideoSettings ───────────────────────────────────────────────────────
+// Vídeo de boas-vindas exibido no topo da Central de Ajuda das franquias
+// (AjudaPage.tsx). Editável só pela matriz — grava em company_settings.
+function WelcomeVideoSettings() {
+  const { data: settings } = useCompanySettings()
+  const update = useUpdateCompanySettings()
+  const [draft, setDraft] = useState<string | null>(null)
+
+  const value = draft ?? settings?.welcome_video_url ?? ''
+
+  async function handleSave() {
+    const trimmed = value.trim()
+    if (trimmed && !extractYouTubeId(trimmed)) {
+      toast.error('Link do YouTube inválido.')
+      return
+    }
+    try {
+      await update.mutateAsync({ welcome_video_url: trimmed || null })
+      toast.success('Vídeo de boas-vindas atualizado.')
+      setDraft(null)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (e: any) {
+      toast.error(translateError(e))
+    }
+  }
+
+  return (
+    <div className="pm-card space-y-2">
+      <p className="text-sm font-medium text-foreground">Vídeo de Boas-vindas</p>
+      <p className="text-xs text-muted-foreground">
+        Link do YouTube exibido no topo da Central de Ajuda das franquias.
+      </p>
+      <div className="flex gap-2">
+        <input
+          value={value}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="https://www.youtube.com/watch?v=..."
+          className="flex-1 rounded-xl px-3 py-2 text-sm text-white outline-none"
+          style={{ background: 'hsl(var(--pm-gray-900))', border: '1px solid rgba(255,255,255,0.07)' }}
+        />
+        <Button onClick={handleSave} disabled={update.isPending || draft === null}>
+          {update.isPending ? <Loader2 size={14} className="animate-spin" /> : 'Salvar'}
+        </Button>
+      </div>
+    </div>
+  )
 }
 
 // ─── ArticleCard ──────────────────────────────────────────────────────────────
@@ -257,6 +306,9 @@ export default function MatrizAjudaPage() {
           <Plus size={15} className="mr-2" /> Novo Artigo
         </Button>
       </div>
+
+      {/* Vídeo de Boas-vindas (editável) */}
+      <WelcomeVideoSettings />
 
       {/* Stats */}
       {!isLoading && articles.length > 0 && <StatsBar articles={articles} />}

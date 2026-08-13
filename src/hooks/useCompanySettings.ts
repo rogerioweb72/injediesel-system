@@ -29,6 +29,7 @@ export interface CompanySettings {
     zip?: string
   } | null
   pdv_settings: PdvSettings | null
+  welcome_video_url: string | null
   updated_at: string
 }
 

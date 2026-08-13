@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { useSupportWhatsapp, formatBrWhatsapp } from '@/hooks/useSupportWhatsapp'
+import { useWelcomeVideoUrl } from '@/hooks/useWelcomeVideo'
 import {
   useHelpArticles,
   extractYouTubeId,
@@ -12,10 +13,6 @@ import {
   CATEGORY_COLORS,
   type HelpArticle,
 } from '@/hooks/useHelpArticles'
-
-// ─── Config ───────────────────────────────────────────────────────────────────
-// Substitua pelo ID do vídeo YouTube de boas-vindas da Injediesel
-const WELCOME_VIDEO_ID = 'dQw4w9WgXcQ'
 
 // ─── VideoModal ───────────────────────────────────────────────────────────────
 function VideoModal({ videoId, onClose }: { videoId: string; onClose: () => void }) {
@@ -270,6 +267,9 @@ export default function AjudaPage() {
   const [selected, setSelected] = useState<HelpArticle | null>(null)
   // Suporte interno (franquias<->matriz): número vem do banco (RPC autenticada), nunca do bundle.
   const { data: supportWa } = useSupportWhatsapp()
+  // Vídeo de boas-vindas: editável pela matriz (company_settings), lido via RPC autenticada.
+  const { data: welcomeVideoUrl } = useWelcomeVideoUrl()
+  const welcomeVideoId = welcomeVideoUrl ? extractYouTubeId(welcomeVideoUrl) : null
 
   const { data: articles = [], isLoading } = useHelpArticles({
     status: 'published',
@@ -289,7 +289,7 @@ export default function AjudaPage() {
     <div className="space-y-8">
       <PageHeader title="Central de Ajuda" />
 
-      <WelcomeVideo videoId={WELCOME_VIDEO_ID} />
+      {welcomeVideoId && <WelcomeVideo videoId={welcomeVideoId} />}
 
       {/* Search */}
       <div className="relative">

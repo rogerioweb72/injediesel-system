@@ -287,7 +287,7 @@ export default function FranqueadoPedidosPage() {
             const expanded    = expandedId === order.id
             const itemCount   = order.order_items?.length ?? 0
             const isPix       = order.payment_method === 'pix'
-            const needsPay    = order.status === 'aguardando_pagamento'
+            const needsPay    = order.status === 'aguardando_pagamento' || order.status === 'aprovado'
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const hasComprovante = !!(order as any).comprovante_uploaded_at
             const date = new Date(order.created_at).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' })
@@ -425,5 +425,5 @@ export default function FranqueadoPedidosPage() {
 }
 
 function needsPix(order: Order): boolean {
-  return order.payment_method === 'pix' && order.status === 'aguardando_pagamento'
+  return order.payment_method === 'pix' && (order.status === 'aguardando_pagamento' || order.status === 'aprovado')
 }

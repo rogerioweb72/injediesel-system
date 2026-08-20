@@ -22,7 +22,7 @@ import {
 import {
   Shield, ChevronDown, ChevronUp, RotateCcw, Percent, Plus, Mail, CheckCircle2, MoreVertical,
   ShieldCheck, UserCog, Wrench, BadgeDollarSign, ClipboardCheck, LineChart,
-  Building2, Settings, Wallet, Headset, Store, AlertTriangle,
+  Building2, Settings, Wallet, Headset, Store, AlertTriangle, MapPin,
   type LucideIcon,
 } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
@@ -1167,18 +1167,34 @@ function UserSection({
                     >
                       {ROLE_LABELS[user.role]}
                     </span>
-                    <span
-                      className="inline-flex items-center gap-1 text-[11px] font-medium"
-                      style={{ color: 'hsl(var(--pm-gray-400))' }}
-                      title={user.units.length > 1 ? user.units.join(', ') : undefined}
-                    >
-                      <Building2 size={11} style={{ color: 'hsl(var(--pm-gray-500))' }} />
-                      {user.units.length === 0
-                        ? 'Matriz'
-                        : user.units.length === 1
-                          ? user.units[0]
-                          : `${user.units.length} unidades`}
-                    </span>
+                    {user.units.length === 0 ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium ml-2" style={{ color: 'hsl(var(--pm-gray-400))' }}>
+                        <Building2 size={11} style={{ color: 'hsl(var(--pm-gray-500))' }} />
+                        Matriz
+                      </span>
+                    ) : user.units.length === 1 ? (
+                      <>
+                        {(user.units[0].city || user.units[0].state) && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium ml-2" style={{ color: 'hsl(var(--pm-gray-400))' }}>
+                            <MapPin size={11} style={{ color: 'hsl(var(--pm-gray-500))' }} />
+                            {[user.units[0].city, user.units[0].state].filter(Boolean).join('—')}
+                          </span>
+                        )}
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium" style={{ color: 'hsl(var(--pm-gray-400))' }}>
+                          <Building2 size={11} style={{ color: 'hsl(var(--pm-gray-500))' }} />
+                          {user.units[0].name}
+                        </span>
+                      </>
+                    ) : (
+                      <span
+                        className="inline-flex items-center gap-1 text-[11px] font-medium ml-2"
+                        style={{ color: 'hsl(var(--pm-gray-400))' }}
+                        title={user.units.map((u) => u.name).join(', ')}
+                      >
+                        <Building2 size={11} style={{ color: 'hsl(var(--pm-gray-500))' }} />
+                        {user.units.length} unidades
+                      </span>
+                    )}
                     {(user.commission_rate ?? 0) > 0 && (
                       <span
                         className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium"

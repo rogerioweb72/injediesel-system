@@ -871,3 +871,22 @@ buscável por gestor; faltava relatório comparativo entre unidades na matriz.*
 cross-unidade (como no `useMatrixDashboard`). Antes de portar, confirmar que a RLS do clone
 permite esse SELECT agregado; se não, aí sim avaliar RPC `SECURITY DEFINER` no padrão da
 migration 072. Frentes 1 e 2 são diretas (2 exige a view — migration própria por sistema).
+
+### Continuação 20/08 — gestor da unidade + contato direto (candidatos a cherry-pick)
+
+Desdobramentos da Frente 2, na mesma sessão. Sem migration.
+
+1. **Wizard grava `manager_id`** — ao criar unidade, o convite do responsável legal
+   (`franchise_manager`) já rodava, mas não gravava `franchise_units.manager_id`. Agora o
+   `ConfirmSummaryDialog` grava `manager_id` = `user_id` retornado pelo `invite-franchisee`.
+   Unidades novas saem com o gestor vinculado. Backfill das antigas NÃO foi feito (a coluna
+   já exibe via `responsavel_legal_nome`).
+
+2. **Card de usuário: Cargo · Cidade · Unidade** — `useUsers` traz `city, state` no embed;
+   o card mostra `[Cargo]  Cidade—UF  ·  Unidade` (Matriz sem vínculo; "N unidades" com
+   tooltip). Arquivos: `src/hooks/useUsers.ts`, `src/pages/app/configuracoes/UsersTab.tsx`.
+
+3. **Ficha da unidade expõe o Responsável Legal + contato** — antes o responsável legal só
+   aparecia entrando em Editar e avançando etapas. `FranchiseeDetail` ganhou card no topo de
+   "Dados da Unidade" com nome/cargo/email/telefone + botões **WhatsApp** (`wa.me`, DDI 55) e
+   **E-mail** (`mailto`) pra falar direto com o gestor. Arquivo: `FranchiseeDetail.tsx`.

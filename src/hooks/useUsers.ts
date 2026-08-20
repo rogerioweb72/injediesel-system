@@ -36,7 +36,7 @@ export interface Profile {
   relatorio_vendas: boolean
   relatorio_franquias: boolean
   // unidades vinculadas (via user_unit_roles → franchise_units). Vazio = Matriz.
-  units: string[]
+  units: { name: string; city: string | null; state: string | null }[]
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -48,17 +48,20 @@ export function useUsers() {
     queryFn: async () => {
       const { data, error } = await sb()
         .from('profiles')
-        .select('*, user_unit_roles(franchise_units(name))')
+        .select('*, user_unit_roles(franchise_units(name, city, state))')
         .order('name')
       if (error) throw error
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return ((data ?? []) as any[]).map((row) => {
+        const seen = new Set<string>()
+        const units: Profile['units'] = []
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const units = Array.from(new Set(
-          ((row.user_unit_roles ?? []) as any[])
-            .map((r) => r.franchise_units?.name)
-            .filter(Boolean) as string[]
-        ))
+        for (const r of ((row.user_unit_roles ?? []) as any[])) {
+          const fu = r.franchise_units
+          if (!fu?.name || seen.has(fu.name)) continue
+          seen.add(fu.name)
+          units.push({ name: fu.name, city: fu.city ?? null, state: fu.state ?? null })
+        }
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { user_unit_roles, ...profile } = row
         return { ...profile, units } as Profile

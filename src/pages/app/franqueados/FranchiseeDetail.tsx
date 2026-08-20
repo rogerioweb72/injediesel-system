@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
-import { ArrowLeft, Edit, Trash2, AlertTriangle, Clock, ArrowUpCircle, RefreshCw, ShieldOff, ShieldCheck, Mail, BarChart3 } from 'lucide-react'
+import { ArrowLeft, Edit, Trash2, AlertTriangle, Clock, ArrowUpCircle, RefreshCw, ShieldOff, ShieldCheck, Mail, BarChart3, MessageCircle, UserCog } from 'lucide-react'
 import { toast } from 'sonner'
 import { translateError } from '@/lib/errors'
 import { PermissionGuard } from '@/components/auth/PermissionGuard'
@@ -33,6 +33,14 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
       <div className="text-sm text-foreground">{value ?? '—'}</div>
     </div>
   )
+}
+
+// Monta link wa.me a partir de um telefone BR (adiciona DDI 55 se faltar).
+function waLink(phone: string | null): string | null {
+  if (!phone) return null
+  const d = phone.replace(/\D/g, '')
+  if (!d) return null
+  return `https://wa.me/${d.startsWith('55') ? d : '55' + d}`
 }
 
 export default function FranchiseeDetail() {
@@ -234,6 +242,41 @@ export default function FranchiseeDetail() {
               </div>
             </div>
           )}
+
+          {/* Responsável Legal / Gestor — com contato direto */}
+          <div className="pm-card mt-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="space-y-1 min-w-0">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                  <UserCog size={12} /> Responsável Legal · Gestor
+                </p>
+                <p className="text-base font-semibold text-white truncate">{unit.responsavel_legal_nome ?? '—'}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {[
+                    unit.responsavel_legal_cargo || 'Gestor da unidade',
+                    unit.responsavel_legal_email,
+                    unit.responsavel_legal_telefone,
+                  ].filter(Boolean).join('  ·  ')}
+                </p>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                {waLink(unit.responsavel_legal_telefone) && (
+                  <a href={waLink(unit.responsavel_legal_telefone)!} target="_blank" rel="noreferrer">
+                    <Button type="button" style={{ background: '#25D366', color: '#0b1f14' }}>
+                      <MessageCircle size={16} className="mr-2" />WhatsApp
+                    </Button>
+                  </a>
+                )}
+                {unit.responsavel_legal_email && (
+                  <a href={`mailto:${unit.responsavel_legal_email}`}>
+                    <Button type="button" variant="outline">
+                      <Mail size={16} className="mr-2" />E-mail
+                    </Button>
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
 

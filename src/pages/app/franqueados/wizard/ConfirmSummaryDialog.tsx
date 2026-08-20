@@ -121,13 +121,22 @@ export function ConfirmSummaryDialog({ open, onOpenChange, isEdit, unit, logoFil
 
         let inviteOk = false
         try {
-          await invite.mutateAsync({
+          const inviteRes = await invite.mutateAsync({
             email: values.responsavel_legal_email,
             name: values.responsavel_legal_nome,
             unit_id: created.id,
             role: 'franchise_manager',
           })
           inviteOk = true
+          // Vincula o responsável legal (gestor) à unidade via manager_id.
+          const managerId = (inviteRes as { user_id?: string } | null)?.user_id
+          if (managerId) {
+            try {
+              await update.mutateAsync({ id: created.id, manager_id: managerId })
+            } catch (linkErr) {
+              console.error('Falha ao vincular gestor à unidade:', linkErr)
+            }
+          }
         } catch (inviteErr) {
           console.error('Falha ao enviar convite automático:', inviteErr)
         }

@@ -24,6 +24,10 @@ const COLUMNS: Column<FranchiseUnit>[] = [
     cell: (r) => r.city && r.state ? `${r.city} — ${r.state}` : r.city ?? r.state ?? '—',
   },
   {
+    key: 'manager', header: 'Gestor',
+    cell: (r) => r.manager_name?.trim() || '—',
+  },
+  {
     key: 'contract_type', header: 'Contrato',
     cell: (r) => {
       const isFullContract = r.contract_type === 'full'
@@ -89,7 +93,7 @@ export default function FranchiseesPage() {
         onPageChange={setPage}
         onSearch={(v) => { setQ(v); setPage(0) }}
         searchValue={q}
-        searchPlaceholder="Buscar por nome..."
+        searchPlaceholder="Buscar por unidade ou gestor..."
         onRowClick={(r) => navigate(`${prefix}/franqueados/${r.id}`)}
         emptyTitle="Nenhuma unidade"
         emptyDescription="Clique em Nova Unidade para adicionar."

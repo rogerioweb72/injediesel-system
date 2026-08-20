@@ -49,6 +49,8 @@ export interface FranchiseUnit {
   limite_colaboradores: number | null
   observacoes_internas: string | null
   created_at: string
+  // Preenchido pela view v_franchise_units (join com profiles pelo manager_id).
+  manager_name?: string | null
 }
 
 interface ListFilter {
@@ -63,11 +65,15 @@ export function useFranchiseUnits({ q = '', page = 0, pageSize = 20 }: ListFilte
     queryFn: async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let query = (supabase as any)
-        .from('franchise_units')
+        .from('v_franchise_units')
         .select('*', { count: 'exact' })
         .order('name')
         .range(page * pageSize, (page + 1) * pageSize - 1)
-      if (q) query = query.ilike('name', `%${q}%`)
+      if (q) {
+        // Sanitiza caracteres que quebram a sintaxe do filtro .or() do PostgREST.
+        const safe = q.replace(/[,()]/g, ' ').trim()
+        query = query.or(`name.ilike.%${safe}%,manager_name.ilike.%${safe}%`)
+      }
       const { data, error, count } = await query
       if (error) throw error
       return { data: data as FranchiseUnit[], total: (count as number) ?? 0 }

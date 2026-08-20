@@ -815,3 +815,53 @@ Promax=`myjrylmxzertrbwuosrv`, EvoPro=`sumlatisdadarivujabm`).
    Produção usa GitHub Secrets, não o `.env.local`.
 
 *Registro em `INJEDIESEL-PROJECT-MEMORY.md` (§4/§8/§10) pendente de atualização.*
+
+---
+
+## ADENDO — Sessão 19/08/2026 (Injediesel) — melhorias de visibilidade/relatórios
+
+Três **pontos cegos de visibilidade** (não eram bugs — o dado já existia no banco, faltava
+expor/cruzar). Corrigidos no Injediesel; candidatos a portar nos clones (código-base comum).
+**Dados únicos por empresa nunca se copiam.** Migration aplicada pelo Rogério no SQL Editor;
+última antes desta sessão = 102, esta usou a **103**.
+
+Status do levantamento: *cadastro de usuários não mostrava a unidade; franqueados não era
+buscável por gestor; faltava relatório comparativo entre unidades na matriz.*
+
+1. **Cadastro de usuários não mostrava a unidade** — a lista (Config → Usuários) não exibia
+   a que unidade cada usuário pertencia (vínculo em `user_unit_roles`, invisível na tela).
+   `useUsers` passou a trazer as unidades via embed `user_unit_roles → franchise_units`; o
+   card mostra a unidade ao lado do cargo (ou "Matriz" sem vínculo, ou "N unidades" com
+   tooltip). **Sem migration.**
+   Arquivos: `src/hooks/useUsers.ts`, `src/pages/app/configuracoes/UsersTab.tsx`.
+
+2. **Franqueados não era buscável por gestor** — a busca só casava o nome da unidade; buscar
+   o nome do gestor não retornava nada, e a tabela não mostrava quem era o gestor.
+   **Migration 103**: view `v_franchise_units` (`security_invoker = on`) = `franchise_units.*`
+   + `manager_name` (join pelo `manager_id → profiles`). A lista passou a ler a view; a busca
+   casa nome da unidade OU do gestor (ilike, com sanitização de `,()` do `.or`), e ganhou
+   coluna "Gestor". ⚠️ **Dependência:** aplicar a migration ANTES do deploy — senão a lista
+   quebra (`relation "v_franchise_units" does not exist`).
+   Arquivos: `src/hooks/useFranchiseUnits.ts`, `src/pages/app/franqueados/FranchiseesPage.tsx`,
+   `supabase/migrations/103_franchise_units_manager_view.sql`.
+
+3. **Faltava relatório comparativo entre unidades na matriz** — só existiam relatórios de UMA
+   unidade (`RelatoriosPage`, escopo `useMyUnit`). Não dava pra responder "qual unidade
+   faturou/gastou/gerou mais arquivos". Novos `useRelatoriosComparativo` + `RelatoriosMatrizPage`:
+   ranking ordenável (arquivos ECU, faturamento = `amount_charged_to_customer`, gasto c/ matriz =
+   `amount_charged_by_matrix`, margem, ticket médio, clientes, vendedores), breakdown por tipo de
+   serviço e por UF, export CSV/XLSX com seleção de campos (respeita período + ordenação).
+   **Sem RPC nem migration** — o admin matriz já lê `ecu_jobs` de todas as unidades (mesmo acesso
+   provado pelo `useMatrixDashboard`). Rota `/relatorios` guardada a
+   `company_admin`/`operations_admin`/`system_ti` + item no menu Gestão (só matriz;
+   `FranqueadoShell` usa sidebar própria). **Esta frente é genérica e vale para os três sistemas.**
+   ⚠️ Regra de negócio: `amount_charged_by_matrix` = gasto da unidade COM a matriz;
+   `amount_charged_to_customer` = faturamento da unidade. Rotular separado — nunca somar como
+   se fosse a mesma coisa.
+   Arquivos: `src/hooks/useRelatoriosComparativo.ts`, `src/pages/app/relatorios/RelatoriosMatrizPage.tsx`,
+   `src/router/index.tsx`, `src/components/layout/Sidebar.tsx`.
+
+**Nota de porte (Promax/EvoPro):** Frente 3 assume que o admin matriz lê `ecu_jobs`
+cross-unidade (como no `useMatrixDashboard`). Antes de portar, confirmar que a RLS do clone
+permite esse SELECT agregado; se não, aí sim avaliar RPC `SECURITY DEFINER` no padrão da
+migration 072. Frentes 1 e 2 são diretas (2 exige a view — migration própria por sistema).

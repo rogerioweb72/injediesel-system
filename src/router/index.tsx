@@ -56,6 +56,7 @@ const MateriaisMatrizPage     = lazy(() => import('@/pages/app/materiais/Materia
 const AtualizacoesMatrizPage  = lazy(() => import('@/pages/app/atualizacoes/AtualizacoesMatrizPage'))
 const FirmwareEditorPage      = lazy(() => import('@/pages/app/atualizacoes/FirmwareEditorPage'))
 const RelatoriosPage          = lazy(() => import('@/pages/app/franqueados/RelatoriosPage'))
+const RelatoriosMatrizPage    = lazy(() => import('@/pages/app/relatorios/RelatoriosMatrizPage'))
 const CadastrosPage           = lazy(() => import('@/pages/app/cadastros/CadastrosPage'))
 const AjudaPage               = lazy(() => import('@/pages/app/ajuda/AjudaPage'))
 const MatrizAjudaPage         = lazy(() => import('@/pages/app/ajuda/MatrizAjudaPage'))
@@ -178,6 +179,7 @@ const router = createBrowserRouter([
           { path: 'suporte/:id',                 element: <MS m="suporte"><SupportTicketDetail /></MS> },
           { path: 'configuracoes',               element: <MS m="configuracoes"><ConfigPage /></MS> },
           { path: 'financeiro',                  element: <MS m="financeiro"><FinanceiroPage /></MS> },
+          { path: 'relatorios',                  element: <S><RoleGuard allowedRoles={['company_admin', 'operations_admin', 'system_ti']} redirectTo="/acesso-negado"><RelatoriosMatrizPage /></RoleGuard></S> },
           { path: 'cadastros',                   element: <S><CadastrosPage /></S> },
           { path: 'tabela-remap',                element: <MS m="tabela_remap"><TabelaRemapPage /></MS> },
           { path: 'materiais',                   element: <S><MateriaisMatrizPage /></S> },

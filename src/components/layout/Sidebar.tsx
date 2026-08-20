@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Files, Users, Building2,
   Package, ShoppingBag,
   Headphones, Settings,
-  ClipboardList, Megaphone, HelpCircle, BookOpen, Shield, RefreshCw,
+  ClipboardList, Megaphone, HelpCircle, BookOpen, Shield, RefreshCw, BarChart3,
 } from 'lucide-react'
 
 function IconTabelaRemap({ className, size = 24 }: { className?: string; size?: number }) {
@@ -55,7 +55,8 @@ interface SidebarProps {
 
 export function Sidebar({ mode, onTogglePin, onNavClick }: SidebarProps) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
-  useProfile()
+  const { hasRole } = useProfile()
+  const canRelatoriosMatriz = hasRole('company_admin', 'operations_admin')
   const prefix = useRoutePrefix()
   const permFranqueados = useModulePermission('franqueados')
   const permFinanceiro  = useModulePermission('financeiro')
@@ -157,6 +158,9 @@ export function Sidebar({ mode, onTogglePin, onNavClick }: SidebarProps) {
         {collapsed  && <div className="h-px mx-3 my-2 bg-[hsl(var(--pm-gray-800))]" />}
         {permFinanceiro.canView && (
           <NavItem to={`${prefix}/financeiro`} icon={IconFinanceiro} label="Financeiro" collapsed={collapsed} onNavigate={onNavClick} badge={pendingValueEdits.length} />
+        )}
+        {canRelatoriosMatriz && (
+          <NavItem to={`${prefix}/relatorios`} icon={BarChart3} label="Relatórios" collapsed={collapsed} onNavigate={onNavClick} />
         )}
         <NavItem to={`${prefix}/cadastros`} icon={BookOpen} label="Cadastros" collapsed={collapsed} onNavigate={onNavClick} />
         {permSuporte.canView && (

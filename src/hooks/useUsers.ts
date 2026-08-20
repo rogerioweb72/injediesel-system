@@ -35,6 +35,8 @@ export interface Profile {
   relatorio_ecu: boolean
   relatorio_vendas: boolean
   relatorio_franquias: boolean
+  // unidades vinculadas (via user_unit_roles → franchise_units). Vazio = Matriz.
+  units: string[]
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -46,10 +48,21 @@ export function useUsers() {
     queryFn: async () => {
       const { data, error } = await sb()
         .from('profiles')
-        .select('*')
+        .select('*, user_unit_roles(franchise_units(name))')
         .order('name')
       if (error) throw error
-      return data as Profile[]
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return ((data ?? []) as any[]).map((row) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const units = Array.from(new Set(
+          ((row.user_unit_roles ?? []) as any[])
+            .map((r) => r.franchise_units?.name)
+            .filter(Boolean) as string[]
+        ))
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { user_unit_roles, ...profile } = row
+        return { ...profile, units } as Profile
+      })
     },
   })
 }

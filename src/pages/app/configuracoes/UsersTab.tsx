@@ -1167,6 +1167,18 @@ function UserSection({
                     >
                       {ROLE_LABELS[user.role]}
                     </span>
+                    <span
+                      className="inline-flex items-center gap-1 text-[11px] font-medium"
+                      style={{ color: 'hsl(var(--pm-gray-400))' }}
+                      title={user.units.length > 1 ? user.units.join(', ') : undefined}
+                    >
+                      <Building2 size={11} style={{ color: 'hsl(var(--pm-gray-500))' }} />
+                      {user.units.length === 0
+                        ? 'Matriz'
+                        : user.units.length === 1
+                          ? user.units[0]
+                          : `${user.units.length} unidades`}
+                    </span>
                     {(user.commission_rate ?? 0) > 0 && (
                       <span
                         className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium"

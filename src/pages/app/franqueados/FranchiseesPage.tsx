@@ -25,7 +25,8 @@ const COLUMNS: Column<FranchiseUnit>[] = [
   },
   {
     key: 'manager', header: 'Gestor',
-    cell: (r) => r.manager_name?.trim() || '—',
+    // Gestor = responsável legal (dono/CEO, 1º acesso full). Fallback: conta vinculada.
+    cell: (r) => r.responsavel_legal_nome?.trim() || r.manager_name?.trim() || '—',
   },
   {
     key: 'contract_type', header: 'Contrato',

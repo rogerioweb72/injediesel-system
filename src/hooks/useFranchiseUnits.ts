@@ -71,8 +71,10 @@ export function useFranchiseUnits({ q = '', page = 0, pageSize = 20 }: ListFilte
         .range(page * pageSize, (page + 1) * pageSize - 1)
       if (q) {
         // Sanitiza caracteres que quebram a sintaxe do filtro .or() do PostgREST.
+        // Gestor = responsável legal da unidade (dono/CEO, quem recebe o 1º acesso full).
+        // manager_name (conta vinculada) fica como fallback pesquisável quando existir.
         const safe = q.replace(/[,()]/g, ' ').trim()
-        query = query.or(`name.ilike.%${safe}%,manager_name.ilike.%${safe}%`)
+        query = query.or(`name.ilike.%${safe}%,responsavel_legal_nome.ilike.%${safe}%,manager_name.ilike.%${safe}%`)
       }
       const { data, error, count } = await query
       if (error) throw error

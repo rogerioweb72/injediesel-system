@@ -842,6 +842,12 @@ buscável por gestor; faltava relatório comparativo entre unidades na matriz.*
    casa nome da unidade OU do gestor (ilike, com sanitização de `,()` do `.or`), e ganhou
    coluna "Gestor". ⚠️ **Dependência:** aplicar a migration ANTES do deploy — senão a lista
    quebra (`relation "v_franchise_units" does not exist`).
+   **Correção (20/08):** o "Gestor" exibido/pesquisado é o **responsável legal**
+   (`franchise_units.responsavel_legal_nome`, preenchido no wizard passo 4 na criação da
+   unidade — o dono/CEO que recebe o 1º acesso full), NÃO o `manager_id` (conta vinculada,
+   que fica null até a pessoa aceitar o convite). Coluna e busca usam `responsavel_legal_nome`
+   com `manager_name` só como fallback. A view segue útil (traz `manager_name`), mas o dado
+   sempre-presente é o responsável legal, que já está na tabela base.
    Arquivos: `src/hooks/useFranchiseUnits.ts`, `src/pages/app/franqueados/FranchiseesPage.tsx`,
    `supabase/migrations/103_franchise_units_manager_view.sql`.
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
 import { Plus } from 'lucide-react'
@@ -7,6 +7,13 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { DataTable, type Column } from '@/components/shared/DataTable'
 import { FranchiseeWizard } from './wizard/FranchiseeWizard'
 import { useFranchiseUnits, type FranchiseUnit, type UnitStatus } from '@/hooks/useFranchiseUnits'
+import { useSaldoFranquias, fmtBRL, diasEmAberto } from '@/hooks/useFranquiasFinanceiro'
+
+// Sem campo de vencimento em ecu_jobs: usamos a idade da cobrança aberta mais
+// antiga como proxy de atraso. Acima deste limite (dias) = atrasado (vermelho).
+const DEBT_OVERDUE_DAYS = 30
+
+interface DebtInfo { total: number; qtd: number; dias: number }
 
 const CONTRACT_LABELS: Record<string, string> = { full: 'Full', linha_leve: 'Linha Leve' }
 
@@ -72,6 +79,49 @@ export default function FranchiseesPage() {
 
   const { data, isLoading } = useFranchiseUnits({ q, page, pageSize: PAGE_SIZE })
 
+  // Dívida por unidade (mesma fonte da ficha: ecu_jobs em aberto, via vw_saldo_franquias).
+  // A view só traz unidades COM dívida > 0; as demais ficam sem entrada (dívida 0).
+  const { data: saldos = [] } = useSaldoFranquias()
+  const debtByUnit = useMemo(() => {
+    const m = new Map<string, DebtInfo>()
+    for (const s of saldos) {
+      m.set(s.unit_id, { total: s.total_em_aberto, qtd: s.qtd_abertos, dias: diasEmAberto(s.data_mais_antiga) })
+    }
+    return m
+  }, [saldos])
+
+  const columns = useMemo<Column<FranchiseUnit>[]>(() => [
+    ...COLUMNS,
+    {
+      key: 'divida', header: 'Dívida',
+      cell: (r) => {
+        const d = debtByUnit.get(r.id)
+        if (!d || d.total <= 0) return <span style={{ color: 'hsl(var(--pm-gray-600))' }}>—</span>
+        const overdue = d.dias > DEBT_OVERDUE_DAYS
+        const color = overdue ? '#F87171' : '#FBBF24'
+        const bg = overdue ? 'rgba(248,113,113,0.1)' : 'rgba(251,191,36,0.1)'
+        return (
+          <span
+            title={`${d.qtd} cobrança${d.qtd > 1 ? 's' : ''} em aberto · mais antiga há ${d.dias} dias`}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 999, background: bg, color, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}
+          >
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: color, flexShrink: 0 }} />
+            {fmtBRL(d.total)} · {overdue ? `atrasado ${d.dias}d` : 'em aberto'}
+          </span>
+        )
+      },
+    },
+  ], [debtByUnit])
+
+  // Destaque de linha: vermelho (atrasado) tem precedência sobre âmbar (em aberto).
+  const rowClassName = (r: FranchiseUnit): string | undefined => {
+    const d = debtByUnit.get(r.id)
+    if (!d || d.total <= 0) return undefined
+    return d.dias > DEBT_OVERDUE_DAYS
+      ? 'bg-[rgba(248,113,113,0.06)]'
+      : 'bg-[rgba(251,191,36,0.05)]'
+  }
+
   return (
     <div>
       <PageHeader
@@ -85,7 +135,7 @@ export default function FranchiseesPage() {
       />
 
       <DataTable
-        columns={COLUMNS}
+        columns={columns}
         data={data?.data ?? []}
         isLoading={isLoading}
         total={data?.total ?? 0}
@@ -96,6 +146,7 @@ export default function FranchiseesPage() {
         searchValue={q}
         searchPlaceholder="Buscar por unidade ou gestor..."
         onRowClick={(r) => navigate(`${prefix}/franqueados/${r.id}`)}
+        rowClassName={rowClassName}
         emptyTitle="Nenhuma unidade"
         emptyDescription="Clique em Nova Unidade para adicionar."
       />

@@ -890,3 +890,23 @@ Desdobramentos da Frente 2, na mesma sessão. Sem migration.
    aparecia entrando em Editar e avançando etapas. `FranchiseeDetail` ganhou card no topo de
    "Dados da Unidade" com nome/cargo/email/telefone + botões **WhatsApp** (`wa.me`, DDI 55) e
    **E-mail** (`mailto`) pra falar direto com o gestor. Arquivo: `FranchiseeDetail.tsx`.
+
+### Continuação 27/08 — visão de dívida na lista de Franqueados (candidato a cherry-pick)
+
+**Objetivo:** ver na própria lista de Franqueados quem deve à matriz, sem clicar unidade por
+unidade. **Sem migration.**
+
+- **Fonte da dívida = `ecu_jobs`, NÃO `financial_entries`.** Dívida = Σ `amount_charged_by_matrix`
+  onde `matrix_payment_status = 'em_aberto'`. Já existe a view **`vw_saldo_franquias`** (migration
+  070) + hook `useSaldoFranquias()` agregando por unidade (`total_em_aberto`, `qtd_abertos`,
+  `data_mais_antiga`), matrix-wide. Reaproveitados — bate com a aba "Cobranças ECU" da ficha por
+  construção (mesma origem).
+- **`FranchiseesPage`** ganhou coluna **"Dívida"** + destaque de linha (`rowClassName` aditivo):
+  âmbar = em aberto; vermelho = atrasado; sem dívida = normal. A view só traz unidades com
+  dívida > 0 → left-join no cliente (demais = R$ 0).
+- **⚠️ Não existe vencimento** em `ecu_jobs` (só `matrix_payment_status`). "Atraso" é **proxy por
+  idade** da cobrança aberta mais antiga (`data_mais_antiga`): > `DEBT_OVERDUE_DAYS` (30, ajustável)
+  = vermelho. Não é vencimento contratual — se um dia houver campo de vencimento, trocar o proxy.
+- Faturamento na lista ficou de fora (decisão: foco na dívida). Filtro "só inadimplentes" não
+  entrou — a lista é paginada server-side, filtrar só a página atual enganaria. Follow-up.
+  Arquivo: `src/pages/app/franqueados/FranchiseesPage.tsx`.

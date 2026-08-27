@@ -12,6 +12,10 @@ export interface FranchiseUnit {
   logo_url: string | null
   razao_social: string | null
   cnpj: string | null
+  // PF (Opção B, migration 105). Opcionais: a view v_franchise_units (lista) não
+  // expõe estas colunas; a ficha lê franchise_units direto e as recebe.
+  cpf?: string | null
+  document_type?: 'cnpj' | 'cpf'
   inscricao_estadual: string | null
   cidade_fiscal: string | null
   website: string | null

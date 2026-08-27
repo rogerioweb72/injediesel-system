@@ -11,7 +11,11 @@ export const wizardSchema = z.object({
   contract_start_date: z.string().min(1, 'Data de início obrigatória'),
   contract_end_date: z.string().min(1, 'Data de término obrigatória'),
   name: z.string().min(2, 'Nome fantasia obrigatório'),
-  cnpj: z.string().refine(validarCNPJ, 'CNPJ inválido'),
+  // Tipo de pessoa da unidade: PJ (cnpj) ou PF (cpf). Escolhido no Step1.
+  document_type: z.enum(['cnpj', 'cpf']).default('cnpj'),
+  // cnpj/cpf viram condicionais no superRefine abaixo (obrigatório conforme o tipo).
+  cnpj: z.string(),
+  cpf: z.string().nullable(),
   razao_social: z.string().nullable(),
   inscricao_estadual: z.string().nullable(),
   phone: z.string().nullable(),
@@ -47,12 +51,24 @@ export const wizardSchema = z.object({
   ),
   observacoes_internas: z.string().nullable(),
 })
+  .superRefine((val, ctx) => {
+    // Documento obrigatório conforme o tipo de pessoa: CNPJ (PJ) ou CPF (PF).
+    if (val.document_type === 'cpf') {
+      if (!val.cpf || !validarCPF(val.cpf)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['cpf'], message: 'CPF inválido' })
+      }
+    } else {
+      if (!validarCNPJ(val.cnpj)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['cnpj'], message: 'CNPJ inválido' })
+      }
+    }
+  })
 
 export type WizardValues = z.infer<typeof wizardSchema>
 
 export const STEP_FIELDS: Record<number, (keyof WizardValues)[]> = {
   1: ['contract_type', 'contract_start_date', 'contract_end_date'],
-  2: ['name', 'cnpj'],
+  2: ['name', 'cnpj', 'cpf'],
   3: [],
   4: ['responsavel_legal_nome', 'responsavel_legal_cpf', 'responsavel_legal_email', 'responsavel_legal_telefone'],
   5: [],
@@ -111,7 +127,9 @@ export function WizardProvider({ children, initialValues }: WizardProviderProps)
       contract_start_date: '',
       contract_end_date: '',
       name: '',
+      document_type: 'cnpj',
       cnpj: '',
+      cpf: null,
       razao_social: null,
       inscricao_estadual: null,
       phone: null,

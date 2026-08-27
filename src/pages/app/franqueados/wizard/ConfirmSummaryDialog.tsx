@@ -65,7 +65,10 @@ export function ConfirmSummaryDialog({ open, onOpenChange, isEdit, unit, logoFil
         status: values.status,
         logo_url: unit?.logo_url ?? null,
         razao_social: values.razao_social || null,
-        cnpj: values.cnpj || null,
+        document_type: values.document_type,
+        // Só grava o documento do tipo ativo; o outro vai null (nunca string vazia).
+        cnpj: values.document_type === 'cnpj' ? (values.cnpj || null) : null,
+        cpf:  values.document_type === 'cpf'  ? (values.cpf  || null) : null,
         inscricao_estadual: values.inscricao_estadual || null,
         cidade_fiscal: values.cidade_fiscal || null,
         website: values.website || null,
@@ -177,6 +180,10 @@ export function ConfirmSummaryDialog({ open, onOpenChange, isEdit, unit, logoFil
               <p className="text-xs text-muted-foreground">{values.city} — {values.state}</p>
             )}
             <div className="pt-1 space-y-1 text-xs">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{values.document_type === 'cpf' ? 'CPF' : 'CNPJ'}</span>
+                <span className="truncate max-w-[140px]">{(values.document_type === 'cpf' ? values.cpf : values.cnpj) || '—'}</span>
+              </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Contrato</span>
                 <span>{CONTRACT_LABEL[values.contract_type]}</span>

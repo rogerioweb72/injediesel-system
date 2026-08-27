@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { useWizard } from '../WizardContext'
 import { useCnpjLookup } from '@/hooks/useCnpjLookup'
-import { maskCNPJ, maskPhone } from '@/lib/validators'
+import { maskCNPJ, maskCPF, maskPhone } from '@/lib/validators'
 
 function AutofilledIcon() {
   return <CheckCircle2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 pointer-events-none" />
@@ -15,9 +15,12 @@ export function Step2Identity() {
   const { register, setValue, watch, formState: { errors } } = form
   const { status, data, lookup } = useCnpjLookup()
 
+  const documentType = watch('document_type')
+  const isPJ = documentType !== 'cpf'
   const cnpjRaw = watch('cnpj')
 
   useEffect(() => {
+    if (!isPJ) return // autofill da Receita NUNCA no modo PF (não existe lookup de CPF)
     if (status !== 'success' || !data) return
     const fields: string[] = []
     if (data.razao_social) { setValue('razao_social', data.razao_social); fields.push('razao_social') }
@@ -28,7 +31,7 @@ export function Step2Identity() {
     if (data.bairro) { setValue('bairro', data.bairro); fields.push('bairro') }
     if (data.numero) { setValue('numero', data.numero); fields.push('numero') }
     if (fields.length) markAutofilled(fields)
-  }, [status, data, setValue, markAutofilled])
+  }, [isPJ, status, data, setValue, markAutofilled])
 
   function handleCnpjBlur() {
     lookup(cnpjRaw ?? '')
@@ -37,42 +40,66 @@ export function Step2Identity() {
   return (
     <div className="space-y-6">
       <div className="space-y-3">
-        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Dados Fiscais</p>
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+          {isPJ ? 'Dados Fiscais' : 'Dados do Responsável'}
+        </p>
 
-        <div className="space-y-1">
-          <Label>CNPJ *</Label>
-          <div className="relative">
-            <Input
-              {...register('cnpj')}
-              placeholder="00.000.000/0000-00"
-              onChange={(e) => { setValue('cnpj', maskCNPJ(e.target.value)); clearAutofilled('cnpj') }}
-              onBlur={handleCnpjBlur}
-              maxLength={18}
-            />
-            {status === 'loading' && <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-muted-foreground" />}
+        {isPJ ? (
+          <div className="space-y-1">
+            <Label>CNPJ *</Label>
+            <div className="relative">
+              <Input
+                {...register('cnpj')}
+                placeholder="00.000.000/0000-00"
+                onChange={(e) => { setValue('cnpj', maskCNPJ(e.target.value)); clearAutofilled('cnpj') }}
+                onBlur={handleCnpjBlur}
+                maxLength={18}
+              />
+              {status === 'loading' && <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-muted-foreground" />}
+            </div>
+            {errors.cnpj && <p className="text-xs text-red-400">{errors.cnpj.message}</p>}
+            {status === 'error' && <p className="text-xs text-amber-400">CNPJ não encontrado na Receita Federal</p>}
           </div>
-          {errors.cnpj && <p className="text-xs text-red-400">{errors.cnpj.message}</p>}
-          {status === 'error' && <p className="text-xs text-amber-400">CNPJ não encontrado na Receita Federal</p>}
-        </div>
+        ) : (
+          <div className="space-y-1">
+            <Label>CPF *</Label>
+            <Input
+              {...register('cpf')}
+              placeholder="000.000.000-00"
+              onChange={(e) => setValue('cpf', maskCPF(e.target.value))}
+              maxLength={14}
+            />
+            {errors.cpf && <p className="text-xs text-red-400">{errors.cpf.message}</p>}
+            <p className="text-[11px] text-muted-foreground">Representante autônomo (Pessoa Física) — sem consulta à Receita.</p>
+          </div>
+        )}
 
         <div className="space-y-1">
           <Label>Nome Fantasia *</Label>
-          <Input {...register('name')} placeholder="Injediesel System São Paulo" onChange={() => clearAutofilled('name')} />
+          <Input
+            {...register('name')}
+            placeholder={isPJ ? 'Injediesel System São Paulo' : 'Nome comercial do representante'}
+            onChange={() => clearAutofilled('name')}
+          />
           {errors.name && <p className="text-xs text-red-400">{errors.name.message}</p>}
         </div>
 
-        <div className="space-y-1">
-          <Label>Razão Social</Label>
-          <div className="relative">
-            <Input {...register('razao_social')} placeholder="Empresa Ltda." onChange={() => clearAutofilled('razao_social')} />
-            {autofilled.has('razao_social') && <AutofilledIcon />}
-          </div>
-        </div>
+        {isPJ && (
+          <>
+            <div className="space-y-1">
+              <Label>Razão Social</Label>
+              <div className="relative">
+                <Input {...register('razao_social')} placeholder="Empresa Ltda." onChange={() => clearAutofilled('razao_social')} />
+                {autofilled.has('razao_social') && <AutofilledIcon />}
+              </div>
+            </div>
 
-        <div className="space-y-1">
-          <Label>Inscrição Estadual</Label>
-          <Input {...register('inscricao_estadual')} placeholder="000.000.000.000" />
-        </div>
+            <div className="space-y-1">
+              <Label>Inscrição Estadual</Label>
+              <Input {...register('inscricao_estadual')} placeholder="000.000.000.000" />
+            </div>
+          </>
+        )}
       </div>
 
       <div className="space-y-3">

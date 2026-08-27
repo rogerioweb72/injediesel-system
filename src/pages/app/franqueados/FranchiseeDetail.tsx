@@ -285,7 +285,10 @@ export default function FranchiseeDetail() {
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Identificação</p>
               <InfoRow label="Nome Fantasia"     value={unit.name} />
               <InfoRow label="Razão Social"      value={unit.razao_social} />
-              <InfoRow label="CNPJ"              value={unit.cnpj} />
+              <InfoRow
+                label={unit.document_type === 'cpf' ? 'CPF' : 'CNPJ'}
+                value={unit.document_type === 'cpf' ? unit.cpf : unit.cnpj}
+              />
               <InfoRow label="Inscrição Estadual" value={unit.inscricao_estadual} />
               <div>
                 <p className="text-xs text-muted-foreground mb-0.5">Status</p>

@@ -231,7 +231,7 @@ function PerfilDadosUnidade({ unit }: { unit: UnitData | undefined }) {
       <div className="grid grid-cols-2 gap-3">
         <LockedInput label="Nome fantasia"              value={unit?.name} />
         <LockedInput label="Razão social"               value={unit?.razao_social} />
-        <LockedInput label="CNPJ"                       value={unit?.cnpj} />
+        <LockedInput label={unit?.document_type === 'cpf' ? 'CPF' : 'CNPJ'} value={unit?.document_type === 'cpf' ? unit?.cpf : unit?.cnpj} />
         <LockedInput label="Inscrição estadual"         value={unit?.inscricao_estadual} />
         <LockedInput label="Data de abertura"           value={fmtDate(unit?.data_abertura ?? null)} />
         <LockedInput label="Início do contrato"         value={fmtDate(unit?.contract_start_date ?? null)} />

@@ -23,7 +23,7 @@ export function useMyUnit() {
   id, name, city, state, cep, logradouro, numero, complemento, bairro,
   contract_type, contract_start_date, contract_end_date,
   contract_blocked, contract_blocked_reason,
-  razao_social, cnpj, inscricao_estadual, data_abertura,
+  razao_social, cnpj, cpf, document_type, inscricao_estadual, data_abertura,
   plan, financial_status, file_limit,
   commercial_phone, commercial_email, business_hours, main_technician,
   max_discount_pct
@@ -45,6 +45,8 @@ export function useMyUnit() {
           contract_blocked_reason: string | null
           razao_social: string | null
           cnpj: string | null
+          cpf: string | null
+          document_type: 'cnpj' | 'cpf' | null
           inscricao_estadual: string | null
           data_abertura: string | null
           plan: string | null

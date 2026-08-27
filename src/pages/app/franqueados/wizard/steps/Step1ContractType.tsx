@@ -28,6 +28,20 @@ export function Step1ContractType() {
   const name = watch('name')
   const contractStart = watch('contract_start_date')
   const duration = watch('contract_duration')
+  const docType = watch('document_type')
+
+  // Trocar tipo de pessoa limpa os campos do tipo oposto (não enviar lixo ao banco).
+  function handleDocTypeChange(next: 'cnpj' | 'cpf') {
+    if (next === docType) return
+    setValue('document_type', next)
+    if (next === 'cpf') {
+      setValue('cnpj', '')
+      setValue('razao_social', null)
+      setValue('inscricao_estadual', null)
+    } else {
+      setValue('cpf', null)
+    }
+  }
 
   useEffect(() => {
     if (!contractStart || duration === 'custom') return
@@ -94,6 +108,28 @@ export function Step1ContractType() {
 
       <div className="space-y-3">
         <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Tipo & Contrato</p>
+
+        <div className="space-y-1">
+          <Label>Tipo de Pessoa *</Label>
+          <div className="flex gap-1 rounded-lg border border-white/10 p-0.5">
+            {([
+              { v: 'cnpj', label: 'Pessoa Jurídica (CNPJ)' },
+              { v: 'cpf',  label: 'Pessoa Física (CPF)' },
+            ] as const).map(({ v, label }) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => handleDocTypeChange(v)}
+                className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  docType === v ? 'bg-[hsl(var(--pm-red-500))] text-white' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-muted-foreground">Pessoa Física = representante autônomo (só CPF, sem CNPJ).</p>
+        </div>
 
         <div className="space-y-1">
           <Label>Tipo de Contrato *</Label>

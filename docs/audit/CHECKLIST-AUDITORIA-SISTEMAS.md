@@ -929,4 +929,28 @@ unidade. **Sem migration.**
 - **Migration 104** (`104_backfill_franchise_manager_id.sql`) — backfill de `manager_id` das unidades
   antigas a partir do `franchise_manager` em `user_unit_roles`. Idempotente, só `manager_id IS NULL`.
   A exibição do gestor não depende disso (usa `responsavel_legal_nome`); é só integridade do vínculo.
-- Próxima migration livre = **105** (reservada para a feature de unidade PF/CPF).
+- Próxima migration livre = **105** (usada pela feature de unidade PF/CPF — abaixo).
+
+### Continuação 27/08 — unidade Pessoa Física (CPF) no cadastro de Franqueados (candidato a cherry-pick)
+
+**Problema:** representantes autônomos (PF) só têm CPF, não CNPJ. O cadastro exigia CNPJ e era todo
+PJ (autofill Receita, razão social, IE). Adicionado caminho PF.
+
+- **Migration 105** (`105_franchise_units_cpf.sql`, **aditiva Opção B**): mantém `cnpj` intacto;
+  adiciona `cpf` (nullable) + `document_type` (NOT NULL DEFAULT `'cnpj'`, CHECK IN ('cnpj','cpf')).
+  Constraint idempotente (guard `DO $$`). Sem dedup de CPF (consistente com cnpj). **Aplicar ANTES
+  do deploy** — `useMyUnit` faz select explícito de `document_type`/`cpf`; sem a coluna, o select
+  quebra e derruba as páginas do franqueado.
+- **Wizard condicional:** Step1 ganhou toggle **Pessoa Jurídica / Pessoa Física** (ligado a
+  `document_type`; trocar limpa os campos do tipo oposto). Step2 ramifica: PJ = como antes (CNPJ +
+  autofill Receita + razão social + IE); PF = campo CPF obrigatório, **sem autofill** (dupla guarda:
+  `if(!isPJ) return` no effect + input CNPJ só renderiza em PJ), sem razão social/IE, título vira
+  "Dados do Responsável". Schema zod: `superRefine` exige CNPJ (PJ) ou CPF (PF) conforme o tipo.
+- **Persistência null-safe:** `ConfirmSummaryDialog` grava só o documento do tipo ativo, o outro vai
+  `null` (nunca `''`, evita 22P02). Resumo mostra CPF/CNPJ rotulado. Edit (`FranchiseeWizard`) abre no
+  tipo certo via `document_type`/`cpf` no initialValues.
+- **Exibição rotulada** (CPF vs CNPJ) em: `FranchiseeDetail` (ficha matriz), `FranqueadoPerfilPage`
+  (franqueado), resumo do wizard. Tipo `FranchiseUnit` recebeu `cpf?`/`document_type?` opcionais
+  (a view `v_franchise_units` da lista não expõe; a ficha lê `franchise_units` direto).
+- **Follow-up:** o RPC `exportar_relatorio_franquia` segue **CNPJ-só na v1** — expor CPF nele fica
+  para depois (mexe no RPC = outra migration).

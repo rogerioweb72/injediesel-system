@@ -216,7 +216,10 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<UserRole, PermissionEntry[]> = {
 
   finance_admin: MATRIX_MODULES.map((m) => {
     if (m === 'financeiro' || m === 'relatorios') return p(m, true, true, true, false)
-    if (m === 'dashboard' || m === 'pedidos' || m === 'clientes') return p(m, true, false, false, false)
+    // franqueados = SÓ VER (ver=true, criar/editar/excluir=false). O bloqueio por
+    // inadimplência NÃO passa pela RLS de edição (que é tudo-ou-nada) — passa pela
+    // RPC dedicada set_unit_block. Manter editar=false aqui de propósito.
+    if (m === 'dashboard' || m === 'pedidos' || m === 'clientes' || m === 'franqueados') return p(m, true, false, false, false)
     return p(m, false, false, false, false)
   }),
 

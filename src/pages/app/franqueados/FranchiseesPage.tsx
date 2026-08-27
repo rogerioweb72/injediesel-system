@@ -9,9 +9,11 @@ import { FranchiseeWizard } from './wizard/FranchiseeWizard'
 import { useFranchiseUnits, type FranchiseUnit, type UnitStatus } from '@/hooks/useFranchiseUnits'
 import { useSaldoFranquias, fmtBRL, diasEmAberto } from '@/hooks/useFranquiasFinanceiro'
 
-// Sem campo de vencimento em ecu_jobs: usamos a idade da cobrança aberta mais
-// antiga como proxy de atraso. Acima deste limite (dias) = atrasado (vermelho).
-const DEBT_OVERDUE_DAYS = 30
+// Sem campo de vencimento em ecu_jobs: NÃO existe "atraso" real (vencido). O que
+// destacamos é a IDADE da dívida — cobrança aberta há mais dias que este limite
+// ganha ênfase vermelha (dívida antiga); abaixo fica âmbar. Rótulo honesto:
+// "aberto há Nd", nunca "atrasado". Trocar por vencimento real se um dia existir.
+const DEBT_AGING_DAYS = 30
 
 interface DebtInfo { total: number; qtd: number; dias: number }
 
@@ -97,27 +99,27 @@ export default function FranchiseesPage() {
       cell: (r) => {
         const d = debtByUnit.get(r.id)
         if (!d || d.total <= 0) return <span style={{ color: 'hsl(var(--pm-gray-600))' }}>—</span>
-        const overdue = d.dias > DEBT_OVERDUE_DAYS
-        const color = overdue ? '#F87171' : '#FBBF24'
-        const bg = overdue ? 'rgba(248,113,113,0.1)' : 'rgba(251,191,36,0.1)'
+        const aging = d.dias > DEBT_AGING_DAYS
+        const color = aging ? '#F87171' : '#FBBF24'
+        const bg = aging ? 'rgba(248,113,113,0.1)' : 'rgba(251,191,36,0.1)'
         return (
           <span
             title={`${d.qtd} cobrança${d.qtd > 1 ? 's' : ''} em aberto · mais antiga há ${d.dias} dias`}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 999, background: bg, color, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}
           >
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: color, flexShrink: 0 }} />
-            {fmtBRL(d.total)} · {overdue ? `atrasado ${d.dias}d` : 'em aberto'}
+            {fmtBRL(d.total)} · aberto há {d.dias}d
           </span>
         )
       },
     },
   ], [debtByUnit])
 
-  // Destaque de linha: vermelho (atrasado) tem precedência sobre âmbar (em aberto).
+  // Destaque de linha: vermelho (dívida antiga) tem precedência sobre âmbar (recente).
   const rowClassName = (r: FranchiseUnit): string | undefined => {
     const d = debtByUnit.get(r.id)
     if (!d || d.total <= 0) return undefined
-    return d.dias > DEBT_OVERDUE_DAYS
+    return d.dias > DEBT_AGING_DAYS
       ? 'bg-[rgba(248,113,113,0.06)]'
       : 'bg-[rgba(251,191,36,0.05)]'
   }

@@ -902,11 +902,20 @@ unidade. **Sem migration.**
   `data_mais_antiga`), matrix-wide. Reaproveitados — bate com a aba "Cobranças ECU" da ficha por
   construção (mesma origem).
 - **`FranchiseesPage`** ganhou coluna **"Dívida"** + destaque de linha (`rowClassName` aditivo):
-  âmbar = em aberto; vermelho = atrasado; sem dívida = normal. A view só traz unidades com
-  dívida > 0 → left-join no cliente (demais = R$ 0).
-- **⚠️ Não existe vencimento** em `ecu_jobs` (só `matrix_payment_status`). "Atraso" é **proxy por
-  idade** da cobrança aberta mais antiga (`data_mais_antiga`): > `DEBT_OVERDUE_DAYS` (30, ajustável)
-  = vermelho. Não é vencimento contratual — se um dia houver campo de vencimento, trocar o proxy.
-- Faturamento na lista ficou de fora (decisão: foco na dívida). Filtro "só inadimplentes" não
-  entrou — a lista é paginada server-side, filtrar só a página atual enganaria. Follow-up.
-  Arquivo: `src/pages/app/franqueados/FranchiseesPage.tsx`.
+  rótulo honesto **`R$ X · aberto há Nd`**; âmbar = dívida recente, vermelho = dívida antiga;
+  sem dívida = normal. A view só traz unidades com dívida > 0 → left-join no cliente (demais = R$ 0).
+- **⚠️ Não existe vencimento** em `ecu_jobs` (só `matrix_payment_status`). Por isso **NÃO há "atraso"
+  real** — o destaque é por **idade** da cobrança aberta mais antiga (`data_mais_antiga`):
+  > `DEBT_AGING_DAYS` (30, ajustável) = vermelho (dívida antiga). Rótulo evita a palavra "atrasado"
+  de propósito (não é vencido). Se um dia houver campo de vencimento, trocar o proxy pela regra real.
+- Faturamento na lista = **follow-up** (fechamos a dívida primeiro; usuário quer as duas colunas,
+  faturamento entra depois: Σ `amount_charged_to_customer`/unidade, matrix-wide como o comparativo).
+  Filtro "só inadimplentes" também follow-up — a lista é paginada server-side, filtrar só a página
+  atual enganaria. Arquivo: `src/pages/app/franqueados/FranchiseesPage.tsx`.
+
+### Backfill 104 + numeração
+
+- **Migration 104** (`104_backfill_franchise_manager_id.sql`) — backfill de `manager_id` das unidades
+  antigas a partir do `franchise_manager` em `user_unit_roles`. Idempotente, só `manager_id IS NULL`.
+  A exibição do gestor não depende disso (usa `responsavel_legal_nome`); é só integridade do vínculo.
+- Próxima migration livre = **105** (reservada para a feature de unidade PF/CPF).

@@ -7,15 +7,25 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { DataTable, type Column } from '@/components/shared/DataTable'
 import { FranchiseeWizard } from './wizard/FranchiseeWizard'
 import { useFranchiseUnits, type FranchiseUnit, type UnitStatus } from '@/hooks/useFranchiseUnits'
-import { useSaldoFranquias, fmtBRL, diasEmAberto } from '@/hooks/useFranquiasFinanceiro'
+import { useSaldoFranquias, useFaturamentoPorUnidade, fmtBRL, diasEmAberto } from '@/hooks/useFranquiasFinanceiro'
 
-// Sem campo de vencimento em ecu_jobs: NÃO existe "atraso" real (vencido). O que
-// destacamos é a IDADE da dívida — cobrança aberta há mais dias que este limite
-// ganha ênfase vermelha (dívida antiga); abaixo fica âmbar. Rótulo honesto:
-// "aberto há Nd", nunca "atrasado". Trocar por vencimento real se um dia existir.
-const DEBT_AGING_DAYS = 30
+// Critério de dívida = fechamento MENSAL (regra de negócio confirmada pelo Rogério).
+// Cobranças acumulam do dia 1 ao fim do mês; ao virar o mês, o débito do mês fechado
+// deve estar pago. Mês da cobrança = mês do created_at do job (a vw_saldo_franquias
+// expõe MIN(created_at) como data_mais_antiga). Débito cuja cobrança mais antiga é de
+// mês ANTERIOR ao corrente e ainda em aberto = ATRASADO (honesto, não é proxy de idade).
+function isAtrasado(iso: string): boolean {
+  const d = new Date(iso)
+  const h = new Date()
+  return d.getFullYear() < h.getFullYear()
+    || (d.getFullYear() === h.getFullYear() && d.getMonth() < h.getMonth())
+}
+function mesRefAbrev(iso: string): string {
+  const d = new Date(iso)
+  return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getFullYear()).slice(2)}`
+}
 
-interface DebtInfo { total: number; qtd: number; dias: number }
+interface DebtInfo { total: number; qtd: number; dataMaisAntiga: string; dias: number }
 
 const CONTRACT_LABELS: Record<string, string> = { full: 'Full', linha_leve: 'Linha Leve' }
 
@@ -87,39 +97,52 @@ export default function FranchiseesPage() {
   const debtByUnit = useMemo(() => {
     const m = new Map<string, DebtInfo>()
     for (const s of saldos) {
-      m.set(s.unit_id, { total: s.total_em_aberto, qtd: s.qtd_abertos, dias: diasEmAberto(s.data_mais_antiga) })
+      m.set(s.unit_id, { total: s.total_em_aberto, qtd: s.qtd_abertos, dataMaisAntiga: s.data_mais_antiga, dias: diasEmAberto(s.data_mais_antiga) })
     }
     return m
   }, [saldos])
 
+  // Faturamento total por unidade (Σ amount_charged_to_customer, todo histórico).
+  const { data: faturamentoMap } = useFaturamentoPorUnidade()
+
   const columns = useMemo<Column<FranchiseUnit>[]>(() => [
     ...COLUMNS,
+    {
+      key: 'faturamento', header: 'Faturamento',
+      cell: (r) => {
+        const f = faturamentoMap?.get(r.id) ?? 0
+        return f > 0
+          ? <span style={{ color: 'hsl(var(--pm-gray-200))', fontWeight: 600, whiteSpace: 'nowrap' }}>{fmtBRL(f)}</span>
+          : <span style={{ color: 'hsl(var(--pm-gray-600))' }}>—</span>
+      },
+    },
     {
       key: 'divida', header: 'Dívida',
       cell: (r) => {
         const d = debtByUnit.get(r.id)
         if (!d || d.total <= 0) return <span style={{ color: 'hsl(var(--pm-gray-600))' }}>—</span>
-        const aging = d.dias > DEBT_AGING_DAYS
-        const color = aging ? '#F87171' : '#FBBF24'
-        const bg = aging ? 'rgba(248,113,113,0.1)' : 'rgba(251,191,36,0.1)'
+        const overdue = isAtrasado(d.dataMaisAntiga)
+        const color = overdue ? '#F87171' : '#FBBF24'
+        const bg = overdue ? 'rgba(248,113,113,0.1)' : 'rgba(251,191,36,0.1)'
+        const label = overdue ? `atrasado · desde ${mesRefAbrev(d.dataMaisAntiga)}` : 'em aberto'
         return (
           <span
             title={`${d.qtd} cobrança${d.qtd > 1 ? 's' : ''} em aberto · mais antiga há ${d.dias} dias`}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 999, background: bg, color, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}
           >
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: color, flexShrink: 0 }} />
-            {fmtBRL(d.total)} · aberto há {d.dias}d
+            {fmtBRL(d.total)} · {label}
           </span>
         )
       },
     },
-  ], [debtByUnit])
+  ], [debtByUnit, faturamentoMap])
 
-  // Destaque de linha: vermelho (dívida antiga) tem precedência sobre âmbar (recente).
+  // Destaque de linha: vermelho (mês fechado/atrasado) precede âmbar (mês corrente).
   const rowClassName = (r: FranchiseUnit): string | undefined => {
     const d = debtByUnit.get(r.id)
     if (!d || d.total <= 0) return undefined
-    return d.dias > DEBT_AGING_DAYS
+    return isAtrasado(d.dataMaisAntiga)
       ? 'bg-[rgba(248,113,113,0.06)]'
       : 'bg-[rgba(251,191,36,0.05)]'
   }

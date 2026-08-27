@@ -901,17 +901,28 @@ unidade. **Sem migration.**
   070) + hook `useSaldoFranquias()` agregando por unidade (`total_em_aberto`, `qtd_abertos`,
   `data_mais_antiga`), matrix-wide. Reaproveitados — bate com a aba "Cobranças ECU" da ficha por
   construção (mesma origem).
-- **`FranchiseesPage`** ganhou coluna **"Dívida"** + destaque de linha (`rowClassName` aditivo):
-  rótulo honesto **`R$ X · aberto há Nd`**; âmbar = dívida recente, vermelho = dívida antiga;
-  sem dívida = normal. A view só traz unidades com dívida > 0 → left-join no cliente (demais = R$ 0).
-- **⚠️ Não existe vencimento** em `ecu_jobs` (só `matrix_payment_status`). Por isso **NÃO há "atraso"
-  real** — o destaque é por **idade** da cobrança aberta mais antiga (`data_mais_antiga`):
-  > `DEBT_AGING_DAYS` (30, ajustável) = vermelho (dívida antiga). Rótulo evita a palavra "atrasado"
-  de propósito (não é vencido). Se um dia houver campo de vencimento, trocar o proxy pela regra real.
-- Faturamento na lista = **follow-up** (fechamos a dívida primeiro; usuário quer as duas colunas,
-  faturamento entra depois: Σ `amount_charged_to_customer`/unidade, matrix-wide como o comparativo).
-  Filtro "só inadimplentes" também follow-up — a lista é paginada server-side, filtrar só a página
-  atual enganaria. Arquivo: `src/pages/app/franqueados/FranchiseesPage.tsx`.
+- **`FranchiseesPage`** ganhou colunas **"Faturamento"** e **"Dívida"** + destaque de linha
+  (`rowClassName` aditivo). A view só traz unidades com dívida > 0 → left-join no cliente (demais = R$ 0).
+- **Critério de dívida = FECHAMENTO MENSAL** (regra de negócio confirmada pelo Rogério, 27/08).
+  Cobranças acumulam do dia 1 ao fim do mês; ao virar o mês, o débito do mês fechado deve estar pago.
+  Mês da cobrança = mês do `created_at` do job (a view expõe `MIN(created_at)` = `data_mais_antiga`).
+  - `isAtrasado(data_mais_antiga)` = ano-mês da cobrança mais antiga **< ano-mês corrente**.
+  - **Atrasado** (mês fechado, ainda aberto) → 🔴 `R$ X · atrasado · desde MM/AA`, linha vermelha.
+  - **Em aberto** (mês corrente) → 🟡 `R$ X · em aberto`, linha âmbar. Sem dívida → `—`.
+  - Aqui "atrasado" É honesto — reflete a regra real de fechamento, não é proxy de idade em dias.
+  - ⚠️ **Nuance do dia 1º:** pela regra estrita, no 1º dia de cada mês todo débito do mês recém-fechado
+    vira "atrasado" de uma vez (comportamento correto). Para carência (ex: atrasado só após o dia 5),
+    é ajuste de 1 linha em `isAtrasado`.
+- **Coluna "Faturamento"** = Σ `amount_charged_to_customer`/unidade, todo histórico, matrix-wide
+  (hook `useFaturamentoPorUnidade`, mesma fonte/regra do comparativo).
+- **Nota de coerência:** lista e ficha ("Cobranças ECU") usam a MESMA base/regra
+  (`ecu_jobs.matrix_payment_status='em_aberto'`, Σ `amount_charged_by_matrix`), porém são **queries
+  separadas** (view vs consulta direta em `useFranchiseJobHistory`). Batem hoje; se alguém mudar o
+  filtro de uma e não da outra no futuro, divergem — manter as duas alinhadas.
+- **Follow-ups** (melhorias futuras, não pendências): filtro "só inadimplentes" (não feito por causa
+  da paginação server-side — filtrar só a página atual enganaria); export com CPF no RPC de relatório
+  (junto da feature CPF). Arquivos: `src/pages/app/franqueados/FranchiseesPage.tsx`,
+  `src/hooks/useFranquiasFinanceiro.ts`.
 
 ### Backfill 104 + numeração
 

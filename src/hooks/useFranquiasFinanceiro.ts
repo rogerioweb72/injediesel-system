@@ -59,6 +59,33 @@ export function useSaldoFranquias() {
   })
 }
 
+// ── Faturamento total por unidade (matrix-wide, todo o histórico) ─────────────
+// Σ amount_charged_to_customer por unidade (mesma fonte/regra do comparativo).
+// Exclui cancelados e jobs sem unidade (diretos da matriz). RLS da matriz já
+// permite ler ecu_jobs de todas as unidades (como no useMatrixDashboard).
+
+export function useFaturamentoPorUnidade() {
+  return useQuery({
+    queryKey: ['faturamento-por-unidade'],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await sb()
+        .from('ecu_jobs')
+        .select('unit_id, amount_charged_to_customer')
+        .neq('status', 'cancelado')
+        .not('unit_id', 'is', null)
+      if (error) throw error
+      const m = new Map<string, number>()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const r of ((data ?? []) as any[])) {
+        if (!r.unit_id) continue
+        m.set(r.unit_id, (m.get(r.unit_id) ?? 0) + Number(r.amount_charged_to_customer ?? 0))
+      }
+      return m
+    },
+  })
+}
+
 // ── Jobs em aberto de uma unidade ─────────────────────────────────────────────
 
 export function useFranchiseOpenJobs(unitId: string) {

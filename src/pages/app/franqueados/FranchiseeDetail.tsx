@@ -17,7 +17,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { ContractProgressBar, contractDaysRemaining } from '@/components/shared/ContractProgressBar'
 import { FranchiseeWizard } from './wizard/FranchiseeWizard'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useFranchiseUnit, useDeleteFranchiseUnit, useUpdateFranchiseUnit } from '@/hooks/useFranchiseUnits'
+import { useFranchiseUnit, useDeleteFranchiseUnit, useUpdateFranchiseUnit, useSetUnitBlock } from '@/hooks/useFranchiseUnits'
 import { useInviteFranchisee } from '@/hooks/useInviteFranchisee'
 import CobrancasEcuTab from '@/pages/app/franqueados/CobrancasEcuTab'
 import { RelatorioFranchiseeDrawer } from '@/pages/app/franqueados/RelatorioFranchiseeDrawer'
@@ -74,6 +74,7 @@ export default function FranchiseeDetail() {
   const { data: unit, isLoading } = useFranchiseUnit(id ?? '')
   const deleteUnit  = useDeleteFranchiseUnit()
   const updateUnit  = useUpdateFranchiseUnit()
+  const setBlock    = useSetUnitBlock()
   const invite      = useInviteFranchisee()
 
   if (isLoading || !unit) return <div className="pm-skeleton h-64 w-full rounded" />
@@ -112,26 +113,23 @@ export default function FranchiseeDetail() {
   }
 
   async function handleBlock() {
-    const now = new Date().toISOString()
-    await updateUnit.mutateAsync({
-      id: unit!.id,
-      contract_blocked: true,
-      contract_blocked_reason: blockReason || null,
-      contract_blocked_at: now,
-    })
-    toast.warning('Unidade bloqueada')
-    setBlockOpen(false)
-    setBlockReason('')
+    try {
+      await setBlock.mutateAsync({ id: unit!.id, blocked: true, reason: blockReason || null })
+      toast.warning('Unidade bloqueada')
+      setBlockOpen(false)
+      setBlockReason('')
+    } catch (e) {
+      toast.error(translateError(e))
+    }
   }
 
   async function handleUnblock() {
-    await updateUnit.mutateAsync({
-      id: unit!.id,
-      contract_blocked: false,
-      contract_blocked_reason: null,
-      contract_blocked_at: null,
-    })
-    toast.success('Unidade desbloqueada')
+    try {
+      await setBlock.mutateAsync({ id: unit!.id, blocked: false })
+      toast.success('Unidade desbloqueada')
+    } catch (e) {
+      toast.error(translateError(e))
+    }
   }
 
   const hasContract = !!unit.contract_start_date && !!unit.contract_end_date
@@ -166,11 +164,19 @@ export default function FranchiseeDetail() {
           <Button variant="outline" size="sm" onClick={() => { setRenewEnd(unit.contract_end_date?.split('T')[0] ?? ''); setRenewOpen(true) }}>
             <RefreshCw size={14} className="mr-1.5" />Renovar
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+            <Edit size={16} className="mr-2" />Editar
+          </Button>
+        </PermissionGuard>
+        {/* Bloqueio por inadimplência: fora do guard de edição — finance_admin não
+            edita cadastro, mas pode bloquear (via RPC set_unit_block). Cargos aqui
+            espelham a checagem interna da RPC. */}
+        <RoleGuard roles={['company_admin', 'operations_admin', 'finance_admin']}>
           {unit.contract_blocked ? (
             <Button
               size="sm"
               onClick={handleUnblock}
-              disabled={updateUnit.isPending}
+              disabled={setBlock.isPending}
               style={{ background: 'rgba(52,211,153,0.15)', color: '#34D399', border: '1px solid rgba(52,211,153,0.25)' }}
             >
               <ShieldCheck size={14} className="mr-1.5" />Desbloquear
@@ -180,10 +186,7 @@ export default function FranchiseeDetail() {
               <ShieldOff size={14} className="mr-1.5" />Bloquear
             </Button>
           )}
-          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-            <Edit size={16} className="mr-2" />Editar
-          </Button>
-        </PermissionGuard>
+        </RoleGuard>
         <RoleGuard roles={['company_admin']}>
           <Button
             variant="outline"
@@ -458,10 +461,10 @@ export default function FranchiseeDetail() {
             <Button variant="ghost" onClick={() => setBlockOpen(false)}>Cancelar</Button>
             <Button
               variant="destructive"
-              disabled={updateUnit.isPending}
+              disabled={setBlock.isPending}
               onClick={handleBlock}
             >
-              {updateUnit.isPending ? 'Bloqueando...' : 'Bloquear Unidade'}
+              {setBlock.isPending ? 'Bloqueando...' : 'Bloquear Unidade'}
             </Button>
           </DialogFooter>
         </DialogContent>

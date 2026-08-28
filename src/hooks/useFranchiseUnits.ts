@@ -200,6 +200,32 @@ export function useUpdateFranchiseUnit() {
   })
 }
 
+// Bloqueio/desbloqueio via RPC dedicada set_unit_block (migration 106). Permite ao
+// finance_admin bloquear sem escrita ampla em franchise_units — a RPC (SECURITY
+// DEFINER) só flipa contract_blocked e checa o cargo internamente. Mesma invalidação
+// e audit log do useUpdateFranchiseUnit.
+export function useSetUnitBlock() {
+  const qc = useQueryClient()
+  const { log } = useAuditLog()
+  return useMutation({
+    mutationFn: async ({ id, blocked, reason }: { id: string; blocked: boolean; reason?: string | null }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).rpc('set_unit_block', {
+        p_unit_id: id,
+        p_blocked: blocked,
+        p_reason: reason ?? null,
+      })
+      if (error) throw error
+      return { id, blocked }
+    },
+    onSuccess: ({ id, blocked }) => {
+      qc.invalidateQueries({ queryKey: ['franchise-units'] })
+      qc.invalidateQueries({ queryKey: ['franchise-unit', id] })
+      log({ entity: 'franchise_unit', entityId: id, action: blocked ? 'blocked' : 'unblocked' })
+    },
+  })
+}
+
 export function useDeleteFranchiseUnit() {
   const qc = useQueryClient()
   const { log } = useAuditLog()

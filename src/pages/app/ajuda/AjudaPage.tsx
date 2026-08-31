@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   Search, Play, X, ChevronDown, ChevronUp,
-  Mail, MessageCircle, Loader2, Headset,
+  Mail, MessageCircle, Loader2, Headset, Bug,
 } from 'lucide-react'
+import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { useSupportWhatsapp, formatBrWhatsapp } from '@/hooks/useSupportWhatsapp'
 import { useWelcomeVideoUrl } from '@/hooks/useWelcomeVideo'
@@ -263,6 +265,7 @@ function FaqItem({ article, onClick }: { article: HelpArticle; onClick: () => vo
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function AjudaPage() {
+  const prefix = useRoutePrefix()
   const [search, setSearch]     = useState('')
   const [selected, setSelected] = useState<HelpArticle | null>(null)
   // Suporte interno (franquias<->matriz): número vem do banco (RPC autenticada), nunca do bundle.
@@ -367,6 +370,21 @@ export default function AjudaPage() {
           Fale Conosco
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Link to={`${prefix}/suporte/novo`}
+            className="flex items-center gap-3 rounded-xl p-4 transition-colors"
+            style={{ background: 'hsl(var(--pm-gray-900))', border: '1px solid rgba(255,255,255,0.05)' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(245,158,11,0.35)' }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.05)' }}
+          >
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+              style={{ background: 'rgba(245,158,11,0.12)' }}>
+              <Bug size={15} className="text-amber-400" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-white">Reportar um Problema</p>
+              <p className="text-xs" style={{ color: 'hsl(var(--pm-gray-500))' }}>Abrir chamado de bug ou falha</p>
+            </div>
+          </Link>
           <a href="mailto:suporte@inje.tech"
             className="flex items-center gap-3 rounded-xl p-4 transition-colors"
             style={{ background: 'hsl(var(--pm-gray-900))', border: '1px solid rgba(255,255,255,0.05)' }}

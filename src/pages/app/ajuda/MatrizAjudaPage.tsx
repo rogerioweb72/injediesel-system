@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Edit2, Trash2, Building2, LayoutDashboard, Search, X, Loader2 } from 'lucide-react'
+import { Plus, Edit2, Trash2, Building2, LayoutDashboard, Search, X, Loader2, Bug } from 'lucide-react'
 import { toast } from 'sonner'
 import { translateError } from '@/lib/errors'
 import { Button } from '@/components/ui/button'
@@ -299,12 +299,21 @@ export default function MatrizAjudaPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <PageHeader title="Base de Conhecimento" />
-        <Button
-          onClick={() => navigate(`${prefix}/ajuda/novo`)}
-          style={{ background: 'hsl(var(--pm-red-500))', flexShrink: 0 }}
-        >
-          <Plus size={15} className="mr-2" /> Novo Artigo
-        </Button>
+        <div className="flex gap-2 shrink-0">
+          <Button
+            variant="outline"
+            onClick={() => navigate(`${prefix}/suporte/novo`)}
+            style={{ borderColor: 'rgba(245,158,11,0.4)', color: '#F59E0B' }}
+          >
+            <Bug size={15} className="mr-2" /> Reportar Problema
+          </Button>
+          <Button
+            onClick={() => navigate(`${prefix}/ajuda/novo`)}
+            style={{ background: 'hsl(var(--pm-red-500))' }}
+          >
+            <Plus size={15} className="mr-2" /> Novo Artigo
+          </Button>
+        </div>
       </div>
 
       {/* Vídeo de Boas-vindas (editável) */}

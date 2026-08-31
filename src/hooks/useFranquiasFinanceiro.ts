@@ -1,7 +1,6 @@
 // src/hooks/useFranquiasFinanceiro.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
-import { useAuthStore } from '@/stores/auth'
 import { toast } from 'sonner'
 
 const sb = () => supabase as any // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -137,36 +136,19 @@ interface PayJobsPayload {
 
 export function usePayFranchiseJobs() {
   const qc = useQueryClient()
-  const user = useAuthStore((s) => s.user)
 
   return useMutation({
-    mutationFn: async ({ unitId, jobIds, totalValor, formaPagamento, observacao }: PayJobsPayload) => {
-      const { data: pagamento, error: errPag } = await sb()
-        .from('financeiro_pagamentos')
-        .insert({
-          unit_id:         unitId,
-          realizado_por:   user!.id,
-          total_valor:     totalValor,
-          qtd_arquivos:    jobIds.length,
-          forma_pagamento: formaPagamento,
-          observacao:      observacao ?? null,
-        })
-        .select('id')
-        .single()
-      if (errPag) throw errPag
-
-      const { error: errJobs } = await sb()
-        .from('ecu_jobs')
-        .update({
-          matrix_payment_status: 'pago',
-          matrix_paid_at:        new Date().toISOString(),
-          matrix_paid_by:        user!.id,
-          matrix_payment_id:     pagamento.id,
-        })
-        .in('id', jobIds)
-      if (errJobs) throw errJobs
-
-      return pagamento.id as string
+    mutationFn: async ({ unitId, jobIds, formaPagamento, observacao }: PayJobsPayload) => {
+      // Quitação via RPC dedicada (migration 107): atômica, total calculado no
+      // servidor e liberada a finance_admin sem abrir a RLS de ecu_jobs.
+      const { data, error } = await sb().rpc('pay_franchise_jobs', {
+        p_unit_id:         unitId,
+        p_job_ids:         jobIds,
+        p_forma_pagamento: formaPagamento,
+        p_observacao:      observacao ?? null,
+      })
+      if (error) throw error
+      return data as string
     },
     onSuccess: (_pagId, vars) => {
       qc.invalidateQueries({ queryKey: ['saldo-franquias'] })

@@ -954,3 +954,40 @@ PJ (autofill Receita, razão social, IE). Adicionado caminho PF.
   (a view `v_franchise_units` da lista não expõe; a ficha lê `franchise_units` direto).
 - **Follow-up:** o RPC `exportar_relatorio_franquia` segue **CNPJ-só na v1** — expor CPF nele fica
   para depois (mexe no RPC = outra migration).
+
+---
+
+## RBAC — Part A (31/08): Gerente Financeiro acessa Franqueados (branch `feat/finance-franqueados-access`)
+
+**Problema:** `finance_admin` (Gerente Financeiro) não tinha NENHUM acesso a Franqueados
+(`ROLE_DEFAULT_PERMISSIONS.finance_admin` caía no `p(m, false,false,false,false)` para franqueados)
+→ não via menu, lista nem fichas. Não conseguia preparar/fechar cobrança. **RESOLVIDO na Part A.**
+
+Decisões do Rogério: ver via cargo; **bloquear e marcar-pago via RPC dedicada** (não abrir a
+policy FOR ALL de `franchise_units`/`ecu_jobs`, que é tudo-ou-nada). Feito no branch (não no main):
+
+1. **Cargo** — `ROLE_DEFAULT_PERMISSIONS.finance_admin`: `franqueados` = **ver=true, editar=false**.
+   Vê lista (com dívida/faturamento), fichas, relatórios/export. Editar de propósito false — bloqueio
+   não passa pela RLS de edição.
+2. **Migration 106** `set_unit_block(unit_id, blocked, reason)` SECURITY DEFINER — só flipa
+   `contract_blocked/_reason/_at`, checagem de cargo interna
+   (`company_admin/operations_admin/finance_admin/system_ti`). `FranchiseeDetail` chama a RPC
+   (hook `useSetUnitBlock`); botão Bloquear/Desbloquear movido de `PermissionGuard action=edit`
+   para `RoleGuard` com os 3 cargos (senão finance_admin não veria).
+3. **Migration 107** `pay_franchise_jobs(unit_id, job_ids[], forma, obs)` SECURITY DEFINER —
+   marca-pago: total no servidor, insere pagamento + marca jobs num bloco atômico (elimina risco
+   de pagamento órfão do fluxo de 2 statements). `usePayFranchiseJobs` passa a chamar a RPC sempre.
+
+**Pendente do Rogério:** aplicar 106 e 107 no SQL Editor; após merge do branch em produção, zerar o
+custom redundante da Tatiane (`UPDATE profiles SET permissions = NULL WHERE email =
+'INJEDIESELVENDAS@HOTMAIL.COM'`) para ela herdar o cargo novo; merge do branch quando validado.
+
+**Ainda PENDENTES (ciclo próprio, alto risco — não feito):**
+- **Part B** — hierarquia de concessão / teto de gerência (rank de cargos, filtro no seletor,
+  validação no banco): só CEO cria/promove `company_admin`; `operations_admin` e `finance_admin`
+  criam abaixo do teto; ninguém mais cria. Precisa de RLS/RPC de convite — não burlável pela API.
+- **Part C** — ciclo fechado da matriz: reforço no banco para franquia/externo nunca receber cargo
+  de matriz (hoje o seletor separa no front, falta trava no banco).
+
+**Cherry-pick Promax/EvoPro:** cargo finance_admin + RPCs de bloqueio/pagamento são base comum,
+portáveis (numeração de migration própria de cada repo).

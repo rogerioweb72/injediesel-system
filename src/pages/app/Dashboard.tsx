@@ -61,8 +61,8 @@ export default function Dashboard() {
             icon={<Users size={22} />}
             title="Novo Cliente"
             subtitle="Cadastrar cliente"
-            color="from-blue-700 to-blue-500"
-            shadow="shadow-blue-900/30"
+            color="from-amber-600 to-amber-500"
+            shadow="shadow-amber-900/30"
             onClick={() => { navigate(`${prefix}/clientes/novo`) }}
           />
           <QuickActionButton

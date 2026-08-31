@@ -155,7 +155,7 @@ export default function CustomersPage() {
           <PermissionGuard module="clientes" action="create">
             <Button
               onClick={() => navigate(`${prefix}/clientes/novo`)}
-              style={{ background: 'var(--pm-accent-gradient)' }}
+              style={{ background: 'linear-gradient(135deg, #D97706 0%, #F59E0B 100%)' }}
             >
               <UserPlus size={16} className="mr-2" />
               Novo Cliente

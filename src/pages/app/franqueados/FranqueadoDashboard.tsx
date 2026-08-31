@@ -179,8 +179,8 @@ export default function FranqueadoDashboard() {
             sub="Consultar catálogo"
             to={`${prefix}/tabela-remap`}
             icon={Database}
-            gradient="linear-gradient(135deg, #2563EB 0%, #60A5FA 100%)"
-            shadow="0 4px 24px rgba(96,165,250,0.22)"
+            gradient="linear-gradient(135deg, #D97706 0%, #F59E0B 100%)"
+            shadow="0 4px 24px rgba(217,119,6,0.22)"
           />
           <QuickCard
             label="Meus Arquivos"

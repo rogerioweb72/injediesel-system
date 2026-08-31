@@ -662,7 +662,7 @@ export default function EcuJobForm() {
             <button
               type="button"
               onClick={() => setNewClientOpen(true)}
-              className="shrink-0 flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-gray-400 hover:text-gray-200 border border-white/10 hover:border-white/25 bg-white/[0.04] hover:bg-white/[0.08] px-4 py-2 rounded-lg transition-all whitespace-nowrap"
+              className="shrink-0 flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-amber-400 hover:text-amber-300 border border-amber-500/30 hover:border-amber-500/50 bg-amber-500/[0.08] hover:bg-amber-500/[0.15] px-4 py-2 rounded-lg transition-all whitespace-nowrap"
             >
               <Plus size={11} /> Novo Cliente
             </button>

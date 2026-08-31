@@ -176,7 +176,7 @@ export function useCreateFranchiseUnit() {
     },
     onSuccess: (u) => {
       qc.invalidateQueries({ queryKey: ['franchise-units'] })
-      log({ entity: 'franchise_unit', entityId: u.id, action: 'created' })
+      log({ entity: 'franchise_unit', entityId: u.id, action: 'created', metadata: { name: u.name } })
     },
   })
 }
@@ -195,7 +195,7 @@ export function useUpdateFranchiseUnit() {
     onSuccess: (u) => {
       qc.invalidateQueries({ queryKey: ['franchise-units'] })
       qc.invalidateQueries({ queryKey: ['franchise-unit', u.id] })
-      log({ entity: 'franchise_unit', entityId: u.id, action: 'updated' })
+      log({ entity: 'franchise_unit', entityId: u.id, action: 'updated', metadata: { name: u.name } })
     },
   })
 }
@@ -208,7 +208,7 @@ export function useSetUnitBlock() {
   const qc = useQueryClient()
   const { log } = useAuditLog()
   return useMutation({
-    mutationFn: async ({ id, blocked, reason }: { id: string; blocked: boolean; reason?: string | null }) => {
+    mutationFn: async ({ id, blocked, reason }: { id: string; blocked: boolean; reason?: string | null; name?: string }) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any).rpc('set_unit_block', {
         p_unit_id: id,
@@ -218,10 +218,10 @@ export function useSetUnitBlock() {
       if (error) throw error
       return { id, blocked }
     },
-    onSuccess: ({ id, blocked }) => {
+    onSuccess: ({ id, blocked }, vars) => {
       qc.invalidateQueries({ queryKey: ['franchise-units'] })
       qc.invalidateQueries({ queryKey: ['franchise-unit', id] })
-      log({ entity: 'franchise_unit', entityId: id, action: blocked ? 'blocked' : 'unblocked' })
+      log({ entity: 'franchise_unit', entityId: id, action: blocked ? 'blocked' : 'unblocked', metadata: { name: vars.name } })
     },
   })
 }
@@ -230,15 +230,15 @@ export function useDeleteFranchiseUnit() {
   const qc = useQueryClient()
   const { log } = useAuditLog()
   return useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async ({ id }: { id: string; name?: string }) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any).from('franchise_units').delete().eq('id', id)
       if (error) throw error
       return id
     },
-    onSuccess: (id) => {
+    onSuccess: (id, vars) => {
       qc.invalidateQueries({ queryKey: ['franchise-units'] })
-      log({ entity: 'franchise_unit', entityId: id, action: 'deleted' })
+      log({ entity: 'franchise_unit', entityId: id, action: 'deleted', metadata: { name: vars.name } })
     },
   })
 }

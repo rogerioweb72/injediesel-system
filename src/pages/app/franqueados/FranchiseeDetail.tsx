@@ -80,7 +80,7 @@ export default function FranchiseeDetail() {
   if (isLoading || !unit) return <div className="pm-skeleton h-64 w-full rounded" />
 
   async function handleDelete() {
-    await deleteUnit.mutateAsync(unit!.id)
+    await deleteUnit.mutateAsync({ id: unit!.id, name: unit!.name })
     setDeleteOpen(false)
     navigate(`${prefix}/franqueados`)
   }
@@ -114,7 +114,7 @@ export default function FranchiseeDetail() {
 
   async function handleBlock() {
     try {
-      await setBlock.mutateAsync({ id: unit!.id, blocked: true, reason: blockReason || null })
+      await setBlock.mutateAsync({ id: unit!.id, blocked: true, reason: blockReason || null, name: unit!.name })
       toast.warning('Unidade bloqueada')
       setBlockOpen(false)
       setBlockReason('')
@@ -125,7 +125,7 @@ export default function FranchiseeDetail() {
 
   async function handleUnblock() {
     try {
-      await setBlock.mutateAsync({ id: unit!.id, blocked: false })
+      await setBlock.mutateAsync({ id: unit!.id, blocked: false, name: unit!.name })
       toast.success('Unidade desbloqueada')
     } catch (e) {
       toast.error(translateError(e))

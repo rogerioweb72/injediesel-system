@@ -38,6 +38,10 @@ function metaSummary(entity: string, action: string, meta: Record<string, unknow
   if (entity === 'support_ticket' && meta.protocol) return `#${meta.protocol}`
   if (entity === 'support_ticket' && meta.status) return `→ ${meta.status}`
   if (entity === 'vehicle' && meta.customerId) return `cliente ${String(meta.customerId).slice(0,8)}…`
+  // Fallback genérico: se a ação registrou o nome da entidade (ex: unidade
+  // franqueada criada/editada/excluída), mostra o nome — dá clareza de O QUE
+  // foi afetado, não só o tipo. Vale para qualquer entidade que logue `name`.
+  if (meta.name) return String(meta.name)
   return ''
 }
 

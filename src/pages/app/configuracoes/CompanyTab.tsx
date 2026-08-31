@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { toast } from 'sonner'
+import { translateError } from '@/lib/errors'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useCompanySettings, useUpdateCompanySettings, PDV_DEFAULTS, type PdvSettings } from '@/hooks/useCompanySettings'
@@ -112,6 +114,8 @@ export function CompanyTab() {
 
   useEffect(() => {
     if (settings) {
+      // keepDirtyValues: ao refetch (ex: refetchOnWindowFocus ao tirar/voltar o
+      // foco da janela), atualiza o baseline SEM apagar o que o usuário já digitou.
       reset({
         name:  settings.name,
         cnpj:  settings.cnpj ?? '',
@@ -123,27 +127,34 @@ export function CompanyTab() {
           state:  settings.address?.state  ?? '',
           zip:    settings.address?.zip    ?? '',
         },
-      })
+      }, { keepDirtyValues: true })
     }
   }, [settings, reset])
 
   async function onSubmit(data: FormData) {
-    await update.mutateAsync({
-      name:    data.name,
-      cnpj:    data.cnpj   || null,
-      email:   data.email  || null,
-      phone:   data.phone  || null,
-      address: data.address ?? null,
-    })
-    reset(data)
+    try {
+      await update.mutateAsync({
+        name:    data.name,
+        cnpj:    data.cnpj   || null,
+        email:   data.email  || null,
+        phone:   data.phone  || null,
+        address: data.address ?? null,
+      })
+      reset(data)
+      toast.success('Configurações salvas')
+    } catch (e) {
+      console.error('Falha ao salvar company_settings:', e)
+      toast.error(translateError(e))
+    }
   }
 
   if (isLoading) return <div className="pm-skeleton h-64 rounded" />
 
   return (
     <>
-    <form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="max-w-5xl space-y-6">
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="pm-card space-y-4">
         <p className="text-sm font-medium text-foreground">Dados da Empresa</p>
 
@@ -197,6 +208,7 @@ export function CompanyTab() {
           </div>
         </div>
       </div>
+      </div>
 
       <Button
         type="submit"
@@ -210,7 +222,7 @@ export function CompanyTab() {
         <p className="text-sm text-green-400">Configurações salvas com sucesso.</p>
       )}
     </form>
-    <div className="mt-6 max-w-2xl">
+    <div className="mt-6 max-w-5xl">
       <PdvSettingsCard />
     </div>
     </>

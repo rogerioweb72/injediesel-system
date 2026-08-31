@@ -39,6 +39,7 @@ const sb = () => supabase as any
 export function useCompanySettings() {
   return useQuery({
     queryKey: ['company-settings'],
+    staleTime: 300_000, // 5 min — evita refetch a cada foco de janela apagar edições em andamento
     queryFn: async () => {
       const { data, error } = await sb()
         .from('company_settings')
@@ -58,9 +59,16 @@ export function useUpdateCompanySettings() {
 
   return useMutation({
     mutationFn: async (fields: UpdatePayload) => {
+      // UPDATE sem WHERE via PostgREST é frágil; alveja a linha explicitamente.
+      const { data: row, error: rowErr } = await sb()
+        .from('company_settings')
+        .select('id')
+        .single()
+      if (rowErr) throw rowErr
       const { data, error } = await sb()
         .from('company_settings')
         .update({ ...fields, updated_at: new Date().toISOString() })
+        .eq('id', row.id)
         .select()
         .single()
       if (error) throw error

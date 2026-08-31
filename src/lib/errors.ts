@@ -25,10 +25,19 @@ const AUTH_MAP: [RegExp | string, string][] = [
   [/fetch/i,                                 'Erro de conexão. Verifique sua internet.'],
 ]
 
+// Erros do Supabase são objetos { message, code, details } — não instanceof Error.
+// Extrai a mensagem real em vez de virar "[object Object]".
+function rawMessage(raw: unknown): string {
+  if (raw instanceof Error) return raw.message
+  if (typeof raw === 'string') return raw
+  if (raw && typeof raw === 'object' && typeof (raw as { message?: unknown }).message === 'string') {
+    return (raw as { message: string }).message
+  }
+  return String(raw)
+}
+
 export function translateError(raw: unknown): string {
-  const msg = raw instanceof Error ? raw.message
-    : typeof raw === 'string' ? raw
-    : String(raw)
+  const msg = rawMessage(raw)
 
   for (const [pattern, translation] of AUTH_MAP) {
     if (typeof pattern === 'string' ? msg.includes(pattern) : pattern.test(msg)) {

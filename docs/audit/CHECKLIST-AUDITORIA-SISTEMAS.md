@@ -1078,3 +1078,37 @@ AV desativado por enquanto):
 ### Commits (Injediesel, branch `fix/ecu-scan-trigger` → main)
 `44dde0c` (trigger) · `9537668` (verify_jwt) · `b93c824` (Authorization no trigger) ·
 `6e13ce5` (download independente do scan). Migration 115 aplicada; functions deployadas.
+
+---
+
+## ADENDO 01/09/2026 (2) — Aceite de arquivos ECU: whitelist → BLOCKLIST (aplicar nos 3 sistemas)
+
+> **Aplica-se aos 3 sistemas.** Franquia não conseguiu enviar um `.fpf` (flash file) —
+> não estava na whitelist → barrado como "extensão não permitida". Perseguir whitelist
+> de extensões SEMPRE deixa faltar algum formato de ECU e barra arquivo legítimo.
+
+### Decisão de negócio (Rogério)
+Aceitar **TODOS os formatos de ECU do mundo** (qualquer extensão, inclusive sem extensão).
+Bloquear apenas **executáveis/scripts perigosos** (blocklist). Não faz sentido barrar um
+arquivo que faz parte do sistema de ECU de algum veículo.
+
+### Mudança aplicada no Injediesel (portar a Promax/EvoPro)
+Invertida a lógica de extensão (whitelist → blocklist) nos DOIS lugares (mantidos em sync):
+1. **Front** — `src/lib/ecuFileTypes.ts`: `BLOCKED_ECU_EXTENSIONS` + `isEcuFileExtensionAllowed`
+   passa a retornar `true` para tudo, exceto a blocklist. Sem extensão = aceito.
+2. **Back** — `supabase/functions/scan-ecu-file/index.ts`: `ALLOWED_EXTENSIONS` (whitelist)
+   → `BLOCKED_EXTENSIONS` (blocklist); o gate passa a bloquear só se a extensão estiver na
+   blocklist. Deploy: `supabase functions deploy scan-ecu-file --no-verify-jwt`.
+
+Blocklist (dupla, front sem ponto / back com ponto):
+`exe, msi, bat, cmd, com, scr, ps1, vbs, vbe, js, mjs, jse, wsf, hta, sh, bash, php,
+phtml, py, pl, rb, jar, app, apk, dll, so, html, htm, xhtml, svg, lnk`.
+
+### Segurança mantida
+A checagem de **magic-bytes** (`hasDangerousHeader`: MZ/PE, ELF, Mach-O, shebang) continua
+como 2ª camada — pega executável renomeado com extensão de ECU. Size limit e rate-limit
+seguem iguais.
+
+### Ação Promax/EvoPro
+Aplicar a MESMA inversão nos dois arquivos (numeração/deploy próprios de cada repo) para
+nenhum formato de ECU legítimo ser barrado. Commit de referência no Injediesel: `6861202`.

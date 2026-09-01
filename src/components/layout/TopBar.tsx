@@ -180,15 +180,19 @@ export function TopBar({ sidebarExpanded, isMobile = false, onMobileMenuToggle }
       <div className="flex items-center gap-2">
         {!isMobile && isFranchiseShell && (
           <>
-            <Button
-              size="sm"
-              onClick={() => navigate(`${prefix}/clientes/novo`)}
-              className="h-8 text-xs font-semibold gap-1.5"
-              style={{ background: '#16A34A', color: '#fff', border: 'none' }}
-            >
-              <UserPlus size={13} />
-              Novo Cliente
-            </Button>
+            {/* Atalho "Novo Cliente" some na própria página de Clientes (que já tem o
+                botão no cabeçalho) para não duplicar. */}
+            {!location.pathname.startsWith(`${prefix}/clientes`) && (
+              <Button
+                size="sm"
+                onClick={() => navigate(`${prefix}/clientes/novo`)}
+                className="h-8 text-xs font-semibold gap-1.5"
+                style={{ background: '#16A34A', color: '#fff', border: 'none' }}
+              >
+                <UserPlus size={13} />
+                Novo Cliente
+              </Button>
+            )}
             <Button
               size="sm"
               onClick={() => setLancamentoOpen(true)}

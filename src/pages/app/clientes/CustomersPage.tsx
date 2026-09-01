@@ -97,7 +97,7 @@ function UnitCustomers({
         onPageChange={setPage}
         onSearch={(v) => setFilter('q', v)}
         searchValue={filters.q}
-        searchPlaceholder="Buscar por nome, CPF ou telefone..."
+        searchPlaceholder="Buscar por nome, CPF, e-mail ou telefone..."
         onRowClick={(r) => navigate(`${prefix}/clientes/${r.id}`)}
         emptyTitle="Nenhum cliente"
         emptyDescription="Esta unidade ainda não possui clientes cadastrados."
@@ -203,8 +203,8 @@ export default function CustomersPage() {
           searchValue={filters.q}
           searchPlaceholder={
             isMatrix
-              ? 'Buscar por nome, CPF ou telefone (busca em todas as unidades)...'
-              : 'Buscar por nome, CPF ou telefone...'
+              ? 'Buscar por nome, CPF, e-mail ou telefone (todas as unidades)...'
+              : 'Buscar por nome, CPF, e-mail ou telefone...'
           }
           onRowClick={(r) => navigate(`${prefix}/clientes/${r.id}`)}
           emptyTitle="Nenhum cliente"

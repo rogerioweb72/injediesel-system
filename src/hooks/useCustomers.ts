@@ -51,7 +51,8 @@ export function useCustomers({ q = '', page = 0, pageSize = 20, scope, unitId }:
       }
 
       if (q) {
-        query = query.or(`name.ilike.%${q}%,phone.ilike.%${q}%,document.ilike.%${q}%`)
+        const safe = q.replace(/[,()]/g, ' ').trim()
+        query = query.or(`name.ilike.%${safe}%,phone.ilike.%${safe}%,document.ilike.%${safe}%,email.ilike.%${safe}%`)
       }
 
       const { data, error, count } = await query

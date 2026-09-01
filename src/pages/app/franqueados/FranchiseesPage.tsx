@@ -173,7 +173,7 @@ export default function FranchiseesPage() {
         onPageChange={setPage}
         onSearch={(v) => { setQ(v); setPage(0) }}
         searchValue={q}
-        searchPlaceholder="Buscar por unidade ou gestor..."
+        searchPlaceholder="Buscar por nome, cidade, CNPJ, e-mail, gestor..."
         onRowClick={(r) => navigate(`${prefix}/franqueados/${r.id}`)}
         rowClassName={rowClassName}
         emptyTitle="Nenhuma unidade"

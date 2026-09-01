@@ -93,7 +93,21 @@ export function useFranchiseUnits({ q = '', page = 0, pageSize = 20 }: ListFilte
         // Gestor = responsável legal da unidade (dono/CEO, quem recebe o 1º acesso full).
         // manager_name (conta vinculada) fica como fallback pesquisável quando existir.
         const safe = q.replace(/[,()]/g, ' ').trim()
-        query = query.or(`name.ilike.%${safe}%,responsavel_legal_nome.ilike.%${safe}%,manager_name.ilike.%${safe}%`)
+        // Busca ampla nos campos comerciais da unidade (a view expõe fu.* + manager_name).
+        query = query.or([
+          `name.ilike.%${safe}%`,               // nome fantasia
+          `razao_social.ilike.%${safe}%`,
+          `cnpj.ilike.%${safe}%`,
+          `cpf.ilike.%${safe}%`,
+          `city.ilike.%${safe}%`,               // cidade (ex.: Cascavel)
+          `state.ilike.%${safe}%`,
+          `cep.ilike.%${safe}%`,
+          `logradouro.ilike.%${safe}%`,         // endereço
+          `email.ilike.%${safe}%`,
+          `responsavel_legal_nome.ilike.%${safe}%`,
+          `responsavel_legal_email.ilike.%${safe}%`,
+          `manager_name.ilike.%${safe}%`,       // conta gestora vinculada
+        ].join(','))
       }
       const { data, error, count } = await query
       if (error) throw error

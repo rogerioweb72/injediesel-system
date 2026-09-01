@@ -44,7 +44,7 @@ const ALLOWED_EXTENSIONS = new Set([
   '.bin', '.ori', '.hex', '.s19', '.s28', '.s37', '.srec', '.mot', '.mxt',
   // proprietários de ferramentas de tuning
   '.kfg', '.bck', '.eprom', '.cod', '.dtf', '.bbf', '.srf', '.tun', '.cal', '.map',
-  '.ecu', '.rom', '.img', '.frf', '.sgm', '.sgo', '.sox', '.odx', '.a2l', '.xdf', '.damos', '.dam',
+  '.ecu', '.rom', '.img', '.frf', '.fpf', '.sgm', '.sgo', '.sox', '.odx', '.a2l', '.xdf', '.damos', '.dam',
   // dados/calibração
   '.csv', '.xml', '.json', '.dat', '.log',
   // containers/compactados

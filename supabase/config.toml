@@ -412,3 +412,9 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # O "send" (aprovar+enviar) é protegido por requireAuth dentro da função.
 [functions.franchise-signature]
 verify_jwt = false
+
+# scan-ecu-file: autentica-se pelo WEBHOOK_SECRET (header x-supabase-signature),
+# chamado pelo trigger pg_net (migration 115). verify_jwt off para o gateway não
+# barrar antes do check interno do secret.
+[functions.scan-ecu-file]
+verify_jwt = false

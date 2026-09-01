@@ -16,6 +16,9 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { useUsers } from '@/hooks/useUsers'
 import { useCreateFranchiseContract } from '@/hooks/useFranchiseUnits'
 import { useFranchiseProducts } from '@/hooks/useFranchiseProducts'
+import { useUploadUnitDocument } from '@/hooks/useUnitDocuments'
+import { useCompanySettings } from '@/hooks/useCompanySettings'
+import { generateContractPdfBlob } from '@/lib/contractPdf'
 
 const schema = z.object({
   // Comercial
@@ -54,6 +57,8 @@ export default function NovoContratoPage() {
   const navigate = useNavigate()
   const prefix = useRoutePrefix()
   const create = useCreateFranchiseContract()
+  const upload = useUploadUnitDocument()
+  const { data: settings } = useCompanySettings()
 
   // Vendedores da matriz (papel seller, ativos) — recebem a comissão da venda.
   const { data: users = [] } = useUsers()
@@ -88,7 +93,7 @@ export default function NovoContratoPage() {
     try {
       const cidades = (data.cidades_atendidas_txt ?? '')
         .split(',').map((c) => c.trim()).filter(Boolean)
-      await create.mutateAsync({
+      const unit = await create.mutateAsync({
         name: data.name,
         contract_type: data.contract_type,
         franchise_fee: data.franchise_fee,
@@ -110,6 +115,30 @@ export default function NovoContratoPage() {
         responsavel_legal_telefone: data.responsavel_legal_telefone,
         responsavel_legal_cargo: data.responsavel_legal_cargo || null,
       })
+      // Gera + anexa o PDF do contrato à unidade (não bloqueia a criação se falhar).
+      try {
+        const addr = settings?.address
+        const blob = await generateContractPdfBlob({
+          matriz_endereco: [addr?.street, addr?.city, addr?.state].filter(Boolean).join(', ') || '—',
+          matriz_cidade: addr?.city || '—',
+          unidade_nome: data.name,
+          cidade: data.city, uf: data.state,
+          raio: data.raio_atendimento_km ? String(data.raio_atendimento_km) : null,
+          municipios: cidades.length ? cidades.join(', ') : null,
+          responsavel_nome: data.responsavel_legal_nome,
+          responsavel_cpf: data.responsavel_legal_cpf,
+          responsavel_rg: data.responsavel_legal_rg || null,
+          responsavel_email: data.responsavel_legal_email,
+          responsavel_telefone: data.responsavel_legal_telefone,
+          valor_adesao: Number(data.franchise_fee).toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
+          forma_pagamento: METHOD_LABEL[data.sale_payment_method],
+          plano_pagamento: PLAN_LABEL[data.payment_plan],
+          data_contrato: new Date().toLocaleDateString('pt-BR'),
+        })
+        await upload.mutateAsync({ unitId: unit.id, file: blob, name: `contrato-${data.name}.pdf`, kind: 'contract_generated' })
+      } catch (pdfErr) {
+        console.error('Falha ao gerar/anexar o PDF do contrato:', pdfErr)
+      }
       toast.success('Contrato criado (rascunho). Aguardando aprovação/ativação.')
       navigate(`${prefix}/franqueados`)
     } catch (e) {

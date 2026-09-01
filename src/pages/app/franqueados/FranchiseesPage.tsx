@@ -1,8 +1,10 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
-import { Plus } from 'lucide-react'
+import { Plus, Building2, FileSignature } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { RoleGuard } from '@/components/auth/RoleGuard'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { DataTable, type Column } from '@/components/shared/DataTable'
 import { FranchiseeWizard } from './wizard/FranchiseeWizard'
@@ -87,6 +89,7 @@ export default function FranchiseesPage() {
   const [q, setQ] = useState('')
   const [page, setPage] = useState(0)
   const [formOpen, setFormOpen] = useState(false)
+  const [choiceOpen, setChoiceOpen] = useState(false)
   const PAGE_SIZE = 20
 
   const { data, isLoading } = useFranchiseUnits({ q, page, pageSize: PAGE_SIZE })
@@ -153,8 +156,8 @@ export default function FranchiseesPage() {
         title="Franqueados"
         subtitle="Unidades da rede Injediesel System"
         actions={
-          <Button onClick={() => setFormOpen(true)} style={{ background: 'var(--pm-accent-gradient)' }}>
-            <Plus size={16} className="mr-2" />Nova Unidade
+          <Button onClick={() => setChoiceOpen(true)} style={{ background: 'var(--pm-accent-gradient)' }}>
+            <Plus size={16} className="mr-2" />Nova Franquia
           </Button>
         }
       />
@@ -177,6 +180,59 @@ export default function FranchiseesPage() {
       />
 
       <FranchiseeWizard open={formOpen} onOpenChange={setFormOpen} />
+
+      {/* Fase 1 — bifurcação: cadastrar unidade existente OU vender novo contrato */}
+      <Dialog open={choiceOpen} onOpenChange={setChoiceOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Nova Franquia</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm" style={{ color: 'hsl(var(--pm-gray-500))' }}>
+            Escolha o tipo de cadastro:
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+            {/* A — Cadastrar existente (fluxo atual, só admin da matriz) */}
+            <RoleGuard roles={['company_admin', 'operations_admin', 'system_ti']}>
+              <button
+                type="button"
+                onClick={() => { setChoiceOpen(false); setFormOpen(true) }}
+                className="text-left rounded-xl p-4 transition-colors"
+                style={{ background: 'hsl(var(--pm-gray-900))', border: '1px solid rgba(255,255,255,0.08)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'rgba(96,165,250,0.4)')}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')}
+              >
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg mb-3" style={{ background: 'rgba(96,165,250,0.12)' }}>
+                  <Building2 size={17} className="text-blue-400" />
+                </div>
+                <p className="text-sm font-semibold text-white">Cadastrar Existente</p>
+                <p className="text-xs mt-1" style={{ color: 'hsl(var(--pm-gray-500))' }}>
+                  Unidade já operando — dados + convite por e-mail.
+                </p>
+              </button>
+            </RoleGuard>
+
+            {/* B — Novo contrato (venda de franquia; matriz: admins + vendedor) */}
+            <RoleGuard roles={['company_admin', 'operations_admin', 'system_ti', 'seller']}>
+              <button
+                type="button"
+                onClick={() => { setChoiceOpen(false); navigate(`${prefix}/franqueados/novo-contrato`) }}
+                className="text-left rounded-xl p-4 transition-colors"
+                style={{ background: 'hsl(var(--pm-gray-900))', border: '1px solid rgba(255,255,255,0.08)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'rgba(245,158,11,0.45)')}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')}
+              >
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg mb-3" style={{ background: 'rgba(245,158,11,0.12)' }}>
+                  <FileSignature size={17} className="text-amber-400" />
+                </div>
+                <p className="text-sm font-semibold text-white">Novo Contrato</p>
+                <p className="text-xs mt-1" style={{ color: 'hsl(var(--pm-gray-500))' }}>
+                  Venda de franquia — contrato, pagamento e comissão.
+                </p>
+              </button>
+            </RoleGuard>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -26,6 +26,7 @@ const ProductForm       = lazy(() => import('@/pages/app/produtos/ProductForm'))
 const ProductDetail     = lazy(() => import('@/pages/app/produtos/ProductDetail'))
 const FranchiseesPage   = lazy(() => import('@/pages/app/franqueados/FranchiseesPage'))
 const FranchiseeDetail  = lazy(() => import('@/pages/app/franqueados/FranchiseeDetail'))
+const NovoContratoPage  = lazy(() => import('@/pages/app/franqueados/NovoContratoPage'))
 const EcuJobsPage       = lazy(() => import('@/pages/app/arquivos/EcuJobsPage'))
 const EcuJobForm        = lazy(() => import('@/pages/app/arquivos/EcuJobForm'))
 const EcuJobDetail      = lazy(() => import('@/pages/app/arquivos/EcuJobDetail'))
@@ -167,6 +168,7 @@ const router = createBrowserRouter([
           { path: 'produtos/:id',                element: <MS m="produtos"><ProductDetail /></MS> },
           { path: 'produtos/:id/editar',         element: <MS m="produtos"><ProductForm /></MS> },
           { path: 'franqueados',                 element: <MS m="franqueados"><FranchiseesPage /></MS> },
+          { path: 'franqueados/novo-contrato',   element: <S><RoleGuard allowedRoles={['company_admin', 'operations_admin', 'system_ti', 'seller']} redirectTo="/acesso-negado"><NovoContratoPage /></RoleGuard></S> },
           { path: 'franqueados/:id',             element: <MS m="franqueados"><FranchiseeDetail /></MS> },
           { path: 'arquivos',                    element: <MS m="ecu_arquivos"><EcuJobsPage /></MS> },
           { path: 'arquivos/novo',               element: <MS m="ecu_arquivos"><EcuJobForm /></MS> },

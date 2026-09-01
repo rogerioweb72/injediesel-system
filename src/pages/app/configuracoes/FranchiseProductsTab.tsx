@@ -8,6 +8,28 @@ import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useFranchiseProducts, useUpdateFranchiseProduct, type FranchiseProduct } from '@/hooks/useFranchiseProducts'
 
+// Converte texto de moeda pt-BR (ou plano) em número.
+// Aceita "80000", "80000.00", "80.000,00", "80.000", "1.234.567,89", "R$ 5.000".
+// Retorna NaN se realmente inválido (aí o save é abortado, nunca grava 0).
+function parseBRNumber(raw: string): number {
+  let s = String(raw ?? '').trim().replace(/[R$\s]/gi, '')
+  if (!s) return NaN
+  const hasComma = s.includes(',')
+  const hasDot = s.includes('.')
+  if (hasComma) {
+    // vírgula = separador decimal; pontos (se houver) = milhar
+    s = s.replace(/\./g, '').replace(',', '.')
+  } else if (hasDot) {
+    // sem vírgula: ponto pode ser milhar (grupos de 3) ou decimal
+    const parts = s.split('.')
+    const allGroupsOf3 = parts.slice(1).every((g) => g.length === 3)
+    if (parts.length > 1 && allGroupsOf3) s = s.replace(/\./g, '') // milhar → remove
+    // senão, mantém ponto como decimal
+  }
+  const n = Number(s)
+  return Number.isFinite(n) ? n : NaN
+}
+
 function ProductCard({ p }: { p: FranchiseProduct }) {
   const update = useUpdateFranchiseProduct()
   const [fee, setFee]     = useState(String(p.default_fee))
@@ -16,14 +38,21 @@ function ProductCard({ p }: { p: FranchiseProduct }) {
   const [active, setActive] = useState(p.active)
 
   async function save() {
+    const feeNum = parseBRNumber(fee)
+    if (Number.isNaN(feeNum)) { toast.error('Valor base inválido. Ex.: 80.000,00'); return }
+    const cvalNum = parseBRNumber(cval)
+    if (Number.isNaN(cvalNum)) { toast.error('Comissão inválida.'); return }
     try {
-      await update.mutateAsync({
+      const saved = await update.mutateAsync({
         id: p.id,
-        default_fee: parseFloat(fee) || 0,
+        default_fee: feeNum,
         commission_type: ctype,
-        commission_value: parseFloat(cval) || 0,
+        commission_value: cvalNum,
         active,
       })
+      // ressincroniza os campos com o que o banco confirmou
+      setFee(String(saved.default_fee))
+      setCval(String(saved.commission_value))
       toast.success(`${p.name} salvo`)
     } catch (e) {
       toast.error(translateError(e))
@@ -42,7 +71,7 @@ function ProductCard({ p }: { p: FranchiseProduct }) {
 
       <div className="space-y-1">
         <Label>Valor base do contrato (R$)</Label>
-        <Input type="number" step="0.01" min={0} value={fee} onChange={(e) => setFee(e.target.value)} placeholder="50000.00" />
+        <Input type="text" inputMode="decimal" value={fee} onChange={(e) => setFee(e.target.value)} placeholder="80.000,00" />
         <p className="text-[11px] text-muted-foreground">Preenche o valor por padrão no Novo Contrato (editável na venda).</p>
       </div>
 
@@ -59,7 +88,7 @@ function ProductCard({ p }: { p: FranchiseProduct }) {
         </div>
         <div className="space-y-1">
           <Label>{ctype === 'percent' ? 'Percentual (%)' : 'Valor (R$)'}</Label>
-          <Input type="number" step="0.01" min={0} value={cval} onChange={(e) => setCval(e.target.value)} placeholder={ctype === 'percent' ? '10' : '5000.00'} />
+          <Input type="text" inputMode="decimal" value={cval} onChange={(e) => setCval(e.target.value)} placeholder={ctype === 'percent' ? '10' : '5.000,00'} />
         </div>
       </div>
 

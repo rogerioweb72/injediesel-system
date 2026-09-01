@@ -29,7 +29,11 @@ export function useMyUnit() {
   max_discount_pct
 )`)
         .eq('user_id', user!.id)
-        .single()
+        .order('unit_id')
+        .limit(1)
+        .maybeSingle()   // usuário pode gerenciar MAIS de uma unidade — pega a 1ª
+                         // em vez de .single() (que dava erro com 2+ vínculos e
+                         // deslogava com "conta não vinculada a uma unidade")
       if (error) return null
       return data as {
         unit_id: string

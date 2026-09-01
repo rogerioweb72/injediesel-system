@@ -39,18 +39,16 @@ const MAX_BYTES = 10 * 1024 * 1024 // 10 MB — alinhado com EcuJobForm.tsx
 
 // Mantida em sync manual com src/lib/ecuFileTypes.ts (runtime Deno separado
 // do Vite, não dá pra importar de lá) — mudar uma exige mudar a outra.
-const ALLOWED_EXTENSIONS = new Set([
-  // binários universais
-  '.bin', '.ori', '.hex', '.s19', '.s28', '.s37', '.srec', '.mot', '.mxt',
-  // proprietários de ferramentas de tuning
-  '.kfg', '.bck', '.eprom', '.cod', '.dtf', '.bbf', '.srf', '.tun', '.cal', '.map',
-  '.ecu', '.rom', '.img', '.frf', '.fpf', '.sgm', '.sgo', '.sox', '.odx', '.a2l', '.xdf', '.damos', '.dam',
-  // dados/calibração
-  '.csv', '.xml', '.json', '.dat', '.log',
-  // containers/compactados
-  '.zip', '.rar', '.7z', '.gz', '.tar',
-  // texto/documentação
-  '.txt', '.pdf',
+// BLOCKLIST (não whitelist): bloqueia só executáveis/scripts perigosos. QUALQUER
+// outra extensão — todos os formatos de ECU do mundo, com ou sem extensão — é aceita.
+// Perseguir whitelist sempre deixava faltar formato e barrava arquivo legítimo.
+// A checagem de magic-bytes (hasDangerousHeader) é a 2ª camada contra executável
+// renomeado. Mantida em sync manual com src/lib/ecuFileTypes.ts (BLOCKED_ECU_EXTENSIONS).
+const BLOCKED_EXTENSIONS = new Set([
+  '.exe', '.msi', '.bat', '.cmd', '.com', '.scr', '.ps1', '.vbs', '.vbe',
+  '.js', '.mjs', '.jse', '.wsf', '.hta', '.sh', '.bash', '.php', '.phtml',
+  '.py', '.pl', '.rb', '.jar', '.app', '.apk', '.dll', '.so',
+  '.html', '.htm', '.xhtml', '.svg', '.lnk',
 ])
 
 // Max files a single job may upload per 24 hours before rate-limiting kicks in
@@ -205,9 +203,9 @@ serve(async (req) => {
 
   const bucket = resolveBucket(record.file_type)
 
-  // ── 1. Extension whitelist ─────────────────────────────────────────────────
+  // ── 1. Extension blocklist (só executável/script; aceita qualquer formato ECU) ──
   const ext = getExtension(record.file_name)
-  if (!ALLOWED_EXTENSIONS.has(ext)) {
+  if (ext && BLOCKED_EXTENSIONS.has(ext)) {
     await blockFile(bucket, record.id, record.r2_key, 'blocked_extension', { ext, file_name: record.file_name })
     return new Response(JSON.stringify({ status: 'blocked', reason: 'extension_not_allowed' }), {
       headers: { 'Content-Type': 'application/json' },

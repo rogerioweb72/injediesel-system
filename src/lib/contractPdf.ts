@@ -14,6 +14,8 @@ export interface ContractData {
   matriz_endereco: string
   matriz_cidade: string
   unidade_nome: string
+  razao_social?: string | null
+  representante_doc?: string | null   // "CNPJ 00.000.000/0000-00" ou "CPF 000.000.000-00"
   cidade: string
   uf: string
   raio?: string | null
@@ -46,6 +48,13 @@ export function buildContractDoc(d: ContractData) {
 
   const rg = d.responsavel_rg ? `, RG nº ${d.responsavel_rg}` : ''
 
+  // Identificação do REPRESENTANTE: usa razão social + documento quando houver (PJ),
+  // senão o nome fantasia. O documento (CNPJ/CPF) entra logo após.
+  const repDoc = d.representante_doc ? `, ${d.representante_doc}` : ''
+  const repHeader = d.razao_social
+    ? `${d.razao_social} (nome fantasia "${d.unidade_nome}")${repDoc}`
+    : `${d.unidade_nome}${repDoc}`
+
   return {
     pageMargins: [50, 55, 50, 55] as [number, number, number, number],
     info: { title: 'Contrato de Concessão de Uso de Marca e Parceria Comercial' },
@@ -54,7 +63,7 @@ export function buildContractDoc(d: ContractData) {
       { text: 'Pelo presente instrumento particular, as partes abaixo qualificadas celebram o presente Contrato de Concessão de Direito de Uso de Marca e Parceria Comercial, que se regerá pelas cláusulas seguintes.', style: 'p', margin: [0, 8, 0, 4] },
 
       ...clause(1, 'Das Partes',
-        `CONCEDENTE: INJEDIESEL PEÇAS E SERVIÇOS LTDA - ME, CNPJ nº 15.154.660/0001-02, Inscrição Estadual nº 90588183-37, Inscrição Municipal nº 813900-0, com sede em ${d.matriz_endereco}, e-mail contato@injediesel.com, doravante CONCEDENTE (marca INJEDIESEL POWER CHIP).\n\nREPRESENTANTE: ${d.unidade_nome}, representada por ${d.responsavel_nome}, CPF nº ${d.responsavel_cpf}${rg}, e-mail ${d.responsavel_email}, telefone ${d.responsavel_telefone}, doravante REPRESENTANTE (Parceiro Injediesel).`),
+        `CONCEDENTE: INJEDIESEL PEÇAS E SERVIÇOS LTDA - ME, CNPJ nº 15.154.660/0001-02, Inscrição Estadual nº 90588183-37, Inscrição Municipal nº 813900-0, com sede em ${d.matriz_endereco}, e-mail contato@injediesel.com, doravante CONCEDENTE (marca INJEDIESEL POWER CHIP).\n\nREPRESENTANTE: ${repHeader}, representada por ${d.responsavel_nome}, CPF nº ${d.responsavel_cpf}${rg}, e-mail ${d.responsavel_email}, telefone ${d.responsavel_telefone}, doravante REPRESENTANTE (Parceiro Injediesel).`),
 
       ...clause(2, 'Da Natureza do Contrato',
         'Este contrato tem natureza de concessão de direito de uso de marca e parceria comercial, não gerando vínculo societário, empregatício ou de rede de negócios com remuneração periódica fixa. Não há cobrança de royalties, mensalidade ou qualquer taxa periódica da CONCEDENTE sobre o REPRESENTANTE. A relação comercial recorrente se dá exclusivamente pela prestação de serviços descrita na Cláusula 5.'),

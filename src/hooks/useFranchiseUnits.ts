@@ -23,6 +23,14 @@ export interface FranchiseUnit {
   sale_seller_id?: string | null
   responsavel_legal_rg?: string | null
   sale_status?: string
+  // Aprovação / assinatura (migration 112). Opcionais.
+  approved_at?: string | null
+  sign_token?: string | null
+  sign_token_expires_at?: string | null
+  signed_at?: string | null
+  signed_by_name?: string | null
+  signed_ip?: string | null
+  signed_hash?: string | null
   inscricao_estadual: string | null
   cidade_fiscal: string | null
   website: string | null

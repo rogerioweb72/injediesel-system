@@ -39,6 +39,7 @@ const SupportTicketDetail = lazy(() => import('@/pages/app/suporte/SupportTicket
 const ConfigPage        = lazy(() => import('@/pages/app/configuracoes/ConfigPage'))
 const FinanceiroPage    = lazy(() => import('@/pages/app/financeiro/FinanceiroPage'))
 const VehicleDetailPage = lazy(() => import('@/pages/VehicleDetailPage'))
+const AssinarContrato   = lazy(() => import('@/pages/AssinarContrato'))
 const TabelaRemapPage   = lazy(() => import('@/pages/app/tabela-remap/TabelaRemapPage'))
 const FranqueadoCatalogPage   = lazy(() => import('@/pages/app/franqueados/FranqueadoCatalogPage'))
 const FranqueadoDashboard     = lazy(() => import('@/pages/app/franqueados/FranqueadoDashboard'))
@@ -151,6 +152,7 @@ const router = createBrowserRouter([
       { path: '/veiculos/:slug', element: <S><VehicleDetailPage /></S> },
       { path: '/appinjediesel',          element: <S><Login /></S> },
       { path: '/login',           element: <S><LoginParceiro /></S> },
+      { path: '/assinar/:token',  element: <S><AssinarContrato /></S> },
       { path: '/parceiro/login',  element: <Navigate to="/login" replace /> },
       { path: '/parceiro',        element: <Navigate to="/login" replace /> },
       {

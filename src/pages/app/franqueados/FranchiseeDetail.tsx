@@ -21,6 +21,7 @@ import { useFranchiseUnit, useDeleteFranchiseUnit, useUpdateFranchiseUnit, useSe
 import { useInviteFranchisee } from '@/hooks/useInviteFranchisee'
 import CobrancasEcuTab from '@/pages/app/franqueados/CobrancasEcuTab'
 import { RelatorioFranchiseeDrawer } from '@/pages/app/franqueados/RelatorioFranchiseeDrawer'
+import { UnitDocumentsCard } from '@/pages/app/franqueados/UnitDocumentsCard'
 import { useRelatorioPerm } from '@/hooks/useRelatorios'
 import type { ContractType } from '@/types/app'
 
@@ -363,6 +364,11 @@ export default function FranchiseeDetail() {
               <p className="text-sm text-muted-foreground">Datas não definidas. Edite a unidade para configurar.</p>
             </div>
           )}
+
+          {/* Documentos / Contratos (gerado + anexos antigos) */}
+          <div className="mt-6">
+            <UnitDocumentsCard unitId={unit.id} />
+          </div>
         </TabsContent>
 
         <TabsContent value="cobrancas" className="mt-4">

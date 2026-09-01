@@ -24,6 +24,7 @@ import { RelatorioFranchiseeDrawer } from '@/pages/app/franqueados/RelatorioFran
 import { UnitDocumentsCard } from '@/pages/app/franqueados/UnitDocumentsCard'
 import { SaleContractCard } from '@/pages/app/franqueados/SaleContractCard'
 import { FinanceiroContratoTab } from '@/pages/app/franqueados/FinanceiroContratoTab'
+import { ColaboradoresTab } from '@/pages/app/franqueados/ColaboradoresTab'
 import { useRelatorioPerm } from '@/hooks/useRelatorios'
 import type { ContractType } from '@/types/app'
 
@@ -209,6 +210,7 @@ export default function FranchiseeDetail() {
         <TabsList style={{ background: 'hsl(var(--pm-gray-900))' }}>
           <TabsTrigger value="dados" className="text-xs px-4">Dados da Unidade</TabsTrigger>
           <TabsTrigger value="cobrancas" className="text-xs px-4">Cobranças ECU</TabsTrigger>
+          <TabsTrigger value="colaboradores" className="text-xs px-4">Colaboradores</TabsTrigger>
           {unit.sale_status && unit.sale_status !== 'none' && (
             <TabsTrigger value="financeiro" className="text-xs px-4">Financeiro do Contrato</TabsTrigger>
           )}
@@ -383,6 +385,10 @@ export default function FranchiseeDetail() {
 
         <TabsContent value="cobrancas" className="mt-4">
           <CobrancasEcuTab unitId={id ?? ''} unitName={unit?.name ?? ''} />
+        </TabsContent>
+
+        <TabsContent value="colaboradores" className="mt-4">
+          <ColaboradoresTab unitId={unit.id} onInvite={() => setInviteOpen(true)} />
         </TabsContent>
 
         {unit.sale_status && unit.sale_status !== 'none' && (

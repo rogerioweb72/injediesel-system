@@ -23,6 +23,9 @@ SET search_path = public
 AS $$
 DECLARE
   v_url    text := 'https://ttnmvheptxedwninjedv.supabase.co/functions/v1/scan-ecu-file';
+  -- anon key PÚBLICA (mesma do bundle do frontend) — só p/ o gateway rotear a
+  -- requisição. A autenticação real é o WEBHOOK_SECRET em x-supabase-signature.
+  v_anon   text := 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0bm12aGVwdHhlZHduaW5qZWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNzkyMTYsImV4cCI6MjA5Nzc1NTIxNn0.NQlgxnPsAjjIyGswOnZsNXN1ckXNLtfvqlfRTD82a9E';
   v_secret text;
 BEGIN
   -- Secret do Vault; fallback p/ GUC app.webhook_secret se o Vault não estiver disponível.
@@ -45,7 +48,8 @@ BEGIN
     url     := v_url,
     headers := jsonb_build_object(
                  'Content-Type', 'application/json',
-                 'x-supabase-signature', v_secret
+                 'Authorization', 'Bearer ' || v_anon,       -- gateway (verify_jwt)
+                 'x-supabase-signature', v_secret             -- auth real da função
                ),
     body    := jsonb_build_object('record', jsonb_build_object(
                  'id',         NEW.id,

@@ -94,10 +94,10 @@ export function useFranchiseUnits({ q = '', page = 0, pageSize = 20 }: ListFilte
         // manager_name (conta vinculada) fica como fallback pesquisável quando existir.
         const safe = q.replace(/[,()]/g, ' ').trim()
         // Busca ampla nos campos comerciais da unidade (a view expõe fu.* + manager_name).
-        query = query.or([
+        const conds = [
           `name.ilike.%${safe}%`,               // nome fantasia
           `razao_social.ilike.%${safe}%`,
-          `cnpj.ilike.%${safe}%`,
+          `cnpj.ilike.%${safe}%`,               // casa se digitar COM pontuação
           `cpf.ilike.%${safe}%`,
           `city.ilike.%${safe}%`,               // cidade (ex.: Cascavel)
           `state.ilike.%${safe}%`,
@@ -107,7 +107,13 @@ export function useFranchiseUnits({ q = '', page = 0, pageSize = 20 }: ListFilte
           `responsavel_legal_nome.ilike.%${safe}%`,
           `responsavel_legal_email.ilike.%${safe}%`,
           `manager_name.ilike.%${safe}%`,       // conta gestora vinculada
-        ].join(','))
+        ]
+        // CNPJ/CPF digitados SÓ com números → casa nas colunas normalizadas (migration 118).
+        const digits = q.replace(/\D/g, '')
+        if (digits.length >= 3) {
+          conds.push(`cnpj_digits.ilike.%${digits}%`, `cpf_digits.ilike.%${digits}%`)
+        }
+        query = query.or(conds.join(','))
       }
       const { data, error, count } = await query
       if (error) throw error

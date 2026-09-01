@@ -293,6 +293,12 @@ function scan-ecu-file, POST, timeout 5000ms. Headers: `Content-type: applicatio
 Webhook só dispara em INSERT NOVO — arquivos enviados antes dele ficam presos em
 "Analisando" para sempre (não é bug; teste sempre com upload novo).
 
+> ⚠️ **ATUALIZAÇÃO 01/09/2026 — ver "ADENDO 01/09/2026" no fim do arquivo.** No Injediesel
+> esse Database Webhook do Dashboard **morreu/nunca ficou** → 100% dos downloads travaram.
+> Trocado por um **trigger `pg_net` versionado** (migration 115) + `scan-ecu-file`
+> `--no-verify-jwt` + download independente do scan enquanto o AV estiver off. Não depender
+> mais de config manual do Dashboard. Portar aos demais sistemas (Promax/EvoPro).
+
 ### 4B.4 — Modo skipped (sem VirusTotal, fase de teste)
 - Enum `scan_status` é fechado: pending/clean/infected/blocked. Adicionar 'skipped':
   `ALTER TYPE public.scan_status ADD VALUE IF NOT EXISTS 'skipped';` (SQL Editor,
@@ -991,3 +997,84 @@ custom redundante da Tatiane (`UPDATE profiles SET permissions = NULL WHERE emai
 
 **Cherry-pick Promax/EvoPro:** cargo finance_admin + RPCs de bloqueio/pagamento são base comum,
 portáveis (numeração de migration própria de cada repo).
+
+---
+
+## ADENDO 01/09/2026 — Regressão CRÍTICA: 100% dos downloads de ECU travados (gatilho do scan morto)
+
+> **Aplica-se aos 3 sistemas.** Mesma base de código → Promax e EvoPro quase certamente
+> têm o mesmo defeito. Relaciona-se diretamente à **Fase 4B.3** ("o gatilho que só existe
+> como comentário"): o disparo do `scan-ecu-file` dependia de um **Database Webhook do
+> Dashboard** (config fora do código) que parou de entregar / nunca foi criado.
+
+### Sintoma
+Todo download de arquivo ECU falha com **"Arquivo bloqueado — download não permitido"**
+(403) ou **"Análise de segurança ainda em andamento. Aguarde."** (409). Upload funciona;
+download não. Intermitente vira total.
+
+### Causa raiz (confirmada por dados)
+1. `scan-ecu-file` é disparado por um **Database Webhook do Dashboard** (não versionado).
+   Se ele some/desabilita/tem header errado, **nenhum arquivo é escaneado**.
+2. Sem scan, o arquivo fica `scan_status='pending'` (default do INSERT).
+3. O cron `poll-ecu-scans` (a cada 2 min) marca `blocked` todo `pending` > 1h **sem
+   `scan_analysis_id`**.
+4. `ecu-download-url` nega `blocked`/`infected` (403), e `pending`/sem `sha256_hex` (409)
+   → **100% dos downloads travam**.
+
+Sem `VIRUSTOTAL_API_KEY` o esperado era `skipped` (download liberado) — mas isso exige o
+`scan-ecu-file` **rodar**. Com o gatilho morto, ele nunca roda.
+
+### Detecção (rodar no SQL Editor de CADA sistema)
+```sql
+-- Se der muitos 'blocked'/'pending' com sem_analysis_id=true → gatilho morto.
+select scan_status, count(*) qtd,
+       count(*) filter (where scan_analysis_id is null) sem_analysis_id,
+       max(created_at) mais_recente
+from ecu_job_files group by scan_status order by qtd desc;
+```
+
+### Fix aplicado no Injediesel (portar aos demais — numeração/segredos PRÓPRIOS de cada repo)
+
+**1. Trigger `pg_net` versionado (substitui o webhook do Dashboard) — `migration 115_ecu_scan_trigger.sql`:**
+- `CREATE EXTENSION IF NOT EXISTS pg_net;` + trigger `AFTER INSERT ON ecu_job_files`
+  que chama `scan-ecu-file` via `net.http_post`.
+- Headers OBRIGATÓRIOS (aprendidos na marra):
+  - `Authorization: Bearer <ANON_KEY do projeto>` — **o gateway do Supabase exige** header
+    de auth pra rotear; sem ele = **401 UNAUTHORIZED_NO_AUTH_HEADER** antes do código.
+    ⚠️ A anon key é **por-projeto** (pública, vai no bundle). NÃO copiar a do Injediesel.
+  - `x-supabase-signature: <WEBHOOK_SECRET>` — auth real da função (`sig.includes(secret)`).
+- Segredo lido do **Vault**: `select vault.create_secret('<WEBHOOK_SECRET>', 'ecu_webhook_secret');`
+  (o trigger lê `vault.decrypted_secrets`). Fallback opcional: GUC `app.webhook_secret`.
+
+**2. `scan-ecu-file` deployado com `--no-verify-jwt`** (+ `[functions.scan-ecu-file] verify_jwt=false`
+no `config.toml`). A função já se autentica sozinha pelo `WEBHOOK_SECRET`; com `verify_jwt=true`
+o gateway barrava o trigger. `supabase functions deploy scan-ecu-file --no-verify-jwt`.
+
+**3. `WEBHOOK_SECRET` garantido igual nos 2 lados** (função ↔ Vault). No Injediesel foi
+rotacionado (`supabase secrets set WEBHOOK_SECRET=<64 hex>`) e o MESMO valor posto no Vault.
+Se divergir → **403 Forbidden** no check interno.
+
+**4. Download deixou de depender do scan quando o antivírus está OFF** (decisão de negócio:
+AV desativado por enquanto):
+- `ecu-download-url`: o gate de análise (`pending`/`!sha256_hex`/não-`clean`) só vale se
+  `VIRUSTOTAL_API_KEY` presente. Sem AV → libera (mantendo `infected`/`blocked` sempre).
+- `poll-ecu-scans`: só marca `pending`>1h como `blocked` se `VT_KEY` presente. Sem AV não
+  bloqueia — senão travaria downloads legítimos.
+- Efeito: **upload → baixa na hora**, sem depender do scan assíncrono. O trigger ainda roda
+  e carimba `skipped`+hash quando consegue (bônus), mas o download não fica refém dele.
+
+### Config manual (Rogério, por sistema)
+- `select vault.create_secret('<WEBHOOK_SECRET próprio>', 'ecu_webhook_secret');`
+- **Remover o Database Webhook antigo** do Dashboard (Database → Webhooks) pra não duplicar.
+- Trocar no trigger: **project ref** na URL (`https://<REF>.supabase.co/...`) e a **ANON_KEY**
+  própria (`supabase projects api-keys --project-ref <REF>`).
+
+### Gotchas por-projeto (NÃO copiar valores entre sistemas)
+- `WEBHOOK_SECRET`, `ANON_KEY` e **project ref** são de CADA projeto. Copiar do Injediesel
+  quebra (401/403).
+- Arquivos antigos com objeto R2 ausente dão `NoSuchKey` → `scan_status='error'` no re-scan;
+  são irrecuperáveis (não é bug do pipeline). Uploads novos (objeto presente) baixam normal.
+
+### Commits (Injediesel, branch `fix/ecu-scan-trigger` → main)
+`44dde0c` (trigger) · `9537668` (verify_jwt) · `b93c824` (Authorization no trigger) ·
+`6e13ce5` (download independente do scan). Migration 115 aplicada; functions deployadas.

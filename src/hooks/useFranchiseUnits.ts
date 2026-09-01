@@ -16,6 +16,13 @@ export interface FranchiseUnit {
   // expõe estas colunas; a ficha lê franchise_units direto e as recebe.
   cpf?: string | null
   document_type?: 'cnpj' | 'cpf'
+  // Venda de franquia (migration 109). Opcionais.
+  franchise_fee?: number | null
+  payment_plan?: string | null
+  sale_payment_method?: string | null
+  sale_seller_id?: string | null
+  responsavel_legal_rg?: string | null
+  sale_status?: string
   inscricao_estadual: string | null
   cidade_fiscal: string | null
   website: string | null
@@ -177,6 +184,31 @@ export function useCreateFranchiseUnit() {
     onSuccess: (u) => {
       qc.invalidateQueries({ queryKey: ['franchise-units'] })
       log({ entity: 'franchise_unit', entityId: u.id, action: 'created', metadata: { name: u.name } })
+    },
+  })
+}
+
+// Cria o contrato de venda de franquia: unidade nasce como RASCUNHO
+// (sale_status='pending', status='em_implantacao', active=false). NÃO convida nem
+// ativa — isso é feito depois, na aprovação/assinatura. Fluxo separado do
+// "Cadastrar Existente" (useCreateFranchiseUnit).
+export function useCreateFranchiseContract() {
+  const qc = useQueryClient()
+  const { log } = useAuditLog()
+  return useMutation({
+    mutationFn: async (payload: Partial<FranchiseUnit>) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from('franchise_units')
+        .insert({ ...payload, sale_status: 'pending', status: 'em_implantacao', active: false })
+        .select()
+        .single()
+      if (error) throw error
+      return data as FranchiseUnit
+    },
+    onSuccess: (u) => {
+      qc.invalidateQueries({ queryKey: ['franchise-units'] })
+      log({ entity: 'franchise_unit', entityId: u.id, action: 'contract_created', metadata: { name: u.name } })
     },
   })
 }

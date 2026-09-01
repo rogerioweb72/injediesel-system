@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -14,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PageHeader } from '@/components/shared/PageHeader'
 import { useUsers } from '@/hooks/useUsers'
 import { useCreateFranchiseContract } from '@/hooks/useFranchiseUnits'
+import { useFranchiseProducts } from '@/hooks/useFranchiseProducts'
 
 const schema = z.object({
   // Comercial
@@ -57,7 +59,9 @@ export default function NovoContratoPage() {
   const { data: users = [] } = useUsers()
   const sellers = users.filter((u) => u.role === 'seller' && u.active)
 
-  const { register, control, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { data: fProducts = [] } = useFranchiseProducts()
+
+  const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema) as any,
     defaultValues: {
@@ -70,6 +74,15 @@ export default function NovoContratoPage() {
       aceite: false,
     } as unknown as FormData,
   })
+
+  // Preenche o valor base a partir do produto de franquia do tipo selecionado.
+  const contractType = watch('contract_type')
+  useEffect(() => {
+    const prod = fProducts.find((p) => p.contract_type === contractType)
+    if (prod && prod.default_fee > 0) {
+      setValue('franchise_fee', prod.default_fee as unknown as number, { shouldValidate: false })
+    }
+  }, [contractType, fProducts, setValue])
 
   async function onSubmit(data: FormData) {
     try {

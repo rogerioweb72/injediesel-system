@@ -126,13 +126,17 @@ serve(async (req) => {
 
   // Block files stuck pending >1h with no analysis_id (webhook never fired or was rejected).
   // 'blocked' prevents download and surfaces in the Control Tower scan_error count.
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
-  await adminClient
-    .from('ecu_job_files')
-    .update({ scan_status: 'blocked', scan_checked_at: new Date().toISOString() })
-    .eq('scan_status', 'pending')
-    .is('scan_analysis_id', null)
-    .lt('created_at', oneHourAgo)
+  // SÓ quando o antivírus está ativo (VT_KEY). Sem AV não há análise a aguardar, então
+  // não faz sentido bloquear 'pending' — bloquear travaria downloads legítimos.
+  if (VT_KEY) {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+    await adminClient
+      .from('ecu_job_files')
+      .update({ scan_status: 'blocked', scan_checked_at: new Date().toISOString() })
+      .eq('scan_status', 'pending')
+      .is('scan_analysis_id', null)
+      .lt('created_at', oneHourAgo)
+  }
 
   return new Response(JSON.stringify({ clean, infected, stillPending }), {
     headers: { 'Content-Type': 'application/json' },

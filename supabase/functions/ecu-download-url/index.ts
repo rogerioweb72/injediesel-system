@@ -74,20 +74,25 @@ serve(async (req) => {
     )
   }
 
-  if (file.scan_status === 'pending' || !file.sha256_hex) {
-    return new Response(
-      JSON.stringify({ error: 'Análise de segurança ainda em andamento. Aguarde.' }),
-      { status: 409, headers: CORS },
-    )
-  }
-
-  // scan_status must be 'clean' (verified by antivirus) or 'skipped' (no antivirus
-  // configured — test mode; still passed extension/magic-byte checks) at this point.
-  if (file.scan_status !== 'clean' && file.scan_status !== 'skipped') {
-    return new Response(
-      JSON.stringify({ error: 'Arquivo não aprovado para download' }),
-      { status: 403, headers: CORS },
-    )
+  // Gate de análise só vale quando o antivírus está configurado (VIRUSTOTAL_API_KEY).
+  // Sem AV, os arquivos não passam por verificação antivírus e ficam disponíveis
+  // imediatamente após o upload — o download não depende do scan assíncrono. Os
+  // bloqueios explícitos 'infected'/'blocked' (acima) continuam valendo sempre.
+  const avEnabled = !!Deno.env.get('VIRUSTOTAL_API_KEY')
+  if (avEnabled) {
+    if (file.scan_status === 'pending' || !file.sha256_hex) {
+      return new Response(
+        JSON.stringify({ error: 'Análise de segurança ainda em andamento. Aguarde.' }),
+        { status: 409, headers: CORS },
+      )
+    }
+    // scan_status must be 'clean' (verified by antivirus) or 'skipped' at this point.
+    if (file.scan_status !== 'clean' && file.scan_status !== 'skipped') {
+      return new Response(
+        JSON.stringify({ error: 'Arquivo não aprovado para download' }),
+        { status: 403, headers: CORS },
+      )
+    }
   }
 
   // ── Generate short-lived presigned URL ─────────────────────────────────────

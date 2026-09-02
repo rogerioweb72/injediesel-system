@@ -22,6 +22,7 @@ import { toSlug } from '@/lib/slug'
 import { useSignIn } from '@/hooks/useSignIn'
 import { useLoginThrottle } from '@/hooks/useLoginThrottle'
 import { translateError } from '@/lib/errors'
+import { ProfileDialog } from '@/components/shared/ProfileDialog'
 
 const schema = z.object({
   email:    z.string().email('E-mail inválido'),
@@ -31,18 +32,23 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 export default function LoginParceiro() {
-  const { session, profile } = useAuthStore()
+  const { session, profile, hashRecoveryFlow } = useAuthStore()
   useProfile()
   const { data: myUnit, isLoading: unitLoading } = useMyUnit()
   const navigate = useNavigate()
 
   // Capture hash before supabase-js clears it
   const isInviteFlow = useRef(window.location.hash.includes('type=invite')).current
+  const isRecoveryFlow = useRef(window.location.hash.includes('type=recovery')).current
   const hasAuthToken = useRef(window.location.hash.includes('access_token=')).current
 
   useEffect(() => {
     if (isInviteFlow) useAuthStore.getState().setHashInviteFlow(true)
   }, [isInviteFlow])
+
+  useEffect(() => {
+    if (isRecoveryFlow) useAuthStore.getState().setHashRecoveryFlow(true)
+  }, [isRecoveryFlow])
 
   const [showPassword, setShowPassword] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
@@ -103,6 +109,11 @@ export default function LoginParceiro() {
   useEffect(() => {
     if (!session || !profile) return
 
+    // Recovery (esqueci senha): NÃO navegar/deslogar. A troca de senha acontece aqui
+    // mesmo, via ProfileDialog em recoveryMode. Antes, o myUnit ainda não resolvido
+    // caía no signOut abaixo e derrubava a sessão de recovery → voltava pro login.
+    if (hashRecoveryFlow) return
+
     if (!FRANCHISE_ROLES.includes(profile.role)) {
       supabase.auth.signOut()
       setMatrixRejected(true)
@@ -120,7 +131,7 @@ export default function LoginParceiro() {
     const unitSlug = toSlug(myUnit.franchise_units?.name ?? myUnit.unit_id)
     const agentSlug = toSlug(profile.name ?? profile.email)
     navigate(`/${unitSlug}/${agentSlug}/dashboard`, { replace: true })
-  }, [session, profile, myUnit, unitLoading, navigate])
+  }, [session, profile, myUnit, unitLoading, navigate, hashRecoveryFlow])
 
   const { signIn } = useSignIn()
   const { isThrottled, cooldownLeft } = useLoginThrottle()
@@ -181,6 +192,9 @@ export default function LoginParceiro() {
       `}</style>
 
       <LoginBackground />
+
+      {/* Recovery (esqueci senha): troca a senha aqui mesmo, sem navegar pro dashboard. */}
+      <ProfileDialog open={hashRecoveryFlow} recoveryMode forced onOpenChange={() => {}} />
 
       <div className="relative z-10 h-full w-full grid place-items-center px-4">
 

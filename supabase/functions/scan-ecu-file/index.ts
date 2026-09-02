@@ -18,6 +18,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { S3Client, GetObjectCommand, DeleteObjectCommand } from 'npm:@aws-sdk/client-s3'
 import { PUBLIC_CORS } from '../_shared/cors.ts'
+import { logEdgeError } from '../_shared/errorLog.ts'
 
 const VT_KEY = Deno.env.get('VIRUSTOTAL_API_KEY') ?? ''
 const VT_BASE = 'https://www.virustotal.com/api/v3'
@@ -343,6 +344,7 @@ serve(async (req) => {
     if (record?.id) {
       await markScanError(record.id, isRateLimit ? 'vt_rate_limited' : `scan_exception: ${String(err)}`)
     }
+    if (!isRateLimit) await logEdgeError('scan-ecu-file', err, { file_id: record?.id, r2_key: record?.r2_key })
     return new Response(
       JSON.stringify({ error: String(err), retryable: true }),
       { status: isRateLimit ? 429 : 500 },

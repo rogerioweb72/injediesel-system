@@ -65,6 +65,7 @@ const MatrizAjudaPage         = lazy(() => import('@/pages/app/ajuda/MatrizAjuda
 const HelpArticleForm         = lazy(() => import('@/pages/app/ajuda/HelpArticleForm'))
 const AuditoriaPage           = lazy(() => import('@/pages/app/auditoria/AuditoriaPage'))
 const ControlTowerPage        = lazy(() => import('@/pages/app/controlTower/ControlTowerPage'))
+const MonitoramentoPage       = lazy(() => import('@/pages/app/monitoramento/MonitoramentoPage'))
 const CaixaPage               = lazy(() => import('@/pages/app/caixa/CaixaPage'))
 const AcessoNegado            = lazy(() => import('@/pages/AcessoNegado'))
 
@@ -195,6 +196,7 @@ const router = createBrowserRouter([
           { path: 'ajuda/:id/editar',            element: <S><HelpArticleForm /></S> },
           { path: 'auditoria',                   element: <MS m="configuracoes"><AuditoriaPage /></MS> },
           { path: 'control-tower',               element: <S><ControlTowerPage /></S> },
+          { path: 'monitoramento',               element: <S><RoleGuard allowedRoles={['system_ti']} redirectTo="/acesso-negado"><MonitoramentoPage /></RoleGuard></S> },
           { path: 'loja',                        element: <EmBreve titulo="Loja Online" /> },
         ],
       },

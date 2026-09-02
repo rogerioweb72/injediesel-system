@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Files, Users, Building2,
   Package, ShoppingBag,
   Headphones, Settings,
-  ClipboardList, Megaphone, HelpCircle, BookOpen, Shield, RefreshCw, BarChart3,
+  ClipboardList, Megaphone, HelpCircle, BookOpen, Shield, RefreshCw, BarChart3, Activity,
 } from 'lucide-react'
 
 function IconTabelaRemap({ className, size = 24 }: { className?: string; size?: number }) {
@@ -177,6 +177,9 @@ export function Sidebar({ mode, onTogglePin, onNavClick }: SidebarProps) {
         )}
         {permConfig.canView && (
           <NavItem to={`${prefix}/auditoria`} icon={Shield} label="Auditoria" collapsed={collapsed} onNavigate={onNavClick} />
+        )}
+        {hasRole('system_ti') && (
+          <NavItem to={`${prefix}/monitoramento`} icon={Activity} label="Monitoramento" collapsed={collapsed} onNavigate={onNavClick} />
         )}
         <NavItem to={`${prefix}/ajuda`} icon={HelpCircle} label="Base de Conhecimento" collapsed={collapsed} onNavigate={onNavClick} />
         <div className="h-px mx-3 my-1 bg-[hsl(var(--pm-gray-800))]" />

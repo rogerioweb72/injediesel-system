@@ -6,10 +6,12 @@ import { toast } from 'sonner'
 import { syncProfile } from '@/lib/profileSync'
 import { logSecurityEvent } from '@/lib/auditLog'
 import { initSentry } from '@/lib/sentry'
+import { logError, installGlobalErrorLogging } from '@/lib/errorLog'
 import '@/index.css'
 import { AppRouter } from '@/router'
 
 initSentry()
+installGlobalErrorLogging()
 
 // PostgREST / Supabase error codes que indicam falha de sessão (JWT expirado etc.)
 const AUTH_ERROR_CODES = new Set(['PGRST301', 'PGRST302'])
@@ -64,10 +66,12 @@ const queryClient = new QueryClient({
         logSecurityEvent('rls_violation', { error: String((error as unknown as Record<string, unknown>).message) })
         toast.error('Você não tem permissão para executar esta ação.')
         Sentry.captureException(error, { extra: { queryKey: query.queryKey } })
+        logError(error, { source: 'db', level: 'warn', extra: { queryKey: query.queryKey } })
       } else if (isAuthError(error)) {
         handleAuthError()
       } else {
         Sentry.captureException(error, { extra: { queryKey: query.queryKey } })
+        logError(error, { extra: { queryKey: query.queryKey } })
       }
     },
   }),
@@ -77,10 +81,12 @@ const queryClient = new QueryClient({
         logSecurityEvent('rls_violation', { error: String((error as unknown as Record<string, unknown>).message) })
         toast.error('Você não tem permissão para executar esta ação.')
         Sentry.captureException(error, { extra: { mutationKey: mutation.options.mutationKey } })
+        logError(error, { source: 'db', level: 'warn', extra: { mutationKey: mutation.options.mutationKey } })
       } else if (isAuthError(error)) {
         handleAuthError()
       } else {
         Sentry.captureException(error, { extra: { mutationKey: mutation.options.mutationKey } })
+        logError(error, { extra: { mutationKey: mutation.options.mutationKey } })
       }
     },
   }),

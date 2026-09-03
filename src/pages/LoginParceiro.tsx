@@ -128,8 +128,11 @@ export default function LoginParceiro() {
       return
     }
 
-    const unitSlug = toSlug(myUnit.franchise_units?.name ?? myUnit.unit_id)
-    const agentSlug = toSlug(profile.name ?? profile.email)
+    const unitSlug = toSlug(myUnit.franchise_units?.name || myUnit.unit_id)
+    // || (não ??): name vazio "" precisa cair pro email, senão o slug fica vazio,
+    // a URL vira /unidade//dashboard, colapsa p/ 2 segmentos e casa no layout da
+    // matriz → RoleGuard de matriz recusa a franquia → ACESSO NEGADO.
+    const agentSlug = toSlug(profile.name || profile.email) || 'u'
     navigate(`/${unitSlug}/${agentSlug}/dashboard`, { replace: true })
   }, [session, profile, myUnit, unitLoading, navigate, hashRecoveryFlow])
 
@@ -169,7 +172,7 @@ export default function LoginParceiro() {
         return
       }
 
-      const agentSlug = toSlug(loadedProfile.name ?? loadedProfile.email)
+      const agentSlug = toSlug(loadedProfile.name || loadedProfile.email) || 'u'
       const unitSlug = toSlug(unitName)
       navigate(`/${unitSlug}/${agentSlug}/dashboard`, { replace: true })
     } catch (err) {

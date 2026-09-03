@@ -15,6 +15,8 @@ import { NovoLancamentoModal } from '@/pages/app/caixa/NovoLancamentoModal'
 import { FRANCHISE_ROLES } from '@/types/app'
 import { TunerLogo } from '@/components/branding/TunerLogo'
 import { usePageHeaderContext } from '@/contexts/PageHeaderContext'
+import { SoundControl } from './SoundControl'
+import { useNewFileSound } from '@/hooks/useNewFileSound'
 import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
 import { ProfileDialog } from '@/components/shared/ProfileDialog'
 import { useMustSetPassword } from '@/hooks/useMustSetPassword'
@@ -95,6 +97,7 @@ export function TopBar({ sidebarExpanded, isMobile = false, onMobileMenuToggle }
 
   const prefix = useRoutePrefix()
   const { total: notifTotal, items: notifItems } = useNotifications(prefix)
+  useNewFileSound()  // toca o som quando chega arquivo novo (respeita silêncio)
   const isDashboard = location.pathname.endsWith('/dashboard')
   const firstName   = profile?.name?.split(' ')[0] ?? ''
   const initials    = profile?.name
@@ -204,6 +207,7 @@ export function TopBar({ sidebarExpanded, isMobile = false, onMobileMenuToggle }
             </Button>
           </>
         )}
+        <SoundControl />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">

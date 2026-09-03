@@ -7,11 +7,13 @@ import { syncProfile } from '@/lib/profileSync'
 import { logSecurityEvent } from '@/lib/auditLog'
 import { initSentry } from '@/lib/sentry'
 import { logError, installGlobalErrorLogging } from '@/lib/errorLog'
+import { installAudioUnlock } from '@/lib/notificationSound'
 import '@/index.css'
 import { AppRouter } from '@/router'
 
 initSentry()
 installGlobalErrorLogging()
+installAudioUnlock()
 
 // PostgREST / Supabase error codes que indicam falha de sessão (JWT expirado etc.)
 const AUTH_ERROR_CODES = new Set(['PGRST301', 'PGRST302'])

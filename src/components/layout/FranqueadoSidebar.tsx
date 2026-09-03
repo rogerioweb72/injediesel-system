@@ -110,7 +110,7 @@ export function FranqueadoSidebar({ mode, onTogglePin }: FranqueadoSidebarProps)
           aria-hidden={!isExpanded}
           style={{
             opacity: isExpanded ? 1 : 0,
-            maxWidth: isExpanded ? '180px' : '0px',
+            maxWidth: isExpanded ? '120px' : '0px',
             overflow: 'hidden',
             transition: `opacity var(--pm-duration-base) var(--pm-ease-out),
                          max-width var(--pm-duration-base) var(--pm-ease-out)`,

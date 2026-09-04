@@ -86,9 +86,23 @@ export default function FranchiseeDetail() {
   if (isLoading || !unit) return <div className="pm-skeleton h-64 w-full rounded" />
 
   async function handleDelete() {
-    await deleteUnit.mutateAsync({ id: unit!.id, name: unit!.name })
-    setDeleteOpen(false)
-    navigate(`${prefix}/franqueados`)
+    try {
+      await deleteUnit.mutateAsync({ id: unit!.id, name: unit!.name })
+      setDeleteOpen(false)
+      toast.success('Unidade excluída.')
+      navigate(`${prefix}/franqueados`)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (msg.includes('unit_has_history')) {
+        toast.error('Unidade tem histórico (clientes, jobs, lançamentos ou pedidos) — não pode ser excluída. Suspenda ou encerre em vez de excluir.')
+      } else if (msg.includes('forbidden')) {
+        toast.error('Sem permissão para excluir unidades (apenas TI / admin da matriz).')
+      } else if (msg.includes('unit_not_found')) {
+        toast.error('Unidade não encontrada — talvez já tenha sido excluída.')
+      } else {
+        toast.error('Falha ao excluir a unidade: ' + msg)
+      }
+    }
   }
 
   async function handleUpgrade() {
@@ -145,7 +159,7 @@ export default function FranchiseeDetail() {
     <div className="space-y-6">
       <PageHeader
         title={unit.name}
-        subtitle={unit.city && unit.state ? `${unit.city} — ${unit.state}` : undefined}
+        subtitle={[unit.unit_code, unit.city && unit.state ? `${unit.city} — ${unit.state}` : (unit.city ?? unit.state ?? null)].filter(Boolean).join(' · ') || undefined}
       />
 
       <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -302,6 +316,7 @@ export default function FranchiseeDetail() {
             {/* Identificação */}
             <div className="pm-card space-y-4">
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Identificação</p>
+              <InfoRow label="Código da unidade" value={unit.unit_code} />
               <InfoRow label="Nome Fantasia"     value={unit.name} />
               <InfoRow label="Razão Social"      value={unit.razao_social} />
               <InfoRow

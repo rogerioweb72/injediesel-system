@@ -227,6 +227,7 @@ function PerfilDadosUnidade({ unit }: { unit: UnitData | undefined }) {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
+        <LockedInput label="Código da unidade"          value={unit?.unit_code} />
         <LockedInput label="Nome fantasia"              value={unit?.name} />
         <LockedInput label="Razão social"               value={unit?.razao_social} />
         <LockedInput label={unit?.document_type === 'cpf' ? 'CPF' : 'CNPJ'} value={unit?.document_type === 'cpf' ? unit?.cpf : unit?.cnpj} />

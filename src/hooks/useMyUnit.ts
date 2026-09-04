@@ -20,7 +20,7 @@ export function useMyUnit() {
       const { data, error } = await (supabase as any)
         .from('user_unit_roles')
         .select(`unit_id, franchise_units(
-  id, name, city, state, cep, logradouro, numero, complemento, bairro,
+  id, name, unit_code, city, state, cep, logradouro, numero, complemento, bairro,
   contract_type, contract_start_date, contract_end_date,
   contract_blocked, contract_blocked_reason,
   razao_social, cnpj, cpf, document_type, inscricao_estadual, data_abertura,
@@ -42,6 +42,7 @@ export function useMyUnit() {
         unit_id: string
         franchise_units: {
           id: string; name: string
+          unit_code: string | null
           city: string | null; state: string | null
           cep: string | null; logradouro: string | null
           numero: string | null; complemento: string | null; bairro: string | null

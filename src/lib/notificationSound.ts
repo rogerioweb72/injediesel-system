@@ -54,35 +54,63 @@ export function installAudioUnlock(): void {
   window.addEventListener('keydown', unlock, { once: false })
 }
 
-function tone(c: AC, freq: number, start: number, dur: number, vol = 0.22) {
+// Cadeia master: compressor (empurra o volume sem clipar feio) → gain alto →
+// saída. Deixa o alerta MUITO mais alto que o bip discreto anterior.
+function masterChain(c: AC): AudioNode {
+  const comp = c.createDynamicsCompressor()
+  comp.threshold.setValueAtTime(-18, c.currentTime)
+  comp.ratio.setValueAtTime(12, c.currentTime)
+  comp.attack.setValueAtTime(0.002, c.currentTime)
+  comp.release.setValueAtTime(0.15, c.currentTime)
+  const master = c.createGain()
+  master.gain.setValueAtTime(0.95, c.currentTime)  // bem alto
+  comp.connect(master)
+  master.connect(c.destination)
+  return comp
+}
+
+// Um "toque" de campainha (telefone antigo / iFood): onda quadrada com warble
+// rápido entre dois tons — timbre estridente, difícil de ignorar.
+function ringAt(c: AC, dest: AudioNode, t0: number, dur = 0.5, vol = 0.85) {
   const osc = c.createOscillator()
   const gain = c.createGain()
-  osc.type = 'sine'
-  osc.frequency.setValueAtTime(freq, start)
+  osc.type = 'square'  // muito mais "alto" percebido que sine
+
+  // warble ~30 Hz entre 640 e 480 Hz (brrrring da campainha)
+  const steps = 30
+  const freqs = new Float32Array(steps)
+  for (let i = 0; i < steps; i++) freqs[i] = i % 2 === 0 ? 660 : 495
+  osc.frequency.setValueCurveAtTime(freqs, t0, dur)
+
+  gain.gain.setValueAtTime(0.0001, t0)
+  gain.gain.exponentialRampToValueAtTime(vol, t0 + 0.012)
+  gain.gain.setValueAtTime(vol, t0 + dur - 0.06)
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur)
+
   osc.connect(gain)
-  gain.connect(c.destination)
-  gain.gain.setValueAtTime(0.0001, start)
-  gain.gain.exponentialRampToValueAtTime(vol, start + 0.02)
-  gain.gain.exponentialRampToValueAtTime(0.0001, start + dur)
-  osc.start(start)
-  osc.stop(start + dur + 0.02)
+  gain.connect(dest)
+  osc.start(t0)
+  osc.stop(t0 + dur + 0.02)
 }
 
-// Um "toque": duas notas ascendentes (di-din), timbre suave tipo campainha.
-function chimeAt(c: AC, t0: number) {
-  tone(c, 880.0, t0, 0.16)          // A5
-  tone(c, 1318.5, t0 + 0.14, 0.30)  // E6
+// Toque duplo (brrring-brrring), como telefone antigo.
+function doubleRing(c: AC, dest: AudioNode, t0: number) {
+  ringAt(c, dest, t0)
+  ringAt(c, dest, t0 + 0.62)
 }
 
-// Toca o chime até 2x (a chegada de arquivo novo). Respeita enabled + silêncio.
+// Alerta de arquivo novo: 3 toques duplos espaçados = barulhão longo e alto.
+// Respeita enabled + silêncio.
 export function playNewFileSound(force = false): void {
   if (!force && (!isSoundEnabled() || isSilenced())) return
   const c = getCtx()
   if (!c) return
   const go = () => {
+    const dest = masterChain(c)
     const now = c.currentTime
-    chimeAt(c, now)
-    chimeAt(c, now + 0.62)  // 2ª vez
+    doubleRing(c, dest, now)
+    doubleRing(c, dest, now + 1.5)
+    doubleRing(c, dest, now + 3.0)
   }
   if (c.state === 'suspended') c.resume().then(go).catch(() => {})
   else go()

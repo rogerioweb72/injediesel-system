@@ -68,6 +68,8 @@ export interface FranchiseUnit {
   limite_colaboradores: number | null
   observacoes_internas: string | null
   created_at: string
+  // Código legível único da unidade (migration 124), ex.: SAM-CAS-01.
+  unit_code: string | null
   // Preenchido pela view v_franchise_units (join com profiles pelo manager_id).
   manager_name?: string | null
 }
@@ -96,6 +98,7 @@ export function useFranchiseUnits({ q = '', page = 0, pageSize = 20 }: ListFilte
         // Busca ampla nos campos comerciais da unidade (a view expõe fu.* + manager_name).
         const conds = [
           `name.ilike.%${safe}%`,               // nome fantasia
+          `unit_code.ilike.%${safe}%`,          // código da unidade (ex.: SAM-CAS-01)
           `razao_social.ilike.%${safe}%`,
           `cnpj.ilike.%${safe}%`,               // casa se digitar COM pontuação
           `cpf.ilike.%${safe}%`,
@@ -196,7 +199,7 @@ export function useUnitUsers(unitId: string) {
   })
 }
 
-type CreatePayload = Omit<FranchiseUnit, 'id' | 'created_at'>
+type CreatePayload = Omit<FranchiseUnit, 'id' | 'created_at' | 'unit_code'>
 
 export function useCreateFranchiseUnit() {
   const qc = useQueryClient()
@@ -291,8 +294,11 @@ export function useDeleteFranchiseUnit() {
   const { log } = useAuditLog()
   return useMutation({
     mutationFn: async ({ id }: { id: string; name?: string }) => {
+      // Via RPC SECURITY DEFINER (migration 123): gated a system_ti/company_admin,
+      // bloqueia unidade com histórico e — ao contrário do delete client direto —
+      // erra de verdade em vez de "sucesso" silencioso quando nada é excluído.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any).from('franchise_units').delete().eq('id', id)
+      const { error } = await (supabase as any).rpc('admin_delete_franchise_unit', { p_id: id })
       if (error) throw error
       return id
     },

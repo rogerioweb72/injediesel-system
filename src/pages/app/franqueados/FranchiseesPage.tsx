@@ -40,7 +40,19 @@ const STATUS_COLORS: Record<UnitStatus, { bg: string; color: string; label: stri
 }
 
 const COLUMNS: Column<FranchiseUnit>[] = [
-  { key: 'name', header: 'Nome' },
+  {
+    key: 'name', header: 'Nome',
+    cell: (r) => (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <span>{r.name}</span>
+        {r.unit_code && (
+          <span style={{ fontFamily: 'var(--pm-font-mono, monospace)', fontSize: 10, color: '#8A8F98', letterSpacing: 0.5 }}>
+            {r.unit_code}
+          </span>
+        )}
+      </div>
+    ),
+  },
   {
     key: 'location', header: 'Localidade',
     cell: (r) => r.city && r.state ? `${r.city} — ${r.state}` : r.city ?? r.state ?? '—',

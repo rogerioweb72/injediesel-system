@@ -6,7 +6,7 @@ import {
   ChevronRight, AlertCircle, AlertTriangle, MessageSquarePlus, X,
   CreditCard, CheckCircle2, Loader2, ShieldAlert, ArrowUp, ArrowDown,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, parseBRLMoney, parseMoneyCapped, MAX_MONEY } from '@/lib/utils'
 import { ECU_ACCEPTED_EXTENSIONS } from '@/lib/ecuFileTypes'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -23,7 +23,11 @@ import {
   useEcuJobPriceAdjustments, useAddEcuJobPriceAdjustment,
   type EcuJob,
 } from '@/hooks/useEcuJobs'
-import { useUploadEcuFile, useDownloadEcuFile, useEcuJobFilesRealtime } from '@/hooks/useEcuFiles'
+import {
+  useUploadEcuFile, useDownloadEcuFile, useEcuJobFilesRealtime,
+  useDeleteEcuFileFranchise, useReplaceEcuFileFranchise, useReportWrongEcuFile,
+  useInvalidateEcuFile, useDeleteEcuFileMatrix,
+} from '@/hooks/useEcuFiles'
 import { useCreateSupportTicket } from '@/hooks/useSupportTickets'
 import { useUsers } from '@/hooks/useUsers'
 import { useMyUnit } from '@/hooks/useMyUnit'
@@ -285,8 +289,13 @@ function AddPriceAdjustmentModal({ open, onClose, jobId }: {
   }
 
   async function handleSubmit() {
-    const value = Number(amount)
-    if (!amount || Number.isNaN(value) || value === 0) { toast.error('Informe um valor diferente de zero'); return }
+    // ajuste aceita sinal (+acréscimo / -desconto)
+    const raw = amount.trim()
+    const neg = raw.startsWith('-')
+    const parsed = parseBRLMoney(raw.replace(/^-/, ''))
+    if (parsed == null || parsed === 0) { toast.error('Informe um valor diferente de zero'); return }
+    if (parsed > MAX_MONEY) { toast.error(`Valor máximo: ${formatCurrency(MAX_MONEY)}`); return }
+    const value = neg ? -parsed : parsed
     if (!reason.trim()) { toast.error('Descreva o motivo do ajuste'); return }
     try {
       await addAdjustment.mutateAsync({ jobId, amount: value, reason: reason.trim() })
@@ -357,6 +366,12 @@ export default function EcuJobDetail() {
   const [editingCustomerPrice, setEditingCustomerPrice] = useState(false)
   const [customerPriceDraft, setCustomerPriceDraft] = useState('')
   const [addAdjustmentOpen, setAddAdjustmentOpen] = useState(false)
+  // ── apagar/substituir/inutilizar arquivo (migration 120) ──
+  const replaceFileRef = useRef<HTMLInputElement>(null)
+  const [replaceTargetId, setReplaceTargetId] = useState<string | null>(null)
+  const [confirmDeleteFile, setConfirmDeleteFile] = useState<{ fileId: string; matrix: boolean } | null>(null)
+  const [reasonDialog, setReasonDialog] = useState<{ mode: 'report' | 'invalidate'; fileId: string } | null>(null)
+  const [reasonText, setReasonText] = useState('')
 
   const { data: job, isLoading } = useEcuJob(id ?? '')
   useEcuJobFilesRealtime(id ?? '')
@@ -368,6 +383,11 @@ export default function EcuJobDetail() {
   const { data: priceAdjustments = [] } = useEcuJobPriceAdjustments(job?.created_by_matrix ? (id ?? '') : '')
   const uploadFile   = useUploadEcuFile()
   const downloadFile = useDownloadEcuFile()
+  const deleteFileFranchise  = useDeleteEcuFileFranchise()
+  const replaceFileFranchise = useReplaceEcuFileFranchise()
+  const reportWrongFile      = useReportWrongEcuFile()
+  const invalidateFile       = useInvalidateEcuFile()
+  const deleteFileMatrix     = useDeleteEcuFileMatrix()
   const assignJob    = useAssignEcuJob()
   const { isMatrixUser, isFranchiseUser, hasRole } = useProfile()
   // B.3: técnico responsável — só matriz atribui, franquia só lê. Sem role
@@ -464,6 +484,57 @@ export default function EcuJobDetail() {
       }
     }
     downloadFile.mutate({ fileId: f.id, fileName: f.file_name })
+  }
+
+  // ── apagar/substituir/inutilizar arquivo (migration 120) ──
+  function handleReplaceClick(fileId: string) {
+    setReplaceTargetId(fileId)
+    replaceFileRef.current?.click()
+  }
+
+  async function handleReplaceSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    const oldFileId = replaceTargetId
+    setReplaceTargetId(null)
+    if (!file || !oldFileId || !job) return
+    try {
+      await replaceFileFranchise.mutateAsync({ jobId: job.id, oldFileId, file })
+      toast.success('Arquivo substituído.')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Falha ao substituir o arquivo.')
+    }
+  }
+
+  async function handleConfirmDeleteFile() {
+    if (!confirmDeleteFile || !job) return
+    const { fileId, matrix } = confirmDeleteFile
+    try {
+      if (matrix) await deleteFileMatrix.mutateAsync({ fileId, jobId: job.id })
+      else        await deleteFileFranchise.mutateAsync({ fileId, jobId: job.id })
+      toast.success('Arquivo excluído.')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Falha ao excluir o arquivo.')
+    }
+    setConfirmDeleteFile(null)
+  }
+
+  async function handleConfirmReason() {
+    if (!reasonDialog || !job) return
+    const { mode, fileId } = reasonDialog
+    try {
+      if (mode === 'report') {
+        await reportWrongFile.mutateAsync({ fileId, jobId: job.id, reason: reasonText })
+        toast.success('Matriz avisada: arquivo marcado como errado.')
+      } else {
+        await invalidateFile.mutateAsync({ fileId, jobId: job.id, reason: reasonText })
+        toast.success('Arquivo inutilizado.')
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Falha na operação.')
+    }
+    setReasonDialog(null)
+    setReasonText('')
   }
 
   async function handleSendToFinance() {
@@ -674,7 +745,9 @@ export default function EcuJobDetail() {
                         size="sm" disabled={setCustomerPrice.isPending || !customerPriceDraft}
                         style={{ background: 'var(--pm-accent-gradient)' }}
                         onClick={async () => {
-                          await setCustomerPrice.mutateAsync({ id: job.id, amount: Number(customerPriceDraft) })
+                          const { value, error } = parseMoneyCapped(customerPriceDraft)
+                          if (error || value == null) { toast.error(error ?? 'Valor inválido'); return }
+                          await setCustomerPrice.mutateAsync({ id: job.id, amount: value })
                           setEditingCustomerPrice(false)
                           setCustomerPriceDraft('')
                         }}
@@ -708,7 +781,9 @@ export default function EcuJobDetail() {
                         size="sm" disabled={setPrice.isPending || !matrixPrice}
                         style={{ background: 'var(--pm-accent-gradient)' }}
                         onClick={async () => {
-                          await setPrice.mutateAsync({ id: job.id, amount: Number(matrixPrice) })
+                          const { value, error } = parseMoneyCapped(matrixPrice)
+                          if (error || value == null) { toast.error(error ?? 'Valor inválido'); return }
+                          await setPrice.mutateAsync({ id: job.id, amount: value })
                           setEditingPrice(false)
                           setMatrixPrice('')
                         }}
@@ -906,6 +981,14 @@ export default function EcuJobDetail() {
                 onChange={handleMatrixFileSelect}
               />
             )}
+            {/* franquia: input oculto p/ substituir o original antes do aceite */}
+            {isFranchise && (
+              <input
+                ref={replaceFileRef} type="file" className="hidden"
+                accept={ECU_ACCEPTED_EXTENSIONS}
+                onChange={handleReplaceSelect}
+              />
+            )}
 
             {files.length === 0 ? (
               <div className="pm-card flex items-center gap-3 py-8 justify-center text-muted-foreground">
@@ -917,11 +1000,20 @@ export default function EcuJobDetail() {
                 {files.map((f) => {
                   const isModificado = f.file_type === 'entrega'
                   const isCorrecao   = f.file_type === 'correcao'
+                  const isOriginal   = f.file_type === 'original'
+                  const isInvalid    = !!f.invalidated
+                  const isReported   = !!f.reported_wrong
+                  // franquia: apaga/substitui só o original ANTES do aceite (status='recebido')
+                  const franchiseCanEdit = isFranchise && isOriginal && job.status === 'recebido'
+                  // franquia: avisa a matriz (pós-aceite), enquanto não invalidado/reportado
+                  const franchiseCanReport = isFranchise && !isInvalid && !isReported
+                    && job.status !== 'recebido' && job.status !== 'cancelado'
                   return (
                   <div key={f.id} className={cn(
-                    'flex items-center gap-3 p-3',
+                    'flex items-center gap-3 p-3 flex-wrap',
                     isModificado && 'bg-green-500/[0.06]',
                     isCorrecao && 'bg-amber-500/[0.06]',
+                    isInvalid && 'opacity-50 grayscale',
                   )}>
                     {/* Tipo: ícone + título lado a lado, na mesma linha vertical — o
                         que precisa ficar óbvio de cara é ORIGINAL vs MODIFICADO vs CORREÇÃO. */}
@@ -939,16 +1031,28 @@ export default function EcuJobDetail() {
                     </div>
                     <div className="w-px self-stretch bg-white/10 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground truncate">{f.file_name}</p>
+                      <p className={cn('text-sm truncate', isInvalid ? 'line-through text-muted-foreground' : 'text-foreground')}>
+                        {f.file_name}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {formatBytes(f.size_bytes)} · {formatDateTime(f.created_at)}
                       </p>
+                      {isInvalid && (
+                        <p className="text-xs font-bold text-red-400 mt-0.5 flex items-center gap-1">
+                          <AlertTriangle size={12} /> ARQUIVO ERRADO{f.invalidated_reason ? ` — ${f.invalidated_reason}` : ''}
+                        </p>
+                      )}
+                      {isReported && !isInvalid && (
+                        <p className="text-xs font-semibold text-amber-400 mt-0.5 flex items-center gap-1">
+                          <AlertCircle size={12} /> Reportado como errado pela franquia{f.reported_reason ? ` — ${f.reported_reason}` : ''}
+                        </p>
+                      )}
                     </div>
                     <Button
                       size="sm"
-                      disabled={f.r2_key.startsWith('mock/') || downloadFile.isPending}
+                      disabled={f.r2_key.startsWith('mock/') || isInvalid || downloadFile.isPending}
                       className={cn(
-                        f.r2_key.startsWith('mock/')
+                        (f.r2_key.startsWith('mock/') || isInvalid)
                           ? 'opacity-40 cursor-not-allowed'
                           : 'bg-green-600 hover:bg-green-500 text-white border-0 gap-1.5',
                       )}
@@ -956,6 +1060,65 @@ export default function EcuJobDetail() {
                     >
                       Baixar
                     </Button>
+
+                    {/* franquia — antes do aceite: substituir / excluir */}
+                    {franchiseCanEdit && (
+                      <>
+                        <Button
+                          size="sm" variant="outline"
+                          disabled={replaceFileFranchise.isPending || deleteFileFranchise.isPending}
+                          onClick={() => handleReplaceClick(f.id)}
+                          className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10 hover:text-blue-300"
+                        >
+                          <Upload size={14} className="mr-1" /> Substituir
+                        </Button>
+                        <Button
+                          size="sm" variant="outline"
+                          disabled={replaceFileFranchise.isPending || deleteFileFranchise.isPending}
+                          onClick={() => setConfirmDeleteFile({ fileId: f.id, matrix: false })}
+                          className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                        >
+                          <X size={14} className="mr-1" /> Excluir
+                        </Button>
+                      </>
+                    )}
+
+                    {/* franquia — depois do aceite: avisar a matriz */}
+                    {franchiseCanReport && (
+                      <Button
+                        size="sm" variant="outline"
+                        onClick={() => { setReasonText(''); setReasonDialog({ mode: 'report', fileId: f.id }) }}
+                        className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300"
+                      >
+                        <AlertTriangle size={14} className="mr-1" /> Avisar: errado
+                      </Button>
+                    )}
+                    {isFranchise && isReported && !isInvalid && (
+                      <span className="text-xs font-mono uppercase text-amber-400/70 px-2">aguardando matriz</span>
+                    )}
+
+                    {/* matriz — inutilizar / excluir */}
+                    {isMatrixUser() && (
+                      <>
+                        {!isInvalid && (
+                          <Button
+                            size="sm" variant="outline"
+                            onClick={() => { setReasonText(''); setReasonDialog({ mode: 'invalidate', fileId: f.id }) }}
+                            className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300"
+                          >
+                            <ShieldAlert size={14} className="mr-1" /> Inutilizar
+                          </Button>
+                        )}
+                        <Button
+                          size="sm" variant="outline"
+                          disabled={deleteFileMatrix.isPending}
+                          onClick={() => setConfirmDeleteFile({ fileId: f.id, matrix: true })}
+                          className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                        >
+                          <X size={14} className="mr-1" /> Excluir
+                        </Button>
+                      </>
+                    )}
                   </div>
                   )
                 })}
@@ -1270,6 +1433,56 @@ export default function EcuJobDetail() {
         isLoading={updateStatus.isPending}
         confirmLabel={confirmStatus === 'cancelado' ? 'Cancelar Job' : 'Confirmar'}
       />
+
+      {/* Excluir arquivo (franquia pré-aceite / matriz) */}
+      <ConfirmDialog
+        open={!!confirmDeleteFile}
+        onOpenChange={(v) => !v && setConfirmDeleteFile(null)}
+        title="Excluir arquivo?"
+        description="O arquivo será removido definitivamente (banco + R2). Esta ação não pode ser desfeita."
+        onConfirm={handleConfirmDeleteFile}
+        isLoading={deleteFileFranchise.isPending || deleteFileMatrix.isPending}
+        confirmLabel="Excluir"
+      />
+
+      {/* Motivo — avisar matriz (franquia) / inutilizar (matriz) */}
+      <Dialog open={!!reasonDialog} onOpenChange={(v) => { if (!v) { setReasonDialog(null); setReasonText('') } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {reasonDialog?.mode === 'invalidate' ? 'Inutilizar arquivo' : 'Avisar a matriz — arquivo errado'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="reason-text">
+              {reasonDialog?.mode === 'invalidate'
+                ? 'Nota (aparece marcada no arquivo)'
+                : 'O que está errado? (opcional)'}
+            </Label>
+            <Textarea
+              id="reason-text"
+              value={reasonText}
+              onChange={(e) => setReasonText(e.target.value)}
+              placeholder={reasonDialog?.mode === 'invalidate' ? 'Ex.: arquivo trocado, versão incorreta...' : 'Ex.: mandei o arquivo da ECU errada...'}
+              rows={3}
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="ghost" onClick={() => { setReasonDialog(null); setReasonText('') }}>Cancelar</Button>
+            <Button
+              onClick={handleConfirmReason}
+              disabled={reportWrongFile.isPending || invalidateFile.isPending}
+              className={reasonDialog?.mode === 'invalidate'
+                ? 'bg-amber-600 hover:bg-amber-500 text-white border-0'
+                : 'bg-amber-600 hover:bg-amber-500 text-white border-0'}
+            >
+              {reportWrongFile.isPending || invalidateFile.isPending
+                ? 'Aguarde...'
+                : reasonDialog?.mode === 'invalidate' ? 'Inutilizar' : 'Avisar matriz'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {correcaoOpen && (
         <TicketCorrecaoModal

@@ -16,6 +16,7 @@ import {
   type LancamentoCategoria,
 } from '@/hooks/useLancamentos'
 import { useUnitCategories, useCreateUnitCategory } from '@/hooks/useUnitCategories'
+import { parseBRLMoney, MAX_MONEY, formatCurrency } from '@/lib/utils'
 
 const NEW_CAT_VALUE = '__new__'
 
@@ -77,8 +78,9 @@ export function NovoLancamentoModal({ unitId, onClose, onSuccess }: Props) {
   const [showNewCat, setShowNewCat]         = useState(false)
 
   const dateWarning = dataComp ? fmtDate(dataComp) : false
-  const valorNum = parseFloat(valor.replace(',', '.')) || 0
-  const canSave = categoria !== '' && categoria !== NEW_CAT_VALUE && valorNum > 0 && dataComp !== ''
+  const valorNum = parseBRLMoney(valor) ?? 0
+  const valorTooBig = valorNum > MAX_MONEY
+  const canSave = categoria !== '' && categoria !== NEW_CAT_VALUE && valorNum > 0 && !valorTooBig && dataComp !== ''
 
   function handleCatChange(v: string) {
     if (v === NEW_CAT_VALUE) {
@@ -281,8 +283,14 @@ export function NovoLancamentoModal({ unitId, onClose, onSuccess }: Props) {
                 style={{
                   ...inputStyle,
                   color: valor && valorNum > 0 ? tipoColor : '#fff',
+                  ...(valorTooBig ? { borderColor: '#F87171' } : {}),
                 }}
               />
+              {valorTooBig && (
+                <span style={{ color: '#F87171', fontSize: 12 }}>
+                  Valor máximo: {formatCurrency(MAX_MONEY)}
+                </span>
+              )}
             </div>
 
             <div className="flex flex-col gap-1.5">

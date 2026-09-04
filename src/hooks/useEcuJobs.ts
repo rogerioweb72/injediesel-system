@@ -19,6 +19,10 @@ export interface EcuJobFile {
   size_bytes: number
   created_at: string
   scan_status: EcuFileScanStatus
+  invalidated?: boolean
+  invalidated_reason?: string | null
+  reported_wrong?: boolean
+  reported_reason?: string | null
 }
 
 export interface EcuJobEvent {

@@ -54,7 +54,7 @@ const schema = z.object({
   customer_id:              z.string().min(1, 'Selecione um cliente'),
   vehicle_id:               z.string().nullable(),
   service_type:             z.string().min(1, 'Selecione o tipo de serviço'),
-  service_tags:             z.array(z.string()).default([]),
+  service_tags:             z.array(z.string()).min(1, 'Selecione ao menos uma tag de serviço').default([]),
   problem_description:      z.string().nullable(),
   lgpd_accepted:            z.boolean().refine(v => v === true, 'Confirme o aceite presencial do cliente antes de enviar'),
   seller_id:                z.string().optional().transform(v => v === '' ? null : v),
@@ -931,8 +931,11 @@ export default function EcuJobForm() {
 
           {/* Tags */}
           <div className="space-y-2">
-            <Label>Tags de Serviço</Label>
-            <div className="flex flex-wrap gap-2">
+            <Label>Tags de Serviço <span className="text-red-400">*</span></Label>
+            <div className={cn(
+              'flex flex-wrap gap-2 rounded-md',
+              fieldErr('service_tags') && 'ring-1 ring-red-500 p-2',
+            )}>
               {SERVICE_TAGS.map((tag) => {
                 const active = serviceTags.includes(tag)
                 return (
@@ -940,7 +943,7 @@ export default function EcuJobForm() {
                     key={tag} type="button"
                     onClick={() => {
                       const cur = watch('service_tags')
-                      setValue('service_tags', active ? cur.filter(t => t !== tag) : [...cur, tag])
+                      setValue('service_tags', active ? cur.filter(t => t !== tag) : [...cur, tag], { shouldValidate: true })
                     }}
                     className={cn(
                       'px-3 py-1 rounded-md text-xs font-mono uppercase tracking-wide border transition-colors',
@@ -954,6 +957,7 @@ export default function EcuJobForm() {
                 )
               })}
             </div>
+            {errors.service_tags && <p className="text-xs text-red-400">{errors.service_tags.message}</p>}
           </div>
 
           {/* Descrição */}

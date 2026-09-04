@@ -4,6 +4,7 @@ import { AlertTriangle, Loader2 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useRequestValueEdit } from '@/hooks/useEcuValueEdit'
+import { parseBRLMoney, MAX_MONEY } from '@/lib/utils'
 
 const CHIPS = [
   'Erro de digitação no valor original',
@@ -29,8 +30,9 @@ export function EcuValueEditModal({ open, onClose, jobId, jobCode, valorAtual }:
   const [motivo, setMotivo] = useState('')
   const request = useRequestValueEdit()
 
-  const valorNum = parseFloat(novoValor.replace(',', '.'))
-  const valorValido = !isNaN(valorNum) && valorNum > 0 && valorNum !== valorAtual
+  const valorNum = parseBRLMoney(novoValor) ?? NaN
+  const valorTooBig = Number.isFinite(valorNum) && valorNum > MAX_MONEY
+  const valorValido = !isNaN(valorNum) && valorNum > 0 && valorNum <= MAX_MONEY && valorNum !== valorAtual
   const motivoValido = motivo.trim().length >= 20
   const canSubmit = valorValido && motivoValido && !request.isPending
 
@@ -104,6 +106,11 @@ export function EcuValueEditModal({ open, onClose, jobId, jobCode, valorAtual }:
             {novoValor && !isNaN(valorNum) && valorNum === valorAtual && (
               <p className="text-[11px] mt-1" style={{ color: '#F87171' }}>
                 O novo valor deve ser diferente do valor atual.
+              </p>
+            )}
+            {valorTooBig && (
+              <p className="text-[11px] mt-1" style={{ color: '#F87171' }}>
+                Valor máximo: {fmtBRL(MAX_MONEY)}.
               </p>
             )}
           </div>

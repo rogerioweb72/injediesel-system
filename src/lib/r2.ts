@@ -63,6 +63,29 @@ export async function downloadFileFromR2(params: {
   URL.revokeObjectURL(url)
 }
 
+export async function deleteEcuFileFromR2(params: {
+  bucket: 'originals' | 'delivered'
+  r2Key: string
+  accessToken: string
+}): Promise<void> {
+  // objetos mock não existem no R2 — nada a apagar
+  if (params.r2Key.startsWith('mock/')) return
+
+  const res = await fetch(`${PRESIGN_API_URL}/r2-ecu-delete`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${params.accessToken}`,
+    },
+    body: JSON.stringify({ bucket: params.bucket, r2Key: params.r2Key }),
+  })
+
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Falha ao excluir arquivo: ${text}`)
+  }
+}
+
 // -----------------------------------------------------------------
 // Marketing Materials — R2 via Worker
 // -----------------------------------------------------------------

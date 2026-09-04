@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
-import { uploadFileToR2 } from '@/lib/r2'
+import { uploadFileToR2, deleteEcuFileFromR2 } from '@/lib/r2'
 import { useAuthStore } from '@/stores/auth'
 import { toast } from 'sonner'
 
@@ -98,6 +98,110 @@ export function useUploadEcuFile() {
       // header — todo upload tomava 403 silencioso (erro sempre engolido,
       // .catch(() => null)) e o arquivo nunca era escaneado.
       return data
+    },
+  })
+}
+
+// ─── Apagar / substituir / inutilizar arquivo ECU (migration 120) ───────────
+
+// FRANQUEADO apaga o próprio 'original' ANTES do aceite (status='recebido').
+export function useDeleteEcuFileFranchise() {
+  const qc = useQueryClient()
+  const session = useAuthStore((s) => s.session)
+  return useMutation({
+    mutationFn: async ({ fileId, jobId }: { fileId: string; jobId: string }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any).rpc('franchise_delete_ecu_file', { p_file_id: fileId })
+      if (error) throw error
+      const row = Array.isArray(data) ? data[0] : data
+      if (row?.r2_key) {
+        try {
+          await deleteEcuFileFromR2({ bucket: row.bucket ?? 'originals', r2Key: row.r2_key, accessToken: session?.access_token ?? '' })
+        } catch { /* linha já removida; objeto R2 vira órfão — limpeza em lote depois */ }
+      }
+      qc.invalidateQueries({ queryKey: ['ecu-job', jobId] })
+    },
+  })
+}
+
+// FRANQUEADO substitui o 'original' em 1 clique: sobe o novo + apaga o errado.
+export function useReplaceEcuFileFranchise() {
+  const qc = useQueryClient()
+  const session = useAuthStore((s) => s.session)
+  const user = useAuthStore((s) => s.user)
+  return useMutation({
+    mutationFn: async ({ jobId, oldFileId, file }: { jobId: string; oldFileId: string; file: File }) => {
+      const token = session?.access_token ?? ''
+      // 1. sobe o novo original (nunca fica zero arquivo se algo falhar depois)
+      const { key: r2Key } = await uploadFileToR2({ bucket: 'originals', file, accessToken: token, jobId })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: insErr } = await (supabase as any).from('ecu_job_files').insert({
+        job_id: jobId, file_type: 'original', r2_key: r2Key,
+        file_name: file.name, mime_type: file.type, size_bytes: file.size,
+      })
+      if (insErr) throw insErr
+      // 2. apaga o antigo (RPC valida unidade/status e devolve a key p/ o R2)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any).rpc('franchise_delete_ecu_file', { p_file_id: oldFileId })
+      if (error) throw error
+      const row = Array.isArray(data) ? data[0] : data
+      if (row?.r2_key) {
+        try { await deleteEcuFileFromR2({ bucket: row.bucket ?? 'originals', r2Key: row.r2_key, accessToken: token }) } catch { /* órfão */ }
+      }
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any).from('ecu_job_events').insert({
+          job_id: jobId, actor_id: user?.id ?? null, event_type: 'file_replaced_by_franchise',
+          payload: { new_file_name: file.name, new_r2_key: r2Key },
+        })
+      } catch { /* best-effort */ }
+      qc.invalidateQueries({ queryKey: ['ecu-job', jobId] })
+    },
+  })
+}
+
+// FRANQUEADO avisa a matriz que o arquivo está errado (pós-aceite).
+export function useReportWrongEcuFile() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ fileId, jobId, reason }: { fileId: string; jobId: string; reason: string }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).rpc('franchise_report_wrong_file', { p_file_id: fileId, p_reason: reason })
+      if (error) throw error
+      qc.invalidateQueries({ queryKey: ['ecu-job', jobId] })
+    },
+  })
+}
+
+// MATRIZ inutiliza (cinza + nota "arquivo errado"), sem apagar.
+export function useInvalidateEcuFile() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ fileId, jobId, reason }: { fileId: string; jobId: string; reason: string }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).rpc('matrix_invalidate_ecu_file', { p_file_id: fileId, p_reason: reason })
+      if (error) throw error
+      qc.invalidateQueries({ queryKey: ['ecu-job', jobId] })
+    },
+  })
+}
+
+// MATRIZ exclui de vez (apaga linha + objeto R2).
+export function useDeleteEcuFileMatrix() {
+  const qc = useQueryClient()
+  const session = useAuthStore((s) => s.session)
+  return useMutation({
+    mutationFn: async ({ fileId, jobId }: { fileId: string; jobId: string }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any).rpc('matrix_delete_ecu_file', { p_file_id: fileId })
+      if (error) throw error
+      const row = Array.isArray(data) ? data[0] : data
+      if (row?.r2_key) {
+        try {
+          await deleteEcuFileFromR2({ bucket: row.bucket ?? 'originals', r2Key: row.r2_key, accessToken: session?.access_token ?? '' })
+        } catch { /* órfão */ }
+      }
+      qc.invalidateQueries({ queryKey: ['ecu-job', jobId] })
     },
   })
 }

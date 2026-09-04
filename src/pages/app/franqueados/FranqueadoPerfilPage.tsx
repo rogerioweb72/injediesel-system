@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import { translateError } from '@/lib/errors'
 import {
-  Lock, Eye, EyeOff, Upload, RefreshCw, ArrowLeft, UserPlus, Plus,
+  Lock, Eye, EyeOff, Upload, RefreshCw, ArrowLeft,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,8 +24,6 @@ import { useCreateSupportTicket } from '@/hooks/useSupportTickets'
 import { useCommissions } from '@/hooks/useCaixa'
 import { useAuthStore } from '@/stores/auth'
 import { supabase } from '@/lib/supabase'
-import { useRoutePrefix } from '@/contexts/RoutePrefixContext'
-import { NovoLancamentoModal } from '@/pages/app/caixa/NovoLancamentoModal'
 
 // ─── Schema ─────────────────────────────────────────────────────────────────
 // eslint-disable-next-line react-refresh/only-export-components
@@ -246,6 +244,46 @@ function PerfilDadosUnidade({ unit }: { unit: UnitData | undefined }) {
         <LockedInput label="Técnico responsável"
           value={unit?.main_technician ? `${unit.main_technician.name} — ${unit.main_technician.contact}` : null} />
       </div>
+
+      {/* Endereço */}
+      <h3 className="text-sm font-semibold uppercase tracking-widest pt-2"
+        style={{ fontFamily: 'var(--pm-font-display)' }}>Endereço</h3>
+      <div className="grid grid-cols-2 gap-3">
+        <LockedInput label="Logradouro"   value={unit?.logradouro} />
+        <LockedInput label="Número"       value={unit?.numero} />
+        <LockedInput label="Complemento"  value={unit?.complemento} />
+        <LockedInput label="Bairro"       value={unit?.bairro} />
+        <LockedInput label="Cidade"       value={unit?.city} />
+        <LockedInput label="UF"           value={unit?.state} />
+        <LockedInput label="CEP"          value={unit?.cep} />
+      </div>
+
+      {/* Representante Legal */}
+      <h3 className="text-sm font-semibold uppercase tracking-widest pt-2"
+        style={{ fontFamily: 'var(--pm-font-display)' }}>Representante Legal</h3>
+      <div className="grid grid-cols-2 gap-3">
+        <LockedInput label="Nome"     value={unit?.responsavel_legal_nome} />
+        <LockedInput label="CPF"      value={unit?.responsavel_legal_cpf} />
+        <LockedInput label="RG"       value={unit?.responsavel_legal_rg} />
+        <LockedInput label="E-mail"   value={unit?.responsavel_legal_email} />
+        <LockedInput label="Telefone" value={unit?.responsavel_legal_telefone} />
+        <LockedInput label="Cargo / vínculo" value={unit?.responsavel_legal_cargo} />
+      </div>
+
+      {/* Representante Operacional / Comercial */}
+      <h3 className="text-sm font-semibold uppercase tracking-widest pt-2"
+        style={{ fontFamily: 'var(--pm-font-display)' }}>Representante Operacional / Comercial</h3>
+      {unit?.responsavel_op_mesmo ? (
+        <p className="text-sm text-muted-foreground">
+          Mesmo que o representante legal.
+        </p>
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          <LockedInput label="Nome"     value={unit?.responsavel_op_nome} />
+          <LockedInput label="E-mail"   value={unit?.responsavel_op_email} />
+          <LockedInput label="Telefone" value={unit?.responsavel_op_telefone} />
+        </div>
+      )}
     </div>
   )
 }
@@ -740,13 +778,10 @@ function PerfilFormPanel({
 // ─── FranqueadoPerfilPage ────────────────────────────────────────────────────
 export default function FranqueadoPerfilPage() {
   const navigate = useNavigate()
-  const prefix = useRoutePrefix()
   const { data: profile, isLoading: loadingProfile } = useFranchiseeProfile()
   const { data: myUnit, isLoading: loadingUnit } = useMyUnit()
   const unit = myUnit?.franchise_units
-  const unitId = myUnit?.unit_id ?? ''
   const [renovarOpen, setRenovarOpen] = useState(false)
-  const [lancamentoOpen, setLancamentoOpen] = useState(false)
   const user = useAuthStore((s) => s.user)
   const { data: commissions = [] } = useCommissions(user?.id)
   const totalCommission = commissions.reduce((sum, c) => sum + c.commission_amount, 0)
@@ -766,28 +801,10 @@ export default function FranqueadoPerfilPage() {
         title="EDITAR PERFIL DE USUÁRIO"
         subtitle="Gerencie seus dados pessoais e configurações de acesso"
         actions={
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
-              <ArrowLeft size={14} className="mr-1.5" />
-              Voltar ↵
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => navigate(`${prefix}/clientes/novo`)}
-              style={{ background: '#16A34A', color: '#fff', border: 'none' }}
-            >
-              <UserPlus size={14} className="mr-1.5" />
-              Novo Cliente
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => setLancamentoOpen(true)}
-              style={{ background: '#2563EB', color: '#fff', border: 'none' }}
-            >
-              <Plus size={14} className="mr-1.5" />
-              Novo Lançamento
-            </Button>
-          </div>
+          <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+            <ArrowLeft size={14} className="mr-1.5" />
+            Voltar ↵
+          </Button>
         }
       />
 
@@ -883,14 +900,6 @@ export default function FranqueadoPerfilPage() {
         onClose={() => setRenovarOpen(false)}
         unitId={unit?.id}
       />
-
-      {lancamentoOpen && (
-        <NovoLancamentoModal
-          unitId={unitId}
-          onClose={() => setLancamentoOpen(false)}
-          onSuccess={() => setLancamentoOpen(false)}
-        />
-      )}
     </div>
   )
 }

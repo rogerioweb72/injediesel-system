@@ -155,6 +155,31 @@ async function handleEcuDownload(request: Request, env: Env): Promise<Response> 
 }
 
 // -----------------------------------------------------------------
+// ECU Delete — remove um objeto do bucket ECU (originals|delivered).
+// A autorização de NEGÓCIO (franquia pré-aceite / matriz) é feita na RPC
+// (franchise_delete_ecu_file / matrix_delete_ecu_file), que só devolve a
+// r2_key depois de validar cargo/unidade/status e apagar a linha do banco.
+// Aqui exigimos apenas: token válido + key no escopo jobs/ (ou uploads do
+// próprio usuário) — mesma postura do handleEcuDownload.
+// -----------------------------------------------------------------
+async function handleEcuDelete(request: Request, env: Env): Promise<Response> {
+  const auth = await verifyToken(request.headers.get('Authorization'), env)
+  if (!auth) return json({ error: 'Unauthorized' }, 401, env)
+  const { userId } = auth
+
+  const body   = await request.json<{ r2Key: string; bucket: string }>()
+  const bucket = getEcuBucket(env, body.bucket ?? 'originals')
+  if (!bucket) return json({ error: 'Bucket inválido' }, 400, env)
+
+  const key = body.r2Key ?? ''
+  const allowed = key.startsWith(`uploads/${userId}/`) || key.startsWith('jobs/')
+  if (!allowed) return json({ error: 'Forbidden' }, 403, env)
+
+  await bucket.delete(key)
+  return json({ ok: true }, 200, env)
+}
+
+// -----------------------------------------------------------------
 // MKT Upload — matrix admin only (company_admin | operations_admin)
 // -----------------------------------------------------------------
 async function handleMktUpload(request: Request, env: Env): Promise<Response> {
@@ -378,6 +403,7 @@ export default {
     switch (pathname) {
       case '/r2-presign-upload':        return handleEcuUpload(request, env)
       case '/r2-presign-download':      return handleEcuDownload(request, env)
+      case '/r2-ecu-delete':            return handleEcuDelete(request, env)
       case '/r2-mkt-upload':            return handleMktUpload(request, env)
       case '/r2-mkt-download':          return handleMktDownload(request, env)
       case '/r2-mkt-delete':            return handleMktDelete(request, env)

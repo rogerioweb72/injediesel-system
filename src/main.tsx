@@ -28,6 +28,18 @@ function isRlsDenied(error: unknown): boolean {
   return (error as Record<string, unknown>).code === RLS_DENIED_CODE
 }
 
+// Erros de CONECTIVIDADE do cliente (rede caiu, aba em background, wifi, request
+// abortado). Não são bug do app — react-query re-tenta sozinho. Não logar como
+// ERROR: poluíam o painel de monitoramento (ex.: queryKey "unseen-jobs" do badge).
+function isNetworkError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false
+  const e = error as Record<string, unknown>
+  const name = String(e.name ?? '')
+  const msg = String(e.message ?? '')
+  if (name === 'AbortError') return true
+  return /failed to fetch|load failed|networkerror|network request failed|fetch failed/i.test(msg)
+}
+
 function isAuthError(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false
   if (isRlsDenied(error)) return false
@@ -64,6 +76,7 @@ async function handleAuthError() {
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError(error, query) {
+      if (isNetworkError(error)) return   // conectividade transiente — não logar
       if (isRlsDenied(error)) {
         logSecurityEvent('rls_violation', { error: String((error as unknown as Record<string, unknown>).message) })
         toast.error('Você não tem permissão para executar esta ação.')
@@ -79,6 +92,7 @@ const queryClient = new QueryClient({
   }),
   mutationCache: new MutationCache({
     onError(error, _vars, _ctx, mutation) {
+      if (isNetworkError(error)) return   // conectividade transiente — não logar
       if (isRlsDenied(error)) {
         logSecurityEvent('rls_violation', { error: String((error as unknown as Record<string, unknown>).message) })
         toast.error('Você não tem permissão para executar esta ação.')

@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { PageHeader } from '@/components/shared/PageHeader'
+import { LocationFields } from '@/components/shared/LocationFields'
 import { useCustomer, useCreateCustomer, useUpdateCustomer } from '@/hooks/useCustomers'
 import { useMyUnit } from '@/hooks/useMyUnit'
 import { useProfile } from '@/hooks/useProfile'
@@ -238,16 +239,15 @@ export default function CustomerForm() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="col-span-2 space-y-1">
-                <Label htmlFor="cidade">Cidade</Label>
-                <Input id="cidade" {...register('cidade')} placeholder="São Paulo" />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="estado">UF</Label>
-                <Input id="estado" {...register('estado')} placeholder="SP" maxLength={2} className="uppercase" />
-                {errors.estado && <p className="text-xs text-red-400">{errors.estado.message}</p>}
-              </div>
+            <div className="grid grid-cols-2 gap-4">
+              <LocationFields
+                country={country}
+                cidade={watch('cidade') ?? ''}
+                estado={watch('estado') ?? ''}
+                onCidade={(v) => setValue('cidade', v || null)}
+                onEstado={(v) => setValue('estado', v || null)}
+                idPrefix="cust"
+              />
             </div>
           </div>
         </div>

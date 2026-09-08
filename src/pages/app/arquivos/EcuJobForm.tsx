@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { useCustomers, useCreateCustomer, useLookupCustomerByDocument, type Customer, type CustomerAddress } from '@/hooks/useCustomers'
+import { LocationFields } from '@/components/shared/LocationFields'
 import { useVehicles, useCreateVehicle } from '@/hooks/useVehicles'
 import { useCreateEcuJob } from '@/hooks/useEcuJobs'
 import { useUploadEcuFile } from '@/hooks/useEcuFiles'
@@ -254,14 +255,14 @@ function NovoClienteModal({ open, onClose, onCreated, unitId }: {
                 <Label>Número</Label>
                 <Input placeholder="123" value={numero} onChange={e => setNumero(e.target.value)} />
               </div>
-              <div className="space-y-1">
-                <Label>Cidade</Label>
-                <Input placeholder="São Paulo" value={cidade} onChange={e => setCidade(e.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <Label>Estado</Label>
-                <Input placeholder={isPY ? 'Depto.' : 'SP'} maxLength={isPY ? 40 : 2} value={estado} onChange={e => setEstado(isPY ? e.target.value : e.target.value.toUpperCase())} />
-              </div>
+              <LocationFields
+                country={country}
+                cidade={cidade}
+                estado={estado}
+                onCidade={setCidade}
+                onEstado={setEstado}
+                idPrefix="ecu-cust"
+              />
             </div>
           </div>
 

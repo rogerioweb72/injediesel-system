@@ -108,6 +108,7 @@ function NovoClienteModal({ open, onClose, onCreated, unitId }: {
   onCreated: (c: Customer) => void
   unitId: string | null
 }) {
+  const [country,    setCountry]    = useState<'BR' | 'PY'>('BR')
   const [name,       setName]       = useState('')
   const [phone,      setPhone]      = useState('')
   const [email,      setEmail]      = useState('')
@@ -124,7 +125,10 @@ function NovoClienteModal({ open, onClose, onCreated, unitId }: {
   const create = useCreateCustomer()
   const lookupByDocument = useLookupCustomerByDocument()
 
+  const isPY = country === 'PY'
+
   function resetForm() {
+    setCountry('BR')
     setName(''); setPhone(''); setEmail(''); setDoc('')
     setCidade(''); setEstado(''); setLogradouro(''); setNumero('')
     setNameErr(false); setPhoneErr(false); setDocErr(false)
@@ -153,6 +157,7 @@ function NovoClienteModal({ open, onClose, onCreated, unitId }: {
 
     try {
       const c = await create.mutateAsync({
+        country,
         name: name.trim(),
         phone: phone.trim(),
         email: email || null,
@@ -177,6 +182,27 @@ function NovoClienteModal({ open, onClose, onCreated, unitId }: {
           <DialogTitle>Novo Cliente</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 pt-2">
+          {/* País — BR segue padrões brasileiros; PY libera documento/celular livres */}
+          <div className="space-y-1">
+            <Label>País *</Label>
+            <div className="flex gap-2">
+              {([['BR', '🇧🇷', 'Brasil'], ['PY', '🇵🇾', 'Paraguai']] as const).map(([code, flag, label]) => (
+                <button
+                  key={code} type="button"
+                  onClick={() => setCountry(code)}
+                  className={cn(
+                    'flex items-center gap-2 px-4 py-2 rounded-md border text-sm font-medium transition-colors',
+                    country === code
+                      ? 'bg-[hsl(var(--pm-red-500))] border-[hsl(var(--pm-red-500))] text-white'
+                      : 'bg-transparent border-[hsl(var(--pm-gray-700))] text-muted-foreground hover:border-[hsl(var(--pm-gray-500))]',
+                  )}
+                >
+                  <span className="text-base leading-none">{flag}</span>{label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="space-y-1">
             <Label>Nome *</Label>
             <Input
@@ -192,7 +218,7 @@ function NovoClienteModal({ open, onClose, onCreated, unitId }: {
             <div className="space-y-1">
               <Label>Celular *</Label>
               <Input
-                placeholder="(00) 00000-0000"
+                placeholder={isPY ? '+595 9XX XXX XXX' : '(00) 00000-0000'}
                 value={phone}
                 onChange={e => { setPhone(e.target.value); setPhoneErr(false) }}
                 className={cn(phoneErr && 'field-error-blink border-red-500')}
@@ -200,15 +226,15 @@ function NovoClienteModal({ open, onClose, onCreated, unitId }: {
               {phoneErr && <p className="text-xs text-red-400">Celular obrigatório</p>}
             </div>
             <div className="space-y-1">
-              <Label>CPF / CNPJ *</Label>
+              <Label>{isPY ? 'Cédula / RUC / Documento *' : 'CPF / CNPJ *'}</Label>
               <Input
-                placeholder="000.000.000-00"
+                placeholder={isPY ? 'Documento do Paraguai (livre)' : '000.000.000-00'}
                 value={doc}
                 onChange={e => { setDoc(e.target.value); setDocErr(false) }}
                 onBlur={handleDocBlur}
                 className={cn(docErr && 'field-error-blink border-red-500')}
               />
-              {docErr && <p className="text-xs text-red-400">CPF obrigatório</p>}
+              {docErr && <p className="text-xs text-red-400">Documento obrigatório</p>}
             </div>
           </div>
 
@@ -234,7 +260,7 @@ function NovoClienteModal({ open, onClose, onCreated, unitId }: {
               </div>
               <div className="space-y-1">
                 <Label>Estado</Label>
-                <Input placeholder="SP" maxLength={2} value={estado} onChange={e => setEstado(e.target.value.toUpperCase())} />
+                <Input placeholder={isPY ? 'Depto.' : 'SP'} maxLength={isPY ? 40 : 2} value={estado} onChange={e => setEstado(isPY ? e.target.value : e.target.value.toUpperCase())} />
               </div>
             </div>
           </div>

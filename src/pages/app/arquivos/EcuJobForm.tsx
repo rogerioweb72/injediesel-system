@@ -493,6 +493,14 @@ export default function EcuJobForm() {
       toast.error('Selecione o arquivo original antes de enviar o formulário.')
       return
     }
+    // Guarda: franquia SEM unidade resolvida ainda (myUnit não carregou) — não
+    // deixar inserir ecu_jobs com unit_id null, que viola a RLS ("new row violates
+    // row-level security policy for table ecu_jobs"). Melhor barrar com mensagem
+    // clara e pedir recarregar do que mandar null pro banco.
+    if (!isMatrix && !effectiveUnitId) {
+      toast.error('Sua unidade ainda não carregou. Recarregue a página (Ctrl+Shift+R) e tente novamente.')
+      return
+    }
     // Hard-block: unidade bloqueada pela Matriz
     if (isBlocked) {
       setBlockedModalOpen(true)

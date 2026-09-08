@@ -23,19 +23,13 @@ export const ECU_FILE_EXTENSIONS = [
 // "todos os arquivos" e a validação abaixo (blocklist) é quem realmente decide.
 export const ECU_ACCEPTED_EXTENSIONS = ECU_FILE_EXTENSIONS.map((e) => `.${e}`).join(',')
 
-// BLOCKLIST: só executáveis/scripts perigosos são barrados. QUALQUER outro arquivo
-// (todos os formatos de ECU do mundo, inclusive sem extensão) é aceito. Mantida em
-// sync manual com scan-ecu-file/index.ts (BLOCKED_EXTENSIONS).
-export const BLOCKED_ECU_EXTENSIONS = [
-  'exe', 'msi', 'bat', 'cmd', 'com', 'scr', 'ps1', 'vbs', 'vbe',
-  'js', 'mjs', 'jse', 'wsf', 'hta', 'sh', 'bash', 'php', 'phtml',
-  'py', 'pl', 'rb', 'jar', 'app', 'apk', 'dll', 'so',
-  'html', 'htm', 'xhtml', 'svg', 'lnk',
-] as const
+// ⚠️ ANTIVÍRUS/BLOCKLIST DESATIVADO por decisão do dono (08/09) — rede interna, só
+// franqueados têm acesso, e o R2 é armazenamento inerte (não executa nada). Aceita
+// QUALQUER arquivo. Risco residual = PC de quem BAIXA (mantenham AV de endpoint nas
+// máquinas). Para REATIVAR: repovoar BLOCKED_ECU_EXTENSIONS e restaurar o !includes
+// aqui + o bloqueio no scan-ecu-file/index.ts (BLOCKED_EXTENSIONS + magic-bytes).
+export const BLOCKED_ECU_EXTENSIONS = [] as const
 
-export function isEcuFileExtensionAllowed(fileName: string): boolean {
-  const ext = fileName.split('.').pop()?.toLowerCase() ?? ''
-  // Sem extensão: aceita (muitos dumps de ECU não têm). Bloqueia só a blocklist.
-  if (!ext || ext === fileName.toLowerCase()) return true
-  return !(BLOCKED_ECU_EXTENSIONS as readonly string[]).includes(ext)
+export function isEcuFileExtensionAllowed(_fileName: string): boolean {
+  return true
 }

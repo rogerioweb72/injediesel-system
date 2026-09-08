@@ -204,14 +204,15 @@ serve(async (req) => {
 
   const bucket = resolveBucket(record.file_type)
 
-  // ── 1. Extension blocklist (só executável/script; aceita qualquer formato ECU) ──
-  const ext = getExtension(record.file_name)
-  if (ext && BLOCKED_EXTENSIONS.has(ext)) {
-    await blockFile(bucket, record.id, record.r2_key, 'blocked_extension', { ext, file_name: record.file_name })
-    return new Response(JSON.stringify({ status: 'blocked', reason: 'extension_not_allowed' }), {
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
+  // ── 1. Extension blocklist — DESATIVADA (decisão do dono 08/09: rede interna,
+  // R2 inerte). Para REATIVAR, restaurar o if(BLOCKED_EXTENSIONS.has(ext)) abaixo.
+  // const ext = getExtension(record.file_name)
+  // if (ext && BLOCKED_EXTENSIONS.has(ext)) {
+  //   await blockFile(bucket, record.id, record.r2_key, 'blocked_extension', { ext, file_name: record.file_name })
+  //   return new Response(JSON.stringify({ status: 'blocked', reason: 'extension_not_allowed' }), {
+  //     headers: { 'Content-Type': 'application/json' },
+  //   })
+  // }
 
   // ── 2. Size limit (before download) ───────────────────────────────────────
   if ((record.size_bytes ?? 0) > MAX_BYTES) {
@@ -240,13 +241,14 @@ serve(async (req) => {
     // ── 4. Download from R2 ──────────────────────────────────────────────────
     const fileBytes = await downloadFromR2(bucket, record.r2_key)
 
-    // ── 5. Magic bytes check ─────────────────────────────────────────────────
-    if (hasDangerousHeader(fileBytes)) {
-      await blockFile(bucket, record.id, record.r2_key, 'blocked_magic_bytes', { file_name: record.file_name })
-      return new Response(JSON.stringify({ status: 'blocked', reason: 'dangerous_file_header' }), {
-        headers: { 'Content-Type': 'application/json' },
-      })
-    }
+    // ── 5. Magic bytes check — DESATIVADO (decisão do dono 08/09). Para REATIVAR,
+    // restaurar o if(hasDangerousHeader(fileBytes)) abaixo.
+    // if (hasDangerousHeader(fileBytes)) {
+    //   await blockFile(bucket, record.id, record.r2_key, 'blocked_magic_bytes', { file_name: record.file_name })
+    //   return new Response(JSON.stringify({ status: 'blocked', reason: 'dangerous_file_header' }), {
+    //     headers: { 'Content-Type': 'application/json' },
+    //   })
+    // }
 
     // ── 6. SHA-256 ───────────────────────────────────────────────────────────
     const hash = await sha256Hex(fileBytes)

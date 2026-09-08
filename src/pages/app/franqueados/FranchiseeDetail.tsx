@@ -92,7 +92,10 @@ export default function FranchiseeDetail() {
       toast.success('Unidade excluída.')
       navigate(`${prefix}/franqueados`)
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
+      // Supabase/PostgREST devolve objeto {message, code, details, hint} — não é
+      // Error, então String(err) dava "[object Object]". Extrai a mensagem real.
+      const e = err as { message?: string; details?: string; hint?: string } | null
+      const msg = e?.message || e?.details || e?.hint || (err instanceof Error ? err.message : String(err))
       if (msg.includes('unit_has_history')) {
         toast.error('Unidade tem histórico (clientes, jobs, lançamentos ou pedidos) — não pode ser excluída. Suspenda ou encerre em vez de excluir.')
       } else if (msg.includes('forbidden')) {

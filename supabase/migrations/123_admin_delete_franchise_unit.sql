@@ -20,12 +20,13 @@ BEGIN
     RAISE EXCEPTION 'forbidden';
   END IF;
 
+  -- pos_sales NÃO tem unit_id (liga via customer_id) — não entra aqui; o check de
+  -- customers já cobre qualquer venda PDV daquela unidade.
   SELECT
       (SELECT count(*) FROM public.customers         WHERE unit_id = p_id)
     + (SELECT count(*) FROM public.ecu_jobs          WHERE unit_id = p_id)
     + (SELECT count(*) FROM public.financial_entries WHERE unit_id = p_id)
     + (SELECT count(*) FROM public.orders            WHERE unit_id = p_id)
-    + (SELECT count(*) FROM public.pos_sales         WHERE unit_id = p_id)
   INTO v_hist;
 
   IF v_hist > 0 THEN

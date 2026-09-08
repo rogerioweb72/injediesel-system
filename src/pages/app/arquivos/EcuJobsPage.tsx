@@ -197,8 +197,26 @@ function buildColumns(
       cell: (r) => <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDateTime(r.created_at)}</span>,
     },
     {
-      key: 'customer', header: 'Cliente',
-      cell: (r) => <span className="text-sm text-foreground">{r.customers?.name ?? '—'}</span>,
+      // Matriz vê o TIPO DE SERVIÇO (tags escolhidas na criação) no lugar do
+      // cliente — o operador já sabe o que executar. Franquia mantém "Cliente".
+      key: 'customer',
+      header: isFranchise ? 'Cliente' : 'Tipo de Serviço',
+      cell: (r) => isFranchise
+        ? <span className="text-sm text-foreground">{r.customers?.name ?? '—'}</span>
+        : (
+          (r.service_tags && r.service_tags.length > 0)
+            ? (
+              <div className="flex flex-wrap gap-1">
+                {r.service_tags.map((t) => (
+                  <span key={t} className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wide"
+                    style={{ background: 'rgba(177,40,37,0.12)', color: '#E5484D', border: '1px solid rgba(177,40,37,0.25)' }}>
+                    {t}
+                  </span>
+                ))}
+              </div>
+            )
+            : <span className="text-sm text-muted-foreground">—</span>
+        ),
     },
     {
       key: 'vehicle', header: 'Placa/Veículo',

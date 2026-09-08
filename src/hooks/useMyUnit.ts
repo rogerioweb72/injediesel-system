@@ -29,7 +29,7 @@ export function useMyUnit() {
   max_discount_pct,
   responsavel_legal_nome, responsavel_legal_cpf, responsavel_legal_rg,
   responsavel_legal_email, responsavel_legal_telefone, responsavel_legal_cargo,
-  responsavel_op_mesmo, responsavel_op_nome, responsavel_op_email, responsavel_op_telefone
+  responsavel_op_mesmo_legal, responsavel_op_nome, responsavel_op_email, responsavel_op_telefone
 )`)
         .eq('user_id', user!.id)
         .order('unit_id')
@@ -76,7 +76,7 @@ export function useMyUnit() {
           responsavel_legal_email: string | null
           responsavel_legal_telefone: string | null
           responsavel_legal_cargo: string | null
-          responsavel_op_mesmo: boolean | null
+          responsavel_op_mesmo_legal: boolean | null
           responsavel_op_nome: string | null
           responsavel_op_email: string | null
           responsavel_op_telefone: string | null

@@ -274,7 +274,7 @@ function PerfilDadosUnidade({ unit }: { unit: UnitData | undefined }) {
       {/* Representante Operacional / Comercial */}
       <h3 className="text-sm font-semibold uppercase tracking-widest pt-2"
         style={{ fontFamily: 'var(--pm-font-display)' }}>Representante Operacional / Comercial</h3>
-      {unit?.responsavel_op_mesmo ? (
+      {unit?.responsavel_op_mesmo_legal ? (
         <p className="text-sm text-muted-foreground">
           Mesmo que o representante legal.
         </p>

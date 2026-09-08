@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { ArrowLeft } from 'lucide-react'
 import { validarCPF, validarCNPJ, maskCPF, maskCNPJ } from '@/lib/validators'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,19 +18,24 @@ import { useProfile } from '@/hooks/useProfile'
 import { FRANCHISE_ROLES } from '@/types/app'
 
 const schema = z.object({
+  country:   z.enum(['BR', 'PY']),
   name:      z.string().min(2, 'Nome é obrigatório'),
   email:     z.string().email('E-mail inválido').or(z.literal('')).nullable(),
   phone:     z.string().min(1, 'Celular é obrigatório'),
-  document:  z.string()
-    .min(1, 'CPF / CNPJ é obrigatório')
-    .refine(v => validarCPF(v) || validarCNPJ(v), 'CPF ou CNPJ inválido'),
+  // Documento livre por padrão; CPF/CNPJ só é validado quando country=BR (ver refine).
+  document:  z.string().min(1, 'Documento é obrigatório'),
   price_tier: z.enum(['cliente_final', 'franqueado_linha_leve', 'franqueado_full']),
   active:    z.boolean(),
-  // address (all optional)
+  // address (all optional). estado sem max(2) — PY tem departamentos com nome longo.
   logradouro: z.string().nullable(),
   numero:     z.string().nullable(),
   cidade:     z.string().nullable(),
-  estado:     z.string().max(2).nullable(),
+  estado:     z.string().nullable(),
+}).superRefine((val, ctx) => {
+  // Só BR exige CPF/CNPJ válido. PY = cédula/RUC → digitação livre.
+  if (val.country === 'BR' && !(validarCPF(val.document) || validarCNPJ(val.document))) {
+    ctx.addIssue({ path: ['document'], code: 'custom', message: 'CPF ou CNPJ inválido' })
+  }
 })
 
 type FormValues = z.infer<typeof schema>
@@ -54,7 +60,7 @@ export default function CustomerForm() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema) as any,
     defaultValues: {
-      name: '', email: null, phone: '', document: '',
+      country: 'BR', name: '', email: null, phone: '', document: '',
       price_tier: 'cliente_final', active: true,
       logradouro: null, numero: null, cidade: null, estado: null,
     },
@@ -62,6 +68,7 @@ export default function CustomerForm() {
 
   useEffect(() => {
     if (customer) {
+      setValue('country',   customer.country ?? 'BR')
       setValue('name',      customer.name)
       setValue('email',     customer.email)
       setValue('phone',     customer.phone ?? '')
@@ -89,6 +96,7 @@ export default function CustomerForm() {
       : null
 
     const payload = {
+      country:          values.country,
       name:             values.name,
       email:            values.email  || null,
       phone:            values.phone  || null,
@@ -111,6 +119,8 @@ export default function CustomerForm() {
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const priceTier = watch('price_tier')
+  const country = watch('country')
+  const isPY = country === 'PY'
 
   return (
     <div>
@@ -132,6 +142,27 @@ export default function CustomerForm() {
           <div className="pm-card space-y-5">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Dados Pessoais</p>
 
+            {/* País do cliente — BR segue padrões brasileiros; PY libera documento/celular livres */}
+            <div className="space-y-1">
+              <Label>País *</Label>
+              <div className="flex gap-2">
+                {([['BR', '🇧🇷', 'Brasil'], ['PY', '🇵🇾', 'Paraguai']] as const).map(([code, flag, label]) => (
+                  <button
+                    key={code} type="button"
+                    onClick={() => setValue('country', code, { shouldValidate: true })}
+                    className={cn(
+                      'flex items-center gap-2 px-4 py-2 rounded-md border text-sm font-medium transition-colors',
+                      country === code
+                        ? 'bg-[hsl(var(--pm-red-500))] border-[hsl(var(--pm-red-500))] text-white'
+                        : 'bg-transparent border-[hsl(var(--pm-gray-700))] text-muted-foreground hover:border-[hsl(var(--pm-gray-500))]',
+                    )}
+                  >
+                    <span className="text-base leading-none">{flag}</span>{label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="space-y-1">
               <Label htmlFor="name">Nome completo *</Label>
               <Input id="name" {...register('name')} placeholder="João da Silva" />
@@ -141,7 +172,7 @@ export default function CustomerForm() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label htmlFor="phone">Celular *</Label>
-                <Input id="phone" {...register('phone')} placeholder="(11) 99999-9999" />
+                <Input id="phone" {...register('phone')} placeholder={isPY ? '+595 9XX XXX XXX' : '(11) 99999-9999'} />
                 {errors.phone && <p className="text-xs text-red-400">{errors.phone.message}</p>}
               </div>
               <div className="space-y-1">
@@ -153,15 +184,20 @@ export default function CustomerForm() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Label htmlFor="document">CPF / CNPJ *</Label>
+                <Label htmlFor="document">{isPY ? 'Cédula / RUC / Documento *' : 'CPF / CNPJ *'}</Label>
                 <Input
                   id="document"
                   {...register('document')}
-                  placeholder="000.000.000-00 ou 00.000.000/0001-00"
+                  placeholder={isPY ? 'Documento do Paraguai (livre)' : '000.000.000-00 ou 00.000.000/0001-00'}
                   onChange={e => {
-                    const digits = e.target.value.replace(/\D/g, '')
-                    const masked = digits.length <= 11 ? maskCPF(digits) : maskCNPJ(digits)
-                    setValue('document', masked, { shouldValidate: true })
+                    if (isPY) {
+                      // PY: digitação livre (cédula/RUC não seguem máscara BR)
+                      setValue('document', e.target.value, { shouldValidate: true })
+                    } else {
+                      const digits = e.target.value.replace(/\D/g, '')
+                      const masked = digits.length <= 11 ? maskCPF(digits) : maskCNPJ(digits)
+                      setValue('document', masked, { shouldValidate: true })
+                    }
                   }}
                 />
                 {errors.document && <p className="text-xs text-red-400">{errors.document.message}</p>}

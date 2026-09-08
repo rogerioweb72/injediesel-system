@@ -17,6 +17,7 @@ export interface Customer {
   phone: string | null
   document: string | null
   document_type?: string
+  country?: 'BR' | 'PY'   // default 'BR' no banco; cadastro inline (ECU) omite
   address: CustomerAddress | null
   active: boolean
   price_tier: PriceTier

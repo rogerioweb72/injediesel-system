@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -55,6 +56,9 @@ export function VehicleForm({ open, onOpenChange, customerId }: VehicleFormProps
   // eslint-disable-next-line react-hooks/incompatible-library
   const plate = watch('plate')
   const vehicleType = watch('vehicle_type')
+  // Placa estrangeira (ex.: Paraguai modelo antigo) — digitação livre, sem busca
+  // BR nem máscara Mercosul. Placa nova do PY é Mercosul = igual BR (deixa desmarcado).
+  const [foreignPlate, setForeignPlate] = useState(false)
 
   function handlePlateLookupFound(info: VehicleInfo) {
     setValue('brand', info.marca)
@@ -105,13 +109,37 @@ export function VehicleForm({ open, onOpenChange, customerId }: VehicleFormProps
           </div>
 
           {vehicleType === 'automotivo' && (
-            <div className="space-y-1">
-              <Label>Placa (busca automática)</Label>
-              <PlateLookup
-                value={plate ?? ''}
-                onChange={(v) => setValue('plate', v)}
-                onFound={handlePlateLookupFound}
-              />
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={foreignPlate}
+                  onChange={(e) => setForeignPlate(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-600"
+                />
+                Placa estrangeira (Paraguai — modelo antigo)
+              </label>
+              {foreignPlate ? (
+                <div className="space-y-1">
+                  <Label>Placa</Label>
+                  <Input
+                    value={plate ?? ''}
+                    onChange={(e) => setValue('plate', e.target.value.toUpperCase())}
+                    placeholder="Placa do Paraguai (livre)"
+                    maxLength={16}
+                  />
+                  <p className="text-xs text-muted-foreground">Placa nova do PY é Mercosul (igual BR) — nesse caso desmarque e use a busca.</p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <Label>Placa (busca automática)</Label>
+                  <PlateLookup
+                    value={plate ?? ''}
+                    onChange={(v) => setValue('plate', v)}
+                    onFound={handlePlateLookupFound}
+                  />
+                </div>
+              )}
             </div>
           )}
 

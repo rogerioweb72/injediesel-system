@@ -31,11 +31,43 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
+// Resolve o nome da unidade vinculada ao usuário, com retry. No 1º acesso via
+// convite o vínculo (user_unit_roles) pode ter acabado de ser criado e ainda não
+// estar visível pra sessão recém-emitida. Tenta ~4x, com refresh do JWT entre as
+// tentativas (o refresh reemite o token e a RLS relê o banco). Devolve null só se
+// realmente não houver vínculo.
+async function resolveUnitName(userId: string, token: string): Promise<string | null> {
+  const base = import.meta.env.VITE_SUPABASE_URL as string
+  const key  = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string
+  let accessToken = token
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      const res = await fetch(
+        `${base}/rest/v1/user_unit_roles?user_id=eq.${userId}&select=franchise_units(name)&limit=1`,
+        { headers: { apikey: key, Authorization: `Bearer ${accessToken}` } },
+      )
+      const rows = await res.json()
+      const name: string | null = (Array.isArray(rows) && rows[0]?.franchise_units?.name) || null
+      if (name) return name
+    } catch { /* rede — cai no retry */ }
+    if (attempt < 3) {
+      const { data } = await supabase.auth.refreshSession()
+      accessToken = data.session?.access_token ?? accessToken
+      await new Promise((r) => setTimeout(r, 800))
+    }
+  }
+  return null
+}
+
 export default function LoginParceiro() {
   const { session, profile, hashRecoveryFlow } = useAuthStore()
   useProfile()
-  const { data: myUnit, isLoading: unitLoading } = useMyUnit()
+  const { data: myUnit, isLoading: unitLoading, refetch: refetchUnit } = useMyUnit()
   const navigate = useNavigate()
+  // Vínculo de unidade pode acabar de ser criado (convite) e ainda não ter
+  // propagado pra sessão no 1º acesso. Em vez de derrubar na hora, tentamos
+  // refresh do JWT + refetch algumas vezes antes de desistir.
+  const unitRetryRef = useRef(0)
 
   // Capture hash before supabase-js clears it
   const isInviteFlow = useRef(window.location.hash.includes('type=invite')).current
@@ -123,18 +155,29 @@ export default function LoginParceiro() {
     if (unitLoading) return
 
     if (!myUnit) {
+      // 1º acesso via convite: o vínculo pode ter acabado de ser criado e ainda
+      // não estar visível pra esta sessão. Antes de desistir, refaz refresh do
+      // JWT + refetch algumas vezes (~4x, 900ms). Só derruba se persistir.
+      if (unitRetryRef.current < 4) {
+        unitRetryRef.current += 1
+        const t = setTimeout(() => {
+          supabase.auth.refreshSession().catch(() => {}).finally(() => { void refetchUnit() })
+        }, 900)
+        return () => clearTimeout(t)
+      }
       supabase.auth.signOut()
       setServerError('Sua conta ainda não está vinculada a uma unidade. Entre em contato com a matriz.')
       return
     }
 
+    unitRetryRef.current = 0
     const unitSlug = toSlug(myUnit.franchise_units?.name || myUnit.unit_id)
     // || (não ??): name vazio "" precisa cair pro email, senão o slug fica vazio,
     // a URL vira /unidade//dashboard, colapsa p/ 2 segmentos e casa no layout da
     // matriz → RoleGuard de matriz recusa a franquia → ACESSO NEGADO.
     const agentSlug = toSlug(profile.name || profile.email) || 'u'
     navigate(`/${unitSlug}/${agentSlug}/dashboard`, { replace: true })
-  }, [session, profile, myUnit, unitLoading, navigate, hashRecoveryFlow])
+  }, [session, profile, myUnit, unitLoading, navigate, hashRecoveryFlow, refetchUnit])
 
   const { signIn } = useSignIn()
   const { isThrottled, cooldownLeft } = useLoginThrottle()
@@ -157,14 +200,9 @@ export default function LoginParceiro() {
         return
       }
 
-      const base = import.meta.env.VITE_SUPABASE_URL as string
-      const key  = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string
-      const unitRes = await fetch(
-        `${base}/rest/v1/user_unit_roles?user_id=eq.${userId}&select=franchise_units(name)&limit=1`,
-        { headers: { apikey: key, Authorization: `Bearer ${accessToken}` } },
-      )
-      const unitRows = await unitRes.json()
-      const unitName: string | null = (Array.isArray(unitRows) && unitRows[0]?.franchise_units?.name) || null
+      // Resolve a unidade com retry: no 1º acesso via convite o vínculo pode ter
+      // acabado de ser criado e não estar visível ainda. Refresh do JWT + retenta.
+      const unitName = await resolveUnitName(userId, accessToken)
 
       if (!unitName) {
         await supabase.auth.signOut()

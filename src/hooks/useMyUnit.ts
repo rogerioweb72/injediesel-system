@@ -37,7 +37,12 @@ export function useMyUnit() {
         .maybeSingle()   // usuário pode gerenciar MAIS de uma unidade — pega a 1ª
                          // em vez de .single() (que dava erro com 2+ vínculos e
                          // deslogava com "conta não vinculada a uma unidade")
-      if (error) return null
+      // NÃO retornar null aqui: no 1º acesso (convite) o handoff do token pode dar
+      // um erro transitório (401/403) enquanto a sessão não propaga pro PostgREST.
+      // Se engolisse o erro e retornasse null, o react-query cachearia esse null
+      // por 5min → login via "sem unidade" e derrubava. Lançar deixa o react-query
+      // retentar (config abaixo) até a sessão/vínculo resolverem.
+      if (error) throw error
       return data as {
         unit_id: string
         franchise_units: {
@@ -78,5 +83,9 @@ export function useMyUnit() {
         }
       }
     },
+    // Retenta erro transitório do 1º acesso (o retry global não retenta 401/403).
+    // Até 4x com backoff — dá tempo do token/vínculo propagarem antes de desistir.
+    retry: 4,
+    retryDelay: (i) => Math.min(400 * 2 ** i, 2500),
   })
 }

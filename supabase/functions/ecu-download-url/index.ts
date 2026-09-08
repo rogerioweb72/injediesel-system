@@ -105,11 +105,23 @@ serve(async (req) => {
     },
   })
 
+  // Força o Content-Disposition com o NOME ORIGINAL (file_name), senão o browser
+  // baixa com o basename da r2_key — que tem prefixo timestamp ("1788531623462-...")
+  // e QUEBRA a ativação no módulo ECU. filename= (ASCII) + filename* (UTF-8) p/ acentos.
+  const rawName   = (file.file_name || 'arquivo').replace(/["\r\n]/g, '_')
+  const asciiName = rawName.replace(/[^\x20-\x7E]/g, '_')
+  const contentDisposition =
+    `attachment; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(rawName)}`
+
   let downloadUrl: string
   try {
     downloadUrl = await getSignedUrl(
       s3,
-      new GetObjectCommand({ Bucket: resolveBucket(file.file_type), Key: file.r2_key }),
+      new GetObjectCommand({
+        Bucket: resolveBucket(file.file_type),
+        Key: file.r2_key,
+        ResponseContentDisposition: contentDisposition,
+      }),
       { expiresIn: DOWNLOAD_EXPIRY_SECONDS },
     )
   } catch {

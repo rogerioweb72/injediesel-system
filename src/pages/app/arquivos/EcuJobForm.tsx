@@ -49,7 +49,10 @@ const LEVE_BLOCKED = new Set(['Truck', 'Agrícola', 'Máquina Pesada'])
 const VEHICLE_TRANSMISSIONS = ['Automático', 'Manual']
 const PLATE_CATEGORIES = new Set(['Carro/SUV', 'Pickup', 'Truck', 'Moto'])
 const PLATE_REGEX = /^[A-Z]{3}-?(?:\d{4}|\d[A-Z]\d{2})$/i
-const MAX_BYTES = 10 * 1024 * 1024
+// 50 MB (era 10 MB — pedido do dono 11/09, arquivos de até 10MB estavam sendo
+// barrados). Bem abaixo do limite de corpo de requisição do Cloudflare Worker
+// (100MB), então cabe folga sem estourar lá.
+const MAX_BYTES = 50 * 1024 * 1024
 
 const schema = z.object({
   customer_id:              z.string().min(1, 'Selecione um cliente'),
@@ -97,7 +100,7 @@ function formatBytes(bytes: number) {
 }
 
 function validateEcuFile(f: File): string | null {
-  if (f.size > MAX_BYTES) return `Arquivo muito grande (máx 10 MB): ${formatBytes(f.size)}`
+  if (f.size > MAX_BYTES) return `Arquivo muito grande (máx 50 MB): ${formatBytes(f.size)}`
   if (!isEcuFileExtensionAllowed(f.name)) return `Formato não permitido: .${f.name.split('.').pop()}`
   return null
 }

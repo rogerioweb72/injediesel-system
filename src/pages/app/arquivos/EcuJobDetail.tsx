@@ -435,20 +435,21 @@ export default function EcuJobDetail() {
   // - Job direto matriz→cliente (unit_id == null): 1 entry, valor cheio do
   //   cliente (amount_charged_to_customer) — sem repasse, não existe franquia.
   // - Job created_by_matrix (unit_id != null, created_by_matrix true): matriz
-  //   cobra cliente final direto E franquia paga repasse técnico — 2 entries
-  //   independentes, só envia quando ambos os valores estiverem preenchidos
-  //   (envio é ação única — não há como completar a segunda entry depois).
+  //   cobra cliente final direto E franquia paga repasse técnico — até 2 entries.
+  //   Pedido do dono (11/09): "cobrado do cliente" é só informativo pra franquia
+  //   — o financeiro só precisa do repasse (amount_charged_by_matrix) pra abrir.
+  //   Envia sempre a entry do repasse; a entry do cliente final entra também
+  //   SE já estiver preenchida naquele momento (senão fica de fora — sem
+  //   bloquear o envio por ela).
   const hasFranchiseLeg = job.unit_id !== null
   const isCreatedByMatrixJob = hasFranchiseLeg && job.created_by_matrix
   const missingMatrixPriceToConclude = hasFranchiseLeg && !job.amount_charged_by_matrix
-  const chargeFieldLabel = isCreatedByMatrixJob
-    ? 'cobrado do cliente final e repasse à franquia'
-    : hasFranchiseLeg ? 'cobrado pela matriz' : 'cobrado do cliente'
+  const chargeFieldLabel = hasFranchiseLeg ? 'cobrado pela matriz' : 'cobrado do cliente'
   const financeEntries: { unit_id: string | null; amount: number }[] | null = isCreatedByMatrixJob
-    ? (job.amount_charged_to_customer && job.amount_charged_by_matrix
+    ? (job.amount_charged_by_matrix
         ? [
-            { unit_id: null, amount: job.amount_charged_to_customer },
             { unit_id: job.unit_id, amount: job.amount_charged_by_matrix },
+            ...(job.amount_charged_to_customer ? [{ unit_id: null, amount: job.amount_charged_to_customer }] : []),
           ]
         : null)
     : hasFranchiseLeg
@@ -1366,9 +1367,10 @@ export default function EcuJobDetail() {
               )}
 
               {/* Botão Enviar para o Financeiro — qualquer status, enquanto não
-                  enviado. created_by_matrix só habilita quando os 2 valores
-                  (cliente final + repasse) estiverem preenchidos, pois o envio
-                  cria as 2 entries de uma vez só. */}
+                  enviado. created_by_matrix habilita já com o repasse (valor
+                  cobrado pela matriz) preenchido — o valor do cliente final é
+                  só informativo pra franquia e entra na mesma entry se já
+                  estiver preenchido, mas nunca bloqueia o envio. */}
               {financialEntries.length === 0 && financeEntries ? (
                 <button
                   onClick={handleSendToFinance}

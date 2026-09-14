@@ -25,6 +25,7 @@ import { useFranchiseUnitsList } from '@/hooks/useFranchiseUnits'
 import { useProfile } from '@/hooks/useProfile'
 import { useBrasilAPI } from '@/hooks/useBrasilAPI'
 import { useEcuCategories } from '@/hooks/useEcuCategories'
+import { useEcuServiceTags } from '@/hooks/useEcuServiceTags'
 import { useEcuCatalogList } from '@/hooks/useEcuCatalog'
 import { cn } from '@/lib/utils'
 import { ECU_ACCEPTED_EXTENSIONS, isEcuFileExtensionAllowed } from '@/lib/ecuFileTypes'
@@ -35,7 +36,6 @@ const SERVICE_TYPES = [
   'Arquivo Original',
 ]
 
-const SERVICE_TAGS = ['Potência', 'EGR', 'DPF', 'AdBlue', 'Pops and Bangs', 'Pops and Flames', 'Hard Cut', 'Full Smoke', 'Lup Tuner'] as const
 const VEHICLE_CATEGORIES = ['Carro/SUV', 'Pickup', 'Truck', 'Agrícola', 'Máquina Pesada', 'Moto', 'Náutica']
 // Categoria (label do form) → vehicle_type (enum do banco). Categorias sem
 // entrada aqui (Carro/SUV, Pickup, Truck, Moto) caem no default 'automotivo'.
@@ -424,6 +424,7 @@ export default function EcuJobForm() {
   const { data: vehicles = [] } = useVehicles(customerId)
   const { lookupPlate }         = useBrasilAPI()
   const { data: categorias = [] } = useEcuCategories()
+  const { data: serviceTagOptions = [] } = useEcuServiceTags()
 
   // ECU catalog cost suggestion
   const categoriaSlug = useMemo(
@@ -974,14 +975,16 @@ export default function EcuJobForm() {
               'flex flex-wrap gap-2 rounded-md',
               fieldErr('service_tags') && 'ring-1 ring-red-500 p-2',
             )}>
-              {SERVICE_TAGS.map((tag) => {
-                const active = serviceTags.includes(tag)
+              {serviceTagOptions.map((tag) => {
+                // valor salvo em ecu_jobs.service_tags é o label (compatível com
+                // jobs antigos criados antes da tabela dinâmica — migration 129)
+                const active = serviceTags.includes(tag.label)
                 return (
                   <button
-                    key={tag} type="button"
+                    key={tag.id} type="button"
                     onClick={() => {
                       const cur = watch('service_tags')
-                      setValue('service_tags', active ? cur.filter(t => t !== tag) : [...cur, tag], { shouldValidate: true })
+                      setValue('service_tags', active ? cur.filter(t => t !== tag.label) : [...cur, tag.label], { shouldValidate: true })
                     }}
                     className={cn(
                       'px-3 py-1 rounded-md text-xs font-mono uppercase tracking-wide border transition-colors',
@@ -990,7 +993,7 @@ export default function EcuJobForm() {
                         : 'bg-transparent border-[hsl(var(--pm-gray-700))] text-muted-foreground hover:border-[hsl(var(--pm-gray-500))]',
                     )}
                   >
-                    {tag}
+                    {tag.label}
                   </button>
                 )
               })}

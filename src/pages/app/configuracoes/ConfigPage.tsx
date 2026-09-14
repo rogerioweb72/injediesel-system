@@ -3,6 +3,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { UsersTab } from './UsersTab'
 import { CompanyTab } from './CompanyTab'
 import { FranchiseProductsTab } from './FranchiseProductsTab'
+import { ServiceTagsTab } from './ServiceTagsTab'
 
 export default function ConfigPage() {
   return (
@@ -31,6 +32,12 @@ export default function ConfigPage() {
           >
             Franquia
           </TabsTrigger>
+          <TabsTrigger
+            value="servicos"
+            className="rounded-none px-4 py-2 text-sm font-medium bg-transparent data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[hsl(var(--pm-red-500))] data-[state=active]:-mb-px text-muted-foreground hover:text-foreground"
+          >
+            Serviços (ECU)
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="usuarios">
@@ -41,6 +48,9 @@ export default function ConfigPage() {
         </TabsContent>
         <TabsContent value="franquia">
           <FranchiseProductsTab />
+        </TabsContent>
+        <TabsContent value="servicos">
+          <ServiceTagsTab />
         </TabsContent>
       </Tabs>
     </div>

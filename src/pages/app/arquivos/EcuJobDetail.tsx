@@ -677,6 +677,19 @@ export default function EcuJobDetail() {
               <p className="text-xs text-muted-foreground">Serviço</p>
               <p className="text-sm text-foreground">{job.service_type}</p>
             </div>
+            {job.service_tags && job.service_tags.length > 0 && (
+              <div>
+                <p className="text-xs text-muted-foreground">Tipo de Serviço</p>
+                <div className="flex flex-wrap gap-1 mt-0.5">
+                  {job.service_tags.map((t) => (
+                    <span key={t} className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wide"
+                      style={{ background: 'rgba(177,40,37,0.12)', color: '#E5484D', border: '1px solid rgba(177,40,37,0.25)' }}>
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             <div>
               <p className="text-xs text-muted-foreground">Veículo</p>
               <p className="text-sm text-foreground">

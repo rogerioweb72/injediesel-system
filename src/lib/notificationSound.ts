@@ -3,6 +3,7 @@
 
 const LS_ENABLED = 'inje_sound_enabled'
 const LS_SILENCED = 'inje_sound_silenced_until'
+const LS_VOLUME = 'inje_sound_volume'
 
 // ── Preferências (localStorage, por dispositivo) ─────────────────────────────
 export function isSoundEnabled(): boolean {
@@ -10,6 +11,21 @@ export function isSoundEnabled(): boolean {
 }
 export function setSoundEnabled(on: boolean): void {
   try { localStorage.setItem(LS_ENABLED, on ? '1' : '0') } catch { /* ignore */ }
+}
+
+// ── Nível de volume (baixo/médio/alto) — cada operador ajusta o próprio ─────
+export type SoundVolumeLevel = 'baixo' | 'medio' | 'alto'
+const VOLUME_GAIN: Record<SoundVolumeLevel, number> = { baixo: 0.32, medio: 0.62, alto: 0.95 }
+
+export function getSoundVolume(): SoundVolumeLevel {
+  try {
+    const v = localStorage.getItem(LS_VOLUME)
+    if (v === 'baixo' || v === 'medio' || v === 'alto') return v
+  } catch { /* ignore */ }
+  return 'alto' // default (comportamento anterior, sem regressão)
+}
+export function setSoundVolume(level: SoundVolumeLevel): void {
+  try { localStorage.setItem(LS_VOLUME, level) } catch { /* ignore */ }
 }
 export function silencedUntil(): number {
   try { return Number(localStorage.getItem(LS_SILENCED) ?? 0) } catch { return 0 }
@@ -63,7 +79,7 @@ function masterChain(c: AC): AudioNode {
   comp.attack.setValueAtTime(0.002, c.currentTime)
   comp.release.setValueAtTime(0.15, c.currentTime)
   const master = c.createGain()
-  master.gain.setValueAtTime(0.95, c.currentTime)  // bem alto
+  master.gain.setValueAtTime(VOLUME_GAIN[getSoundVolume()], c.currentTime)
   comp.connect(master)
   master.connect(c.destination)
   return comp

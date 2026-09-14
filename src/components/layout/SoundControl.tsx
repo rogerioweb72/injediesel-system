@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Volume2, VolumeX, BellOff, Check, Play } from 'lucide-react'
+import { Volume2, VolumeX, Volume1, Volume, BellOff, Check, Play, BellRing } from 'lucide-react'
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuSeparator,
@@ -8,7 +8,17 @@ import { Button } from '@/components/ui/button'
 import {
   isSoundEnabled, setSoundEnabled, isSilenced, silencedUntil,
   silenceForMinutes, clearSilence, playNewFileSound,
+  getSoundVolume, setSoundVolume, type SoundVolumeLevel,
 } from '@/lib/notificationSound'
+import {
+  getNotificationPermission, requestNotificationPermission,
+} from '@/lib/browserNotify'
+
+const VOLUME_LEVELS: { level: SoundVolumeLevel; label: string; icon: typeof Volume }[] = [
+  { level: 'baixo', label: 'Baixo', icon: Volume },
+  { level: 'medio', label: 'Médio', icon: Volume1 },
+  { level: 'alto', label: 'Alto', icon: Volume2 },
+]
 
 const OPTIONS = [
   { min: 5, l: '5 minutos' },
@@ -30,6 +40,8 @@ export function SoundControl() {
   const [enabled, setEnabled] = useState(isSoundEnabled())
   const [silenced, setSilenced] = useState(isSilenced())
   const [until, setUntil] = useState(silencedUntil())
+  const [volume, setVolume] = useState<SoundVolumeLevel>(getSoundVolume())
+  const [notifPermission, setNotifPermission] = useState(getNotificationPermission())
 
   // Re-checa o silêncio periodicamente pra o ícone voltar quando expirar.
   useEffect(() => {
@@ -42,6 +54,11 @@ export function SoundControl() {
   function toggleEnabled() { const v = !enabled; setSoundEnabled(v); setEnabled(v) }
   function silence(min: number) { silenceForMinutes(min); setSilenced(true); setUntil(Date.now() + min * 60_000) }
   function reactivate() { clearSilence(); setSilenced(false); setUntil(0) }
+  function chooseVolume(level: SoundVolumeLevel) { setSoundVolume(level); setVolume(level) }
+  async function enableBrowserNotifications() {
+    const result = await requestNotificationPermission()
+    setNotifPermission(result)
+  }
 
   return (
     <DropdownMenu>
@@ -63,6 +80,15 @@ export function SoundControl() {
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
+        <div className="px-2 py-1 text-[11px] text-muted-foreground">Volume do alerta</div>
+        {VOLUME_LEVELS.map(({ level, label, icon: Icon }) => (
+          <DropdownMenuItem key={level} onClick={() => chooseVolume(level)}>
+            <Icon size={14} className="mr-2" /> {label}
+            {volume === level && <Check size={14} className="ml-auto text-emerald-400" />}
+          </DropdownMenuItem>
+        ))}
+
+        <DropdownMenuSeparator />
         <div className="px-2 py-1 text-[11px] text-muted-foreground">Silenciar por</div>
         {OPTIONS.map((o) => (
           <DropdownMenuItem key={o.min} onClick={() => silence(o.min)}>
@@ -77,6 +103,25 @@ export function SoundControl() {
               <Volume2 size={14} className="mr-2" /> Reativar agora
               <span className="ml-auto text-[10px] text-zinc-500">{fmtRemaining(until)}</span>
             </DropdownMenuItem>
+          </>
+        )}
+
+        {notifPermission !== 'unsupported' && (
+          <>
+            <DropdownMenuSeparator />
+            {notifPermission === 'granted' ? (
+              <div className="px-2 py-1.5 text-[11px] text-emerald-400 flex items-center gap-2">
+                <Check size={14} /> Notificações do navegador ativas
+              </div>
+            ) : notifPermission === 'denied' ? (
+              <div className="px-2 py-1.5 text-[11px] text-muted-foreground">
+                Notificações bloqueadas — libere nas permissões do navegador.
+              </div>
+            ) : (
+              <DropdownMenuItem onClick={enableBrowserNotifications}>
+                <BellRing size={14} className="mr-2" /> Ativar notificações do navegador
+              </DropdownMenuItem>
+            )}
           </>
         )}
       </DropdownMenuContent>

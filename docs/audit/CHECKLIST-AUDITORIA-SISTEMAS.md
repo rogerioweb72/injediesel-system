@@ -7,6 +7,13 @@
 > Este documento reproduz todas as verificações feitas, os problemas encontrados
 > e as soluções aplicadas — para rodar o mesmo processo nos outros sistemas.
 
+> ⚠️ **CONGELADO em 15/09/2026.** Este arquivo passou de 1.100 linhas e fica
+> pesado/perde contexto ao ser lido ou editado por um agente. **Novos
+> adendos NÃO são mais anexados aqui** — vão em
+> [`adendos/`](./adendos/README.md), um arquivo por tema, cada um com no
+> máximo ~400 linhas. Ver o índice em `adendos/README.md` para tudo que
+> aconteceu depois de 01/09/2026.
+
 ---
 
 ## 🚦 PAINEL DE PARTIDA (para um chat/sessão nova começar daqui)
